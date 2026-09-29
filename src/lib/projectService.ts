@@ -139,8 +139,55 @@ export async function restoreOpenProject(projectKey: string | null): Promise<boo
   }
 }
 
+let saveTimer: number | undefined
+let inFlight: Promise<void> | null = null
+
+/** Debounced save (autosave). A newer call replaces the pending one. */
+export function scheduleSave(delayMs: number): void {
+  cancelScheduledSave()
+  saveTimer = window.setTimeout(() => {
+    saveTimer = undefined
+    void saveProject()
+  }, delayMs)
+}
+
+export function cancelScheduledSave(): void {
+  if (saveTimer !== undefined) clearTimeout(saveTimer)
+  saveTimer = undefined
+}
+
+/** An autosave is queued or a write is running. */
+export function hasPendingSave(): boolean {
+  return saveTimer !== undefined || inFlight !== null
+}
+
+/**
+ * Run any queued autosave now and wait for writes to finish, so switching or
+ * closing a project doesn't drop the last edits. Resolves true if the project
+ * is saved (or there is no project folder).
+ */
+export async function flushSave(): Promise<boolean> {
+  if (saveTimer !== undefined) {
+    cancelScheduledSave()
+    await saveProject()
+  } else if (inFlight) {
+    await inFlight
+  }
+  return useCourseStore.getState().saveState !== 'error'
+}
+
 /** Persist the current course and history to the open project's folder. */
-export async function saveProject(): Promise<void> {
+export function saveProject(): Promise<void> {
+  // Chain behind a running write so two saves never interleave on disk.
+  const run = (inFlight ?? Promise.resolve()).then(writeProject)
+  const tracked = run.finally(() => {
+    if (inFlight === tracked) inFlight = null
+  })
+  inFlight = tracked
+  return tracked
+}
+
+async function writeProject(): Promise<void> {
   const store = useCourseStore.getState()
   const { directoryHandle, course, past, future } = store
   if (!directoryHandle) return

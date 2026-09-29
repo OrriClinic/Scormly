@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import BlockPreview from '../../preview/BlockPreview'
@@ -19,6 +19,18 @@ export default function PreviewOverlay() {
   // Passed restricted `continue` gates: blockId → true (cleared on lesson change).
   const [continued, setContinued] = useState<Record<string, boolean>>({})
   const lesson = course.lessons[index]
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  // Esc closes the preview. Take focus on open so keys typed here don't land
+  // in the editor field that was focused underneath.
+  useEffect(() => {
+    rootRef.current?.focus()
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setPreviewOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [setPreviewOpen])
   const total = course.lessons.length
   const isLast = index >= total - 1
 
@@ -54,8 +66,13 @@ export default function PreviewOverlay() {
 
   return (
     <div
+      ref={rootRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label={course.title}
+      tabIndex={-1}
       data-theme={course.theme}
-      className="fixed inset-0 z-50 flex flex-col bg-white"
+      className="fixed inset-0 z-50 flex flex-col bg-white outline-none"
     >
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 px-4">
         <div className="flex min-w-0 items-center gap-3">

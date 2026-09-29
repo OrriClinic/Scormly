@@ -10,7 +10,7 @@ import { useUndoRedoShortcuts } from '../hooks/useUndoRedoShortcuts'
 import { useEditorShortcuts } from '../hooks/useEditorShortcuts'
 import { useAutosave } from '../hooks/useAutosave'
 import { useCourseStore } from '../store/courseStore'
-import { restoreOpenProject } from '../lib/projectService'
+import { flushSave, hasPendingSave, restoreOpenProject } from '../lib/projectService'
 import { useRoute, navigate } from '../hooks/useRoute'
 
 // Course builder (editor). Rendered on the #/app route. Shows the welcome screen
@@ -41,6 +41,23 @@ export default function Builder() {
     // Run once on mount; projectKey is read from the initial URL.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Warn before closing the tab while edits would be lost: unsaved or failed
+  // writes to the project folder, or any edits in no-folder ("try anyway") mode.
+  useEffect(() => {
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      const s = useCourseStore.getState()
+      const atRisk = s.directoryHandle
+        ? hasPendingSave() || s.saveState === 'error'
+        : skipped && s.past.length > 0
+      if (!atRisk) return
+      if (s.directoryHandle) void flushSave()
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [skipped])
 
   if (restoring && !directoryHandle) {
     return <div className="h-full bg-gray-50" />

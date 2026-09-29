@@ -1,23 +1,18 @@
 import { useEffect } from 'react'
 import { useCourseStore } from '../store/courseStore'
+import { editorShortcutsBlocked, isEditableTarget } from '../lib/keyboard'
 
 // Editor keyboard shortcuts acting on the selected block:
-//   Delete            — delete block
+//   Delete, Backspace — delete block
 //   Ctrl/Cmd + D      — duplicate block
 //   Alt + ↑ / ↓       — move block up / down
 //   Escape            — deselect
-// Ignored while typing in inputs / textareas / contentEditable.
+// Ignored while typing in inputs / textareas / contentEditable (except Escape),
+// and while the preview or settings overlay is open.
 export function useEditorShortcuts() {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      const target = e.target as HTMLElement | null
-      const editable =
-        !!target &&
-        (target.isContentEditable ||
-          target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT')
-
+      if (editorShortcutsBlocked()) return
       const s = useCourseStore.getState()
       const id = s.selectedBlockId
       if (!id) return
@@ -30,7 +25,9 @@ export function useEditorShortcuts() {
         s.selectBlock(null)
         return
       }
-      if (!editable && e.key === 'Delete') {
+      if (isEditableTarget(e.target)) return
+      // Macs have no Delete key on laptops, so Backspace deletes too.
+      if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault()
         s.deleteBlock(lesson.id, id)
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {

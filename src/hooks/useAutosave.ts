@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useCourseStore } from '../store/courseStore'
-import { saveProject } from '../lib/projectService'
+import { cancelScheduledSave, saveProject, scheduleSave } from '../lib/projectService'
 
 const DEBOUNCE_MS = 1000
 
@@ -10,7 +10,6 @@ const DEBOUNCE_MS = 1000
 export function useAutosave() {
   const course = useCourseStore((s) => s.course)
   const handle = useCourseStore((s) => s.directoryHandle)
-  const timer = useRef<number | undefined>(undefined)
   const skipNext = useRef(true)
 
   useEffect(() => {
@@ -20,12 +19,12 @@ export function useAutosave() {
       skipNext.current = false
       return
     }
-    if (timer.current) clearTimeout(timer.current)
-    timer.current = window.setTimeout(() => void saveProject(), DEBOUNCE_MS)
-    return () => {
-      if (timer.current) clearTimeout(timer.current)
-    }
+    scheduleSave(DEBOUNCE_MS)
   }, [course, handle])
+
+  // Leaving the editor drops a queued save; callers that switch projects
+  // flush first (see flushSave).
+  useEffect(() => cancelScheduledSave, [])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

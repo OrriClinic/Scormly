@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
-import { createNewProject, openExistingProject } from '../../lib/projectService'
+import { createNewProject, flushSave, openExistingProject } from '../../lib/projectService'
 import { downloadProjectZip } from '../../lib/exportProjectZip'
 
 // Dropdown on the project name: switch to another project or close the current.
@@ -21,8 +21,16 @@ export default function ProjectMenu() {
     return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [open])
 
-  async function pick(action: () => Promise<void>) {
+  // Switching or closing the project: write pending edits first, and ask
+  // before discarding them if the write failed.
+  async function leave(): Promise<boolean> {
+    if (await flushSave()) return true
+    return window.confirm(t('leaveUnsaved'))
+  }
+
+  async function pick(action: () => Promise<void>, leaving = false) {
     setOpen(false)
+    if (leaving && !(await leave())) return
     try {
       await action()
     } catch (err) {
@@ -56,10 +64,10 @@ export default function ProjectMenu() {
           <p className="px-3 pb-1 pt-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
             {t('manageProject')}
           </p>
-          <MenuItem icon="+" onClick={() => pick(createNewProject)}>
+          <MenuItem icon="+" onClick={() => pick(createNewProject, true)}>
             {t('newProject')}
           </MenuItem>
-          <MenuItem icon={<FolderIcon />} onClick={() => pick(openExistingProject)}>
+          <MenuItem icon={<FolderIcon />} onClick={() => pick(openExistingProject, true)}>
             {t('openProject')}
           </MenuItem>
           <div className="my-1 h-px bg-gray-100" />
@@ -71,7 +79,7 @@ export default function ProjectMenu() {
             icon="✕"
             onClick={() => {
               setOpen(false)
-              closeProject()
+              void leave().then((ok) => ok && closeProject())
             }}
           >
             {t('closeProject')}
