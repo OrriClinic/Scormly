@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import { KEYS } from '../../lib/keyboard'
+import { useDialog } from '../../hooks/useDialog'
 
 const GROUPS: { title: string; items: { label: string; keys: string }[] }[] = [
   {
@@ -30,19 +31,16 @@ const GROUPS: { title: string; items: { label: string; keys: string }[] }[] = [
 export default function ShortcutsHelp() {
   const setOpen = useCourseStore((s) => s.setShortcutsOpen)
   const { t } = useT('common')
-  const closeRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useDialog(dialogRef, () => setOpen(false))
 
+  // "?" toggles the help closed again.
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null
-    closeRef.current?.focus()
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape' || e.key === '?') setOpen(false)
+      if (e.key === '?') setOpen(false)
     }
     document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      previous?.focus?.()
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [setOpen])
 
   return (
@@ -51,6 +49,7 @@ export default function ShortcutsHelp() {
       onClick={() => setOpen(false)}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="shortcuts-title"
@@ -62,7 +61,6 @@ export default function ShortcutsHelp() {
             {t('shortcuts')}
           </h2>
           <button
-            ref={closeRef}
             type="button"
             onClick={() => setOpen(false)}
             aria-label={t('dismiss')}

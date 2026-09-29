@@ -1,4 +1,5 @@
-import { useEffect, type ChangeEvent } from 'react'
+import { useRef, type ChangeEvent } from 'react'
+import { useDialog } from '../../hooks/useDialog'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import { THEME_LIST } from '../../theme/themes'
@@ -25,13 +26,8 @@ export default function ProjectSettings({ onClose }: { onClose: () => void }) {
   const settings = course.settings ?? DEFAULT_COURSE_SETTINGS
   const hasQuiz = course.lessons.some((l) => l.blocks.some((b) => b.type === 'quiz'))
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useDialog(dialogRef, onClose)
 
   async function pickCover(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -51,11 +47,15 @@ export default function ProjectSettings({ onClose }: { onClose: () => void }) {
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
         className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">{t('title')}</h2>
+          <h2 id="settings-title" className="text-lg font-semibold text-gray-900">{t('title')}</h2>
           <button
             type="button"
             onClick={onClose}

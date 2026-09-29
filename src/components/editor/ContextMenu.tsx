@@ -1,4 +1,5 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useMenu } from '../../hooks/useMenu'
 
 export interface ContextMenuItem {
   label: string
@@ -18,43 +19,45 @@ interface ContextMenuProps {
 }
 
 // A small fixed-position menu shown at a cursor location. Closes on outside
-// click, Escape, scroll, or resize.
+// click, Escape, Tab, scroll, or resize; arrow keys move between items.
 export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ left: x, top: y })
+
+  useMenu({ open: true, onClose, rootRef: ref })
 
   useEffect(() => {
-    function onPointerDown(e: PointerEvent) {
-      if (!ref.current?.contains(e.target as Node)) onClose()
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKey)
     window.addEventListener('scroll', onClose, true)
     window.addEventListener('resize', onClose)
     return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKey)
       window.removeEventListener('scroll', onClose, true)
       window.removeEventListener('resize', onClose)
     }
   }, [onClose])
 
-  // Keep the menu inside the viewport.
-  const left = Math.min(x, window.innerWidth - 232)
-  const top = Math.min(y, window.innerHeight - items.length * 40 - 16)
+  // Keep the menu inside the viewport, using its real rendered size.
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const margin = 8
+    setPos({
+      left: Math.max(margin, Math.min(x, window.innerWidth - el.offsetWidth - margin)),
+      top: Math.max(margin, Math.min(y, window.innerHeight - el.offsetHeight - margin)),
+    })
+  }, [x, y])
 
   return (
     <div
       ref={ref}
-      style={{ position: 'fixed', left, top }}
+      role="menu"
+      style={{ position: 'fixed', left: pos.left, top: pos.top }}
       className="z-50 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg"
     >
       {items.map((item, i) => (
         <button
           key={i}
           type="button"
+          role="menuitem"
           disabled={item.disabled}
           onClick={() => {
             item.onClick()
@@ -62,8 +65,8 @@ export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps) 
           }}
           className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-30 ${
             item.danger
-              ? 'text-gray-700 hover:bg-red-50 hover:text-red-600'
-              : 'text-gray-700 hover:bg-gray-50'
+              ? 'text-gray-700 hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600 focus:outline-none'
+              : 'text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none'
           }`}
         >
           {item.icon && <span className="w-4 text-gray-400">{item.icon}</span>}

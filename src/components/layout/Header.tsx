@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { useMenu } from '../../hooks/useMenu'
 import Logo from './Logo'
 import ThemePicker from '../editor/ThemePicker'
 import LanguagePicker from '../editor/LanguagePicker'
@@ -29,15 +30,9 @@ export default function Header() {
   const { t: tp } = useT('preview')
   const { lang, setLang } = useLang()
   const moreRef = useRef<HTMLDivElement>(null)
+  const moreTriggerRef = useRef<HTMLButtonElement>(null)
 
-  useEffect(() => {
-    if (!moreOpen) return
-    function onDown(e: PointerEvent) {
-      if (!moreRef.current?.contains(e.target as Node)) setMoreOpen(false)
-    }
-    document.addEventListener('pointerdown', onDown)
-    return () => document.removeEventListener('pointerdown', onDown)
-  }, [moreOpen])
+  useMenu({ open: moreOpen, onClose: () => setMoreOpen(false), rootRef: moreRef, triggerRef: moreTriggerRef })
 
   const saveLabel =
     saveState === 'saving'
@@ -154,15 +149,18 @@ export default function Header() {
         </button>
         <div ref={moreRef} className="relative">
           <button
+            ref={moreTriggerRef}
             type="button"
             onClick={() => setMoreOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={moreOpen}
             aria-label={t('menu')}
             className="flex h-9 w-9 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
           >
             ⋯
           </button>
           {moreOpen && (
-            <div className="absolute right-0 top-full z-40 mt-2 w-52 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
+            <div role="menu" className="absolute right-0 top-full z-40 mt-2 w-52 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
               <MoreItem
                 label={saveLabel}
                 disabled={!directoryHandle || saveState === 'saving'}
@@ -222,8 +220,9 @@ export default function Header() {
                 href={GITHUB_ISSUES_URL}
                 target="_blank"
                 rel="noreferrer"
+                role="menuitem"
                 onClick={() => setMoreOpen(false)}
-                className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+                className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
               >
                 {tw('reportIssue')}
               </a>
@@ -248,9 +247,10 @@ function MoreItem({
   return (
     <button
       type="button"
+      role="menuitem"
       onClick={onClick}
       disabled={disabled}
-      className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-30"
+      className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none disabled:opacity-30"
     >
       {label}
     </button>

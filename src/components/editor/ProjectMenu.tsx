@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { useMenu } from '../../hooks/useMenu'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import {
@@ -18,15 +19,9 @@ export default function ProjectMenu() {
   const { t: tw } = useT('welcome')
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
 
-  useEffect(() => {
-    if (!open) return
-    function onPointerDown(e: PointerEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    return () => document.removeEventListener('pointerdown', onPointerDown)
-  }, [open])
+  useMenu({ open, onClose: () => setOpen(false), rootRef, triggerRef })
 
   // Switching or closing the project: write pending edits first, and ask
   // before discarding them if the write failed.
@@ -52,6 +47,7 @@ export default function ProjectMenu() {
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
@@ -69,7 +65,7 @@ export default function ProjectMenu() {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-30 mt-1.5 w-60 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
+        <div role="menu" className="absolute left-0 top-full z-30 mt-1.5 w-60 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
           <p className="px-3 pb-1 pt-1.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
             {t('manageProject')}
           </p>
@@ -114,8 +110,9 @@ function MenuItem({
   return (
     <button
       type="button"
+      role="menuitem"
       onClick={onClick}
-      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
+      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
     >
       <span className="flex h-4 w-4 shrink-0 items-center justify-center text-gray-400">
         {icon}

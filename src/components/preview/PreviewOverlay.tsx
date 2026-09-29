@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { useDialog } from '../../hooks/useDialog'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import BlockPreview from '../../preview/BlockPreview'
@@ -21,16 +22,9 @@ export default function PreviewOverlay() {
   const lesson = course.lessons[index]
   const rootRef = useRef<HTMLDivElement>(null)
 
-  // Esc closes the preview. Take focus on open so keys typed here don't land
-  // in the editor field that was focused underneath.
-  useEffect(() => {
-    rootRef.current?.focus()
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setPreviewOpen(false)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [setPreviewOpen])
+  // Esc closes the preview; focus moves into it (so keys don't land in the
+  // editor field underneath) and stays trapped until it closes.
+  useDialog(rootRef, () => setPreviewOpen(false), { focusContainer: true })
   const total = course.lessons.length
   const isLast = index >= total - 1
 

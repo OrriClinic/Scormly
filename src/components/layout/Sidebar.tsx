@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   DndContext,
   PointerSensor,
@@ -32,6 +32,16 @@ export default function Sidebar() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   )
+
+  // Esc closes the mobile drawer.
+  useEffect(() => {
+    if (!sidebarOpen) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setSidebarOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [sidebarOpen, setSidebarOpen])
 
   function onDragEnd(e: DragEndEvent) {
     if (!e.over || e.active.id === e.over.id) return

@@ -6,6 +6,7 @@ import {
   type BlockCategory,
 } from '../../blocks/registry'
 import { useCourseStore } from '../../store/courseStore'
+import { useMenu } from '../../hooks/useMenu'
 import { useT } from '../../i18n/I18nProvider'
 
 interface AddBlockMenuProps {
@@ -79,21 +80,8 @@ export default function AddBlockMenu({
     if (open) searchRef.current?.focus()
   }, [open])
 
-  useEffect(() => {
-    if (!open) return
-    function onPointerDown(e: PointerEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
+  // Search keeps focus on open; ↓ moves into the block list.
+  useMenu({ open, onClose: () => setOpen(false), rootRef, triggerRef, focusFirst: false })
 
   function handleAdd(type: BlockType) {
     addBlock(lessonId, type, atIndex)
@@ -170,7 +158,7 @@ export default function AddBlockMenu({
             />
           </div>
 
-          <div className="overflow-y-auto p-3">
+          <div role="menu" className="overflow-y-auto p-3">
           {BLOCK_CATEGORIES.map(({ category }) => {
             const items = Object.values(BLOCK_REGISTRY).filter(
               (m) => m.category === category && matches(m.type),
@@ -186,8 +174,9 @@ export default function AddBlockMenu({
                     <button
                       key={meta.type}
                       type="button"
+                      role="menuitem"
                       onClick={() => handleAdd(meta.type)}
-                      className="flex flex-col gap-1 rounded-lg border border-gray-100 p-2.5 text-left transition-colors hover:border-brand/40 hover:bg-brand/5"
+                      className="flex flex-col gap-1 rounded-lg border border-gray-100 p-2.5 text-left transition-colors hover:border-brand/40 hover:bg-brand/5 focus:border-brand/40 focus:bg-brand/5 focus:outline-none"
                     >
                       <span className="flex items-center gap-2">
                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-brand/10 text-sm text-brand">
