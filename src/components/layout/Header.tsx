@@ -8,7 +8,7 @@ import { useCourseStore } from '../../store/courseStore'
 import { useT, useLang } from '../../i18n/I18nProvider'
 import { saveProject } from '../../lib/projectService'
 import ExportMenu from '../editor/ExportMenu'
-import { runExport, useExportStore } from '../../export/runExport'
+import { requestExport, useExportStore } from '../../export/runExport'
 import { GITHUB_ISSUES_URL } from '../../lib/links'
 import { KEYS } from '../../lib/keyboard'
 
@@ -173,7 +173,7 @@ export default function Header() {
                 label={t('export2004')}
                 disabled={exporting}
                 onClick={() => {
-                  void runExport('scorm2004')
+                  requestExport('scorm2004')
                   setMoreOpen(false)
                 }}
               />
@@ -181,7 +181,7 @@ export default function Header() {
                 label={t('export12')}
                 disabled={exporting}
                 onClick={() => {
-                  void runExport('scorm12')
+                  requestExport('scorm12')
                   setMoreOpen(false)
                 }}
               />
@@ -189,7 +189,7 @@ export default function Header() {
                 label={t('exportCmi5')}
                 disabled={exporting}
                 onClick={() => {
-                  void runExport('cmi5')
+                  requestExport('cmi5')
                   setMoreOpen(false)
                 }}
               />

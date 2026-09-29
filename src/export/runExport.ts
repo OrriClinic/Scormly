@@ -4,18 +4,34 @@ import { exportCmi5 } from './exportCmi5'
 import { downloadProjectZip } from '../lib/exportProjectZip'
 import { toast } from '../store/toastStore'
 import { translate } from '../i18n/I18nProvider'
+import { useCourseStore } from '../store/courseStore'
+import { checkCourse, type CourseIssue } from './courseCheck'
 
 export type ExportTarget = 'scorm2004' | 'scorm12' | 'cmi5' | 'project'
 
 // One export at a time, shared by the desktop menu, the mobile menu and the
 // project menu, so repeated clicks can't start parallel packaging runs.
-export const useExportStore = create<{ exporting: boolean }>()(() => ({ exporting: false }))
+// `pending` holds a package export waiting on the pre-export check dialog.
+export const useExportStore = create<{
+  exporting: boolean
+  pending: { target: ExportTarget; issues: CourseIssue[] } | null
+}>()(() => ({ exporting: false, pending: null }))
 
 const RUN: Record<ExportTarget, () => Promise<string>> = {
   scorm2004: () => exportScorm('2004'),
   scorm12: () => exportScorm('1.2'),
   cmi5: exportCmi5,
   project: downloadProjectZip,
+}
+
+/**
+ * Export a course package, first listing content problems (empty lessons,
+ * missing media, unanswerable questions, …) in a dialog if there are any.
+ */
+export function requestExport(target: ExportTarget): void {
+  const issues = checkCourse(useCourseStore.getState().course)
+  if (issues.length) useExportStore.setState({ pending: { target, issues } })
+  else void runExport(target)
 }
 
 /** Build + download a package, reporting the outcome as a toast. */

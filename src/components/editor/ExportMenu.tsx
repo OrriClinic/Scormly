@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useMenu } from '../../hooks/useMenu'
 import { useT } from '../../i18n/I18nProvider'
-import { runExport, useExportStore, type ExportTarget } from '../../export/runExport'
+import { requestExport, useExportStore, type ExportTarget } from '../../export/runExport'
 
 // Export button with a SCORM version menu (1.2 / 2004).
 export default function ExportMenu() {
@@ -15,7 +15,7 @@ export default function ExportMenu() {
 
   function run(target: ExportTarget) {
     setOpen(false)
-    void runExport(target)
+    requestExport(target)
   }
 
   return (

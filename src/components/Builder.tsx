@@ -7,6 +7,8 @@ import PreviewOverlay from './preview/PreviewOverlay'
 import ProjectSettings from './editor/ProjectSettings'
 import Toaster from './editor/Toaster'
 import ShortcutsHelp from './editor/ShortcutsHelp'
+import ExportCheckDialog from './editor/ExportCheckDialog'
+import { useExportStore } from '../export/runExport'
 import ThemeProvider from '../theme/ThemeProvider'
 import { useUndoRedoShortcuts } from '../hooks/useUndoRedoShortcuts'
 import { useEditorShortcuts } from '../hooks/useEditorShortcuts'
@@ -27,6 +29,7 @@ export default function Builder() {
   const settingsOpen = useCourseStore((s) => s.settingsOpen)
   const setSettingsOpen = useCourseStore((s) => s.setSettingsOpen)
   const shortcutsOpen = useCourseStore((s) => s.shortcutsOpen)
+  const exportPending = useExportStore((s) => s.pending !== null)
   const { projectKey } = useRoute()
   const { t } = useT('common')
   const [skipped, setSkipped] = useState(false)
@@ -96,6 +99,7 @@ export default function Builder() {
       {previewOpen && <PreviewOverlay />}
       {settingsOpen && <ProjectSettings onClose={() => setSettingsOpen(false)} />}
       {shortcutsOpen && <ShortcutsHelp />}
+      {exportPending && <ExportCheckDialog />}
       <Toaster />
     </ThemeProvider>
   )
