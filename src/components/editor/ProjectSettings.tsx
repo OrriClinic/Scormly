@@ -98,7 +98,7 @@ export default function ProjectSettings({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="flex h-[min(680px,90vh)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
+        className="flex h-[min(820px,92vh)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex shrink-0 items-center justify-between border-b border-gray-200 px-5 py-4 sm:px-6">
@@ -120,7 +120,7 @@ export default function ProjectSettings({ onClose }: { onClose: () => void }) {
             role="tablist"
             aria-label={t('tabsLabel')}
             aria-orientation={vertical ? 'vertical' : 'horizontal'}
-            className="flex shrink-0 gap-1 overflow-x-auto border-b border-gray-200 bg-gray-50 px-3 py-2 sm:w-56 sm:flex-col sm:overflow-x-visible sm:border-b-0 sm:border-r sm:px-3 sm:py-4"
+            className="flex shrink-0 gap-1 overflow-x-auto border-b border-gray-200 bg-gray-50 px-3 py-2 sm:w-64 sm:flex-col sm:overflow-x-visible sm:border-b-0 sm:border-r sm:px-3 sm:py-4"
           >
             {TABS.map((id) => {
               const selected = tab === id
@@ -157,7 +157,7 @@ export default function ProjectSettings({ onClose }: { onClose: () => void }) {
             role="tabpanel"
             id={`settings-panel-${tab}`}
             aria-labelledby={`settings-tab-${tab}`}
-            className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-8"
+            className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-10 sm:py-8"
           >
             {tab === 'general' && <GeneralPanel />}
             {tab === 'appearance' && <AppearancePanel />}
@@ -218,7 +218,7 @@ function GeneralPanel() {
             <img
               src={coverUrl}
               alt=""
-              className="aspect-video w-full rounded-xl border border-gray-200 bg-gray-50 object-cover shadow-sm sm:w-80"
+              className="aspect-video w-full rounded-xl border border-gray-200 bg-gray-50 object-cover shadow-sm sm:w-96"
             />
             <div className="flex gap-2">
               <label className="btn-secondary cursor-pointer text-sm focus-within:outline-2 focus-within:outline-brand">
@@ -235,7 +235,7 @@ function GeneralPanel() {
             </div>
           </div>
         ) : (
-          <label className="flex aspect-video w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-4 text-gray-500 transition focus-within:border-brand hover:border-brand hover:text-brand sm:w-80">
+          <label className="flex aspect-video w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 px-4 text-gray-500 transition focus-within:border-brand hover:border-brand hover:text-brand sm:w-96">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-8 w-8" aria-hidden="true">
               <rect x="3" y="4" width="18" height="16" rx="2" />
               <circle cx="9" cy="10" r="1.8" />
