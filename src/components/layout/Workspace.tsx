@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import {
   DndContext,
   PointerSensor,
@@ -20,6 +21,8 @@ export default function Workspace() {
   const selectBlock = useCourseStore((s) => s.selectBlock)
   const moveBlock = useCourseStore((s) => s.moveBlock)
   const renameLesson = useCourseStore((s) => s.renameLesson)
+  const addLesson = useCourseStore((s) => s.addLesson)
+  const lessonCount = useCourseStore((s) => s.course.lessons.length)
   const { t } = useT('common')
   // Small distance so a click still selects/edits; drag starts only past 5px.
   const sensors = useSensors(
@@ -48,6 +51,7 @@ export default function Workspace() {
               <input
                 value={activeLesson.title}
                 aria-label={t('lessonTitle')}
+                placeholder={t('lessonTitle')}
                 onChange={(e) => renameLesson(activeLesson.id, e.target.value)}
                 className="w-full rounded-md bg-transparent text-3xl font-bold text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-brand"
               />
@@ -76,15 +80,21 @@ export default function Workspace() {
                     items={activeLesson.blocks.map((b) => b.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="space-y-1">
+                    <div>
                       {activeLesson.blocks.map((block, index) => (
-                        <BlockShell
-                          key={block.id}
-                          block={block}
-                          lessonId={activeLesson.id}
-                          index={index}
-                          total={activeLesson.blocks.length}
-                        />
+                        <Fragment key={block.id}>
+                          <AddBlockMenu
+                            variant="inline"
+                            lessonId={activeLesson.id}
+                            atIndex={index}
+                          />
+                          <BlockShell
+                            block={block}
+                            lessonId={activeLesson.id}
+                            index={index}
+                            total={activeLesson.blocks.length}
+                          />
+                        </Fragment>
                       ))}
                     </div>
                   </SortableContext>
@@ -95,6 +105,20 @@ export default function Workspace() {
               </div>
             )}
           </>
+        ) : lessonCount === 0 ? (
+          <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-gray-300 bg-white px-4 py-10 text-center">
+            <p className="mb-4 max-w-xs text-sm text-gray-500">{t('noLessonsHint')}</p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                addLesson()
+              }}
+              className="btn-primary text-sm"
+            >
+              + {t('addLesson')}
+            </button>
+          </div>
         ) : (
           <p className="text-center text-gray-500">{t('chooseLesson')}</p>
         )}

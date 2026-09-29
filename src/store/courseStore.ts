@@ -65,6 +65,10 @@ export interface CourseState {
   settingsOpen: boolean
   setSettingsOpen: (open: boolean) => void
 
+  // Keyboard shortcuts help
+  shortcutsOpen: boolean
+  setShortcutsOpen: (open: boolean) => void
+
   // Mobile lessons drawer
   sidebarOpen: boolean
   setSidebarOpen: (open: boolean) => void
@@ -176,6 +180,9 @@ export const useCourseStore = create<CourseState>((set, get) => {
 
     settingsOpen: false,
     setSettingsOpen: (open) => set({ settingsOpen: open }),
+
+    shortcutsOpen: false,
+    setShortcutsOpen: (open) => set({ shortcutsOpen: open }),
 
     sidebarOpen: false,
     setSidebarOpen: (open) => set({ sidebarOpen: open }),

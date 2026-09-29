@@ -15,5 +15,24 @@ export function isEditableTarget(target: EventTarget | null): boolean {
 /** Editor shortcuts must not reach the course underneath an open overlay. */
 export function editorShortcutsBlocked(): boolean {
   const s = useCourseStore.getState()
-  return s.previewOpen || s.settingsOpen
+  return s.previewOpen || s.settingsOpen || s.shortcutsOpen
 }
+
+const IS_MAC =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+
+/** Modifier label for shortcut hints: ⌘ on Apple devices, Ctrl elsewhere. */
+export const MOD = IS_MAC ? '⌘' : 'Ctrl'
+
+/** Shortcut hints shown in tooltips, menus and the shortcuts help. */
+export const KEYS = {
+  undo: `${MOD}+Z`,
+  redo: IS_MAC ? `${MOD}+Shift+Z` : `${MOD}+Y`,
+  save: `${MOD}+S`,
+  duplicate: `${MOD}+D`,
+  delete: IS_MAC ? '⌫' : 'Del',
+  moveUp: `${IS_MAC ? '⌥' : 'Alt'}+↑`,
+  moveDown: `${IS_MAC ? '⌥' : 'Alt'}+↓`,
+  deselect: 'Esc',
+  help: '?',
+} as const

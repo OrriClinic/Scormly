@@ -9,6 +9,7 @@ import { saveProject } from '../../lib/projectService'
 import ExportMenu from '../editor/ExportMenu'
 import { runExport, useExportStore } from '../../export/runExport'
 import { GITHUB_ISSUES_URL } from '../../lib/links'
+import { KEYS } from '../../lib/keyboard'
 
 export default function Header() {
   const [moreOpen, setMoreOpen] = useState(false)
@@ -21,6 +22,7 @@ export default function Header() {
   const saveState = useCourseStore((s) => s.saveState)
   const setPreviewOpen = useCourseStore((s) => s.setPreviewOpen)
   const setSidebarOpen = useCourseStore((s) => s.setSidebarOpen)
+  const setShortcutsOpen = useCourseStore((s) => s.setShortcutsOpen)
   const exporting = useExportStore((s) => s.exporting)
   const { t } = useT('common')
   const { t: tw } = useT('welcome')
@@ -76,7 +78,7 @@ export default function Header() {
             type="button"
             onClick={undo}
             disabled={!canUndo}
-            title={`${t('undo')} (Ctrl+Z)`}
+            title={`${t('undo')} (${KEYS.undo})`}
             aria-label={t('undo')}
             className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-30"
           >
@@ -86,7 +88,7 @@ export default function Header() {
             type="button"
             onClick={redo}
             disabled={!canRedo}
-            title={`${t('redo')} (Ctrl+Shift+Z)`}
+            title={`${t('redo')} (${KEYS.redo})`}
             aria-label={t('redo')}
             className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100 disabled:opacity-30"
           >
@@ -97,6 +99,15 @@ export default function Header() {
         <ThemePicker />
         <LanguagePicker />
 
+        <button
+          type="button"
+          onClick={() => setShortcutsOpen(true)}
+          title={`${t('shortcuts')} (${KEYS.help})`}
+          aria-label={t('shortcuts')}
+          className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
+        >
+          <KeyboardIcon />
+        </button>
         <a
           href={GITHUB_ISSUES_URL}
           target="_blank"
@@ -121,7 +132,7 @@ export default function Header() {
           type="button"
           onClick={() => void saveProject()}
           disabled={!directoryHandle || saveState === 'saving'}
-          title={directoryHandle ? `${tw('save')} (Ctrl+S)` : tw('noFolderTitle')}
+          title={directoryHandle ? `${tw('save')} (${KEYS.save})` : tw('noFolderTitle')}
           className={`rounded-md px-3 py-1.5 text-sm font-medium hover:bg-gray-100 disabled:opacity-40 ${
             saveState === 'error' ? 'text-red-600' : 'text-gray-600'
           }`}
@@ -243,5 +254,15 @@ function MoreItem({
     >
       {label}
     </button>
+  )
+}
+
+function KeyboardIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
+      strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden>
+      <rect x="2.5" y="6" width="19" height="12" rx="2" />
+      <path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9" />
+    </svg>
   )
 }

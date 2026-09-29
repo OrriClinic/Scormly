@@ -76,6 +76,9 @@ export default function Sidebar() {
             items={course.lessons.map((l) => l.id)}
             strategy={verticalListSortingStrategy}
           >
+            {course.lessons.length === 0 && (
+              <p className="px-2 py-6 text-center text-xs text-gray-400">{t('noLessons')}</p>
+            )}
             <ul className="space-y-1">
               {course.lessons.map((lesson, index) => (
                 <SortableLesson
@@ -95,7 +98,11 @@ export default function Sidebar() {
       <div className="space-y-1 border-t border-gray-200 p-2">
         <button
           type="button"
-          onClick={addLesson}
+          onClick={() => {
+            addLesson()
+            // Name the new lesson right away instead of leaving "Lesson N".
+            setEditingId(useCourseStore.getState().activeLessonId)
+          }}
           className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-500 hover:border-brand hover:text-brand"
         >
           + {t('addLesson')}
@@ -138,6 +145,12 @@ function SortableLesson({
   const renameLesson = useCourseStore((s) => s.renameLesson)
   const { t } = useT('common')
   const isActive = lesson.id === activeLessonId
+  const blockCount = lesson.blocks.length
+
+  function open() {
+    setActiveLesson(lesson.id)
+    setSidebarOpen(false)
+  }
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: lesson.id })
@@ -150,11 +163,21 @@ function SortableLesson({
   return (
     <li ref={setNodeRef} style={style} className="group relative">
       <div
-        onClick={() => {
-          setActiveLesson(lesson.id)
-          setSidebarOpen(false)
+        role="button"
+        tabIndex={0}
+        aria-current={isActive ? 'page' : undefined}
+        onClick={open}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            open()
+          } else if (e.key === 'F2') {
+            e.preventDefault()
+            onStartEdit()
+          }
         }}
-        className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors ${
+        className={`flex w-full outline-none focus-visible:ring-2 focus-visible:ring-brand items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors ${
           isActive
             ? 'bg-brand/10 font-medium text-brand-dark'
             : 'text-gray-700 hover:bg-gray-100'
@@ -176,6 +199,7 @@ function SortableLesson({
         {editing ? (
           <input
             autoFocus
+            onFocus={(e) => e.currentTarget.select()}
             value={lesson.title}
             onChange={(e) => renameLesson(lesson.id, e.target.value)}
             onBlur={onStopEdit}
@@ -198,7 +222,18 @@ function SortableLesson({
         )}
 
         {!editing && (
-          <span className="flex shrink-0 items-center opacity-0 group-hover:opacity-100">
+          <span
+            title={t('blockCount', { n: blockCount })}
+            className={`shrink-0 rounded-full px-1.5 text-xs tabular-nums group-hover:hidden group-focus-within:hidden pointer-coarse:hidden ${
+              blockCount === 0 ? 'text-gray-300' : isActive ? 'text-brand-dark/60' : 'text-gray-400'
+            }`}
+          >
+            {blockCount === 0 ? t('emptyLessonShort') : blockCount}
+          </span>
+        )}
+
+        {!editing && (
+          <span className="hidden shrink-0 items-center group-hover:flex group-focus-within:flex pointer-coarse:flex">
             <button
               type="button"
               title={t('renameLesson')}

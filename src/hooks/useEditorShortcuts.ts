@@ -8,6 +8,7 @@ import { deleteBlockWithUndo } from '../lib/deleteWithUndo'
 //   Ctrl/Cmd + D      — duplicate block
 //   Alt + ↑ / ↓       — move block up / down
 //   Escape            — deselect
+//   ?                 — keyboard shortcuts help
 // Ignored while typing in inputs / textareas / contentEditable (except Escape),
 // and while the preview or settings overlay is open.
 export function useEditorShortcuts() {
@@ -15,6 +16,11 @@ export function useEditorShortcuts() {
     function onKey(e: KeyboardEvent) {
       if (editorShortcutsBlocked()) return
       const s = useCourseStore.getState()
+      if (e.key === '?' && !isEditableTarget(e.target)) {
+        e.preventDefault()
+        s.setShortcutsOpen(true)
+        return
+      }
       const id = s.selectedBlockId
       if (!id) return
       const lesson = s.course.lessons.find((l) => l.id === s.activeLessonId)

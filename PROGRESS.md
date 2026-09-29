@@ -260,3 +260,22 @@ tracking layer.
   learner's language from the `cmi5LearnerPreferences` agent profile (where cmi5 puts it) with
   LaunchData as fallback. Tests: 60 passing. Refreshed stale checkboxes (DnD, shortcuts,
   context menu were already done).
+- 2026-09-29 — **Builder UX pass** (from a UX audit of the editor).
+  - Bugs: editor/undo shortcuts no longer reach the course under the preview/settings/help
+    overlays; Ctrl+D and Alt+↑/↓ ignored while typing; Backspace deletes the selected block
+    (Mac); Esc closes the preview. New/Open/Close project flush the pending autosave first
+    (`flushSave`) and confirm if the write failed; `beforeunload` warns when edits would be lost.
+    Builder logo no longer links to the landing page.
+  - Feedback: toast system (`store/toastStore`, `Toaster`). Exports run through `runExport`
+    (single run, progress/success/error toasts, also on mobile). Block/lesson delete toasts
+    offer Undo. Save failures show one toast with Retry (and a folder-access message); open and
+    upload errors are reported instead of swallowed.
+  - Editing: hover "+" between blocks inserts at that position; Enter in the add-block search
+    adds the first match; newly selected blocks scroll into view; a new lesson opens in rename
+    mode; the sidebar shows block counts / "empty" and lesson rows are keyboard-accessible
+    (Enter, F2 to rename) with actions visible on focus and touch; drag handle visible on touch.
+    Keyboard shortcuts help (`?` or header button) and shortcut hints in tooltips and the
+    context menu (⌘/⌥ on Mac). Empty-course state with Add lesson, spinner while restoring.
+  - Verified headlessly (Chromium + CDP): insert-between, Enter-to-add, delete toast + Undo,
+    shortcuts help, preview isolation, rename-on-add.
+

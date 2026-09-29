@@ -6,6 +6,8 @@ export interface ContextMenuItem {
   onClick: () => void
   disabled?: boolean
   danger?: boolean
+  /** Keyboard shortcut hint shown on the right. */
+  shortcut?: string
 }
 
 interface ContextMenuProps {
@@ -40,14 +42,14 @@ export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps) 
   }, [onClose])
 
   // Keep the menu inside the viewport.
-  const left = Math.min(x, window.innerWidth - 200)
+  const left = Math.min(x, window.innerWidth - 232)
   const top = Math.min(y, window.innerHeight - items.length * 40 - 16)
 
   return (
     <div
       ref={ref}
       style={{ position: 'fixed', left, top }}
-      className="z-50 w-48 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg"
+      className="z-50 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg"
     >
       {items.map((item, i) => (
         <button
@@ -66,6 +68,9 @@ export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps) 
         >
           {item.icon && <span className="w-4 text-gray-400">{item.icon}</span>}
           {item.label}
+          {item.shortcut && (
+            <span className="ml-auto pl-3 text-xs text-gray-400">{item.shortcut}</span>
+          )}
         </button>
       ))}
     </div>

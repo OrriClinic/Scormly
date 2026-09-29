@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useCourseStore } from '../../store/courseStore'
@@ -7,6 +7,7 @@ import type { Block } from '../../types/course'
 import BlockRenderer from '../../blocks/BlockRenderer'
 import { useT } from '../../i18n/I18nProvider'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
+import { KEYS } from '../../lib/keyboard'
 
 interface BlockShellProps {
   block: Block
@@ -33,14 +34,21 @@ export default function BlockShell({
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
 
   const menuItems: ContextMenuItem[] = [
-    { label: t('moveUp'), icon: '↑', disabled: index === 0, onClick: () => moveBlock(lessonId, index, index - 1) },
-    { label: t('moveDown'), icon: '↓', disabled: index === total - 1, onClick: () => moveBlock(lessonId, index, index + 1) },
-    { label: t('duplicate'), icon: '⧉', onClick: () => duplicateBlock(lessonId, block.id) },
-    { label: t('delete'), icon: '✕', danger: true, onClick: () => deleteBlockWithUndo(lessonId, block.id) },
+    { label: t('moveUp'), icon: '↑', shortcut: KEYS.moveUp, disabled: index === 0, onClick: () => moveBlock(lessonId, index, index - 1) },
+    { label: t('moveDown'), icon: '↓', shortcut: KEYS.moveDown, disabled: index === total - 1, onClick: () => moveBlock(lessonId, index, index + 1) },
+    { label: t('duplicate'), icon: '⧉', shortcut: KEYS.duplicate, onClick: () => duplicateBlock(lessonId, block.id) },
+    { label: t('delete'), icon: '✕', shortcut: KEYS.delete, danger: true, onClick: () => deleteBlockWithUndo(lessonId, block.id) },
   ]
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: block.id })
+  const elRef = useRef<HTMLDivElement | null>(null)
+
+  // Bring a newly selected block into view (e.g. one just added or duplicated
+  // below the fold). 'nearest' is a no-op for blocks that are already visible.
+  useEffect(() => {
+    if (selected) elRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [selected])
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -49,7 +57,10 @@ export default function BlockShell({
 
   return (
     <div
-      ref={setNodeRef}
+      ref={(el) => {
+        setNodeRef(el)
+        elRef.current = el
+      }}
       style={style}
       onClick={() => selectBlock(block.id)}
       onContextMenu={(e) => {
@@ -69,7 +80,7 @@ export default function BlockShell({
         {...attributes}
         {...listeners}
         onClick={(e) => e.stopPropagation()}
-        className="absolute -left-1 top-1/2 z-10 hidden h-8 w-6 -translate-y-1/2 cursor-grab touch-none items-center justify-center rounded text-gray-300 hover:text-gray-500 group-hover:flex"
+        className="absolute -left-1 top-1/2 z-10 hidden h-8 w-6 -translate-y-1/2 cursor-grab touch-none items-center justify-center rounded text-gray-300 hover:text-gray-500 group-hover:flex pointer-coarse:flex"
       >
         ⠿
       </button>
@@ -77,6 +88,7 @@ export default function BlockShell({
         <div className="absolute -top-3 right-3 z-10 flex items-center gap-0.5 rounded-md border border-gray-200 bg-white p-0.5 shadow-sm">
           <ToolbarButton
             label={t('moveUp')}
+            shortcut={KEYS.moveUp}
             disabled={index === 0}
             onClick={() => moveBlock(lessonId, index, index - 1)}
           >
@@ -84,6 +96,7 @@ export default function BlockShell({
           </ToolbarButton>
           <ToolbarButton
             label={t('moveDown')}
+            shortcut={KEYS.moveDown}
             disabled={index === total - 1}
             onClick={() => moveBlock(lessonId, index, index + 1)}
           >
@@ -91,12 +104,14 @@ export default function BlockShell({
           </ToolbarButton>
           <ToolbarButton
             label={t('duplicate')}
+            shortcut={KEYS.duplicate}
             onClick={() => duplicateBlock(lessonId, block.id)}
           >
             ⧉
           </ToolbarButton>
           <ToolbarButton
             label={t('delete')}
+            shortcut={KEYS.delete}
             danger
             onClick={() => deleteBlockWithUndo(lessonId, block.id)}
           >
@@ -123,6 +138,7 @@ interface ToolbarButtonProps {
   onClick: () => void
   disabled?: boolean
   danger?: boolean
+  shortcut?: string
   children: React.ReactNode
 }
 
@@ -131,12 +147,13 @@ function ToolbarButton({
   onClick,
   disabled,
   danger,
+  shortcut,
   children,
 }: ToolbarButtonProps) {
   return (
     <button
       type="button"
-      title={label}
+      title={shortcut ? `${label} (${shortcut})` : label}
       aria-label={label}
       disabled={disabled}
       onClick={(e) => {

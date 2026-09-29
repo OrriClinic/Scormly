@@ -12,6 +12,8 @@ interface AddBlockMenuProps {
   lessonId: string
   /** Insertion position; defaults to the end of the lesson. */
   atIndex?: number
+  /** 'inline' = a hover-revealed "+" on a divider line between blocks. */
+  variant?: 'button' | 'inline'
 }
 
 const CATEGORY_KEY: Record<BlockCategory, string> = {
@@ -21,7 +23,11 @@ const CATEGORY_KEY: Record<BlockCategory, string> = {
   navigation: 'catNavigation',
 }
 
-export default function AddBlockMenu({ lessonId, atIndex }: AddBlockMenuProps) {
+export default function AddBlockMenu({
+  lessonId,
+  atIndex,
+  variant = 'button',
+}: AddBlockMenuProps) {
   const addBlock = useCourseStore((s) => s.addBlock)
   const { t } = useT('common')
   const { t: tb } = useT('blocks')
@@ -39,6 +45,12 @@ export default function AddBlockMenu({ lessonId, atIndex }: AddBlockMenuProps) {
     !q ||
     tb(type).toLowerCase().includes(q) ||
     tb(`${type}Desc`).toLowerCase().includes(q)
+  // First match in display order (category by category), picked by Enter.
+  const firstMatch = BLOCK_CATEGORIES.flatMap(({ category }) =>
+    Object.values(BLOCK_REGISTRY).filter(
+      (m) => m.category === category && matches(m.type),
+    ),
+  )[0]
 
   // Open toward whichever side has more room, and cap the height to the space
   // actually available there (minus a margin) so the menu never overflows the
@@ -89,16 +101,51 @@ export default function AddBlockMenu({ lessonId, atIndex }: AddBlockMenuProps) {
     setQuery('')
   }
 
+  const inline = variant === 'inline'
+  // Inline trigger stays hidden until hovered/focused (always faintly visible
+  // on touch screens, which have no hover) and while its menu is open.
+  const reveal = open
+    ? 'opacity-100'
+    : 'opacity-0 group-hover/gap:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-60'
+
   return (
-    <div ref={rootRef} className="relative flex justify-center">
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={toggle}
-        className="flex items-center gap-1.5 rounded-full border border-dashed border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-500 transition-colors hover:border-brand hover:text-brand"
-      >
-        <span className="text-base leading-none">+</span> {t('addBlock')}
-      </button>
+    <div
+      ref={rootRef}
+      className={
+        inline
+          ? 'group/gap relative flex h-5 items-center justify-center'
+          : 'relative flex justify-center'
+      }
+    >
+      {inline ? (
+        <>
+          <div
+            aria-hidden
+            className={`absolute inset-x-4 top-1/2 h-px bg-brand/40 transition-opacity ${
+              open ? 'opacity-100' : 'opacity-0 group-hover/gap:opacity-100'
+            }`}
+          />
+          <button
+            ref={triggerRef}
+            type="button"
+            onClick={toggle}
+            title={t('insertBlock')}
+            aria-label={t('insertBlock')}
+            className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full border border-brand/40 bg-white text-sm leading-none text-brand shadow-sm transition-opacity hover:bg-brand hover:text-white ${reveal}`}
+          >
+            +
+          </button>
+        </>
+      ) : (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={toggle}
+          className="flex items-center gap-1.5 rounded-full border border-dashed border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-500 transition-colors hover:border-brand hover:text-brand"
+        >
+          <span className="text-base leading-none">+</span> {t('addBlock')}
+        </button>
+      )}
 
       {open && (
         <div
@@ -112,6 +159,12 @@ export default function AddBlockMenu({ lessonId, atIndex }: AddBlockMenuProps) {
               ref={searchRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && firstMatch) {
+                  e.preventDefault()
+                  handleAdd(firstMatch.type)
+                }
+              }}
               placeholder={t('searchBlocks')}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />

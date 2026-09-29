@@ -6,6 +6,7 @@ import WelcomeScreen from './welcome/WelcomeScreen'
 import PreviewOverlay from './preview/PreviewOverlay'
 import ProjectSettings from './editor/ProjectSettings'
 import Toaster from './editor/Toaster'
+import ShortcutsHelp from './editor/ShortcutsHelp'
 import ThemeProvider from '../theme/ThemeProvider'
 import { useUndoRedoShortcuts } from '../hooks/useUndoRedoShortcuts'
 import { useEditorShortcuts } from '../hooks/useEditorShortcuts'
@@ -13,6 +14,7 @@ import { useAutosave } from '../hooks/useAutosave'
 import { useCourseStore } from '../store/courseStore'
 import { flushSave, hasPendingSave, restoreOpenProject } from '../lib/projectService'
 import { useRoute, navigate } from '../hooks/useRoute'
+import { useT } from '../i18n/I18nProvider'
 
 // Course builder (editor). Rendered on the #/app route. Shows the welcome screen
 // until a project folder is opened (or the user opts to continue without saving).
@@ -24,7 +26,9 @@ export default function Builder() {
   const previewOpen = useCourseStore((s) => s.previewOpen)
   const settingsOpen = useCourseStore((s) => s.settingsOpen)
   const setSettingsOpen = useCourseStore((s) => s.setSettingsOpen)
+  const shortcutsOpen = useCourseStore((s) => s.shortcutsOpen)
   const { projectKey } = useRoute()
+  const { t } = useT('common')
   const [skipped, setSkipped] = useState(false)
   // Try to restore the project named in the URL (after a page refresh / shared link).
   const [restoring, setRestoring] = useState(true)
@@ -61,7 +65,12 @@ export default function Builder() {
   }, [skipped])
 
   if (restoring && !directoryHandle) {
-    return <div className="h-full bg-gray-50" />
+    return (
+      <div className="flex h-full items-center justify-center bg-gray-50" role="status">
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-brand" />
+        <span className="sr-only">{t('opening')}</span>
+      </div>
+    )
   }
 
   if (!directoryHandle && !skipped) {
@@ -86,6 +95,7 @@ export default function Builder() {
       </div>
       {previewOpen && <PreviewOverlay />}
       {settingsOpen && <ProjectSettings onClose={() => setSettingsOpen(false)} />}
+      {shortcutsOpen && <ShortcutsHelp />}
       <Toaster />
     </ThemeProvider>
   )
