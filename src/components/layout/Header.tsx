@@ -10,6 +10,8 @@ import { saveProject } from '../../lib/projectService'
 import ExportMenu from '../editor/ExportMenu'
 import { requestExport, useExportStore } from '../../export/runExport'
 import { GITHUB_ISSUES_URL } from '../../lib/links'
+import HelpMenu from '../help/HelpMenu'
+import { useHelpStore } from '../../help/helpStore'
 import { KEYS } from '../../lib/keyboard'
 
 export default function Header() {
@@ -24,7 +26,9 @@ export default function Header() {
   const lastSavedAt = useCourseStore((s) => s.lastSavedAt)
   const setPreviewOpen = useCourseStore((s) => s.setPreviewOpen)
   const setSidebarOpen = useCourseStore((s) => s.setSidebarOpen)
-  const setShortcutsOpen = useCourseStore((s) => s.setShortcutsOpen)
+  const startTour = useHelpStore((s) => s.startTour)
+  const openHelpDialog = useHelpStore((s) => s.openDialog)
+  const { t: th } = useT('help')
   const exporting = useExportStore((s) => s.exporting)
   const { t } = useT('common')
   const { t: tw } = useT('welcome')
@@ -95,30 +99,13 @@ export default function Header() {
         <ThemePicker />
         <LanguagePicker />
 
-        <button
-          type="button"
-          onClick={() => setShortcutsOpen(true)}
-          title={`${t('shortcuts')} (${KEYS.help})`}
-          aria-label={t('shortcuts')}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
-        >
-          <KeyboardIcon />
-        </button>
-        <a
-          href={GITHUB_ISSUES_URL}
-          target="_blank"
-          rel="noreferrer"
-          title={tw('reportIssue')}
-          aria-label={tw('reportIssue')}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
-        >
-          ⚑
-        </a>
+        <HelpMenu />
 
         <div className="mx-1 h-6 w-px bg-gray-200" />
 
         <button
           type="button"
+          data-tour="preview"
           onClick={() => setPreviewOpen(true)}
           className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100"
         >
@@ -126,6 +113,7 @@ export default function Header() {
         </button>
         <button
           type="button"
+          data-tour="save"
           onClick={() => void saveProject()}
           disabled={!directoryHandle || saveState === 'saving'}
           title={
@@ -223,6 +211,28 @@ export default function Header() {
                   setMoreOpen(false)
                 }}
               />
+              <div className="my-1 h-px bg-gray-100" />
+              <MoreItem
+                label={th('menuTour')}
+                onClick={() => {
+                  setMoreOpen(false)
+                  startTour()
+                }}
+              />
+              <MoreItem
+                label={th('menuWhatsNew')}
+                onClick={() => {
+                  setMoreOpen(false)
+                  openHelpDialog('whatsNew')
+                }}
+              />
+              <MoreItem
+                label={th('menuFaq')}
+                onClick={() => {
+                  setMoreOpen(false)
+                  openHelpDialog('faq')
+                }}
+              />
               <a
                 href={GITHUB_ISSUES_URL}
                 target="_blank"
@@ -261,15 +271,5 @@ function MoreItem({
     >
       {label}
     </button>
-  )
-}
-
-function KeyboardIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
-      strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden>
-      <rect x="2.5" y="6" width="19" height="12" rx="2" />
-      <path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M7.5 14h9" />
-    </svg>
   )
 }

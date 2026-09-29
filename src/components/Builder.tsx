@@ -8,6 +8,7 @@ import ProjectSettings from './editor/ProjectSettings'
 import Toaster from './editor/Toaster'
 import ShortcutsHelp from './editor/ShortcutsHelp'
 import ExportCheckDialog from './editor/ExportCheckDialog'
+import HelpLayer from './help/HelpLayer'
 import { runExport, useExportStore } from '../export/runExport'
 import ThemeProvider from '../theme/ThemeProvider'
 import { useUndoRedoShortcuts } from '../hooks/useUndoRedoShortcuts'
@@ -113,6 +114,7 @@ export default function Builder() {
       {settingsOpen && <ProjectSettings onClose={() => setSettingsOpen(false)} />}
       {shortcutsOpen && <ShortcutsHelp />}
       {exportPending && <ExportCheckDialog />}
+      <HelpLayer />
       <Toaster />
     </ThemeProvider>
   )

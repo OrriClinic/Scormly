@@ -99,6 +99,7 @@ export default function AddBlockMenu({
   return (
     <div
       ref={rootRef}
+      data-tour={inline ? undefined : 'add-block'}
       className={
         inline
           ? 'group/gap relative flex h-5 items-center justify-center'

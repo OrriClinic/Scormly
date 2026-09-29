@@ -64,6 +64,7 @@ export default function Sidebar() {
         />
       )}
       <aside
+        data-tour="lessons"
         className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-gray-200 bg-gray-50 transition-transform md:static md:z-auto md:w-64 md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
@@ -124,6 +125,7 @@ export default function Sidebar() {
         </button>
         <button
           type="button"
+          data-tour="settings"
           onClick={() => {
             setSettingsOpen(true)
             setSidebarOpen(false)

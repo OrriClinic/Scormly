@@ -19,7 +19,7 @@ export default function ExportMenu() {
   }
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative" data-tour="export">
       <button
         ref={triggerRef}
         type="button"

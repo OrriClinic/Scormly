@@ -42,6 +42,7 @@ export default function Workspace() {
 
   return (
     <main
+      data-tour="canvas"
       className="flex-1 overflow-y-auto bg-gray-100"
       onClick={() => selectBlock(null)}
     >
