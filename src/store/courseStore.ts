@@ -96,6 +96,8 @@ export interface CourseState {
   ) => void
   closeProject: () => void
   setSaveState: (state: SaveState) => void
+  /** Time of the last successful save (ms since epoch). */
+  lastSavedAt: number | null
 
   // ── Lessons ──
   addLesson: () => void
@@ -251,7 +253,9 @@ export const useCourseStore = create<CourseState>((set, get) => {
       set({ directoryHandle: null, projectName: null, saveState: 'idle' })
     },
 
-    setSaveState: (saveState) => set({ saveState }),
+    setSaveState: (saveState) =>
+      set(saveState === 'saved' ? { saveState, lastSavedAt: Date.now() } : { saveState }),
+    lastSavedAt: null,
 
     addLesson: () => {
       const id = uid('lesson')

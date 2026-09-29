@@ -76,6 +76,9 @@ export default function PreviewOverlay() {
           <span className="hidden shrink-0 text-sm text-gray-400 sm:inline">
             {t('progress', { n: index + 1, total })}
           </span>
+          <span className="shrink-0 text-sm tabular-nums text-gray-400 sm:hidden">
+            {index + 1}/{total}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           {finished ? (

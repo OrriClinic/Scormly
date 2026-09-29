@@ -22,7 +22,14 @@ function offerUndo(message: string) {
 }
 
 export function deleteBlockWithUndo(lessonId: string, blockId: string): void {
-  useCourseStore.getState().deleteBlock(lessonId, blockId)
+  const s = useCourseStore.getState()
+  const blocks = s.course.lessons.find((l) => l.id === lessonId)?.blocks ?? []
+  const i = blocks.findIndex((b) => b.id === blockId)
+  // Keep a selection on the next block (or the previous one at the end) so
+  // the keyboard can carry on from where the deleted block was.
+  const neighbour = blocks[i + 1] ?? blocks[i - 1]
+  s.deleteBlock(lessonId, blockId)
+  if (neighbour) useCourseStore.getState().selectBlock(neighbour.id)
   offerUndo(translate('common', 'blockDeleted'))
 }
 

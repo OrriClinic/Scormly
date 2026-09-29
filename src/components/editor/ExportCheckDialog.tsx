@@ -48,7 +48,7 @@ export default function ExportCheckDialog() {
                   selectBlock(issue.blockId ?? null)
                   close()
                 }}
-                className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left text-sm outline-none hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-brand disabled:hover:bg-transparent"
+                className="flex w-full items-start gap-3 rounded-lg px-2 py-2 text-left text-sm outline-none hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand disabled:hover:bg-transparent"
               >
                 <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
                 <span className="min-w-0 flex-1">

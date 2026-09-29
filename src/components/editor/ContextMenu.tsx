@@ -51,6 +51,10 @@ export default function ContextMenu({ x, y, items, onClose }: ContextMenuProps) 
       ref={ref}
       role="menu"
       style={{ position: 'fixed', left: pos.left, top: pos.top }}
+      // Rendered inside the block it acts on: keep clicks from bubbling to the
+      // block (which would re-select it, e.g. right after deleting it).
+      onClick={(e) => e.stopPropagation()}
+      onContextMenu={(e) => e.preventDefault()}
       className="z-50 w-56 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg"
     >
       {items.map((item, i) => (

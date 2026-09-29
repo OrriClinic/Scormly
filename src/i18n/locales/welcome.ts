@@ -27,6 +27,8 @@ const welcome: LocaleTable = {
     saveError: 'Save failed',
     unsaved: 'Unsaved changes',
     noFolderTitle: 'Not saving to disk',
+    opening: 'Opening…',
+    noFolderBanner: 'Your work lives only in this browser tab and is lost when you close it. Download the project to keep it.',
     reportIssue: 'Report an issue',
   },
   uk: {
@@ -52,6 +54,8 @@ const welcome: LocaleTable = {
     saveError: 'Помилка збереження',
     unsaved: 'Незбережені зміни',
     noFolderTitle: 'Без збереження на диск',
+    opening: 'Відкриваємо…',
+    noFolderBanner: 'Робота зберігається лише в цій вкладці й зникне, коли ви її закриєте. Завантажте проєкт, щоб не втратити її.',
     reportIssue: 'Повідомити про проблему',
   },
 }

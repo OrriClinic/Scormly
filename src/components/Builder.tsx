@@ -8,7 +8,7 @@ import ProjectSettings from './editor/ProjectSettings'
 import Toaster from './editor/Toaster'
 import ShortcutsHelp from './editor/ShortcutsHelp'
 import ExportCheckDialog from './editor/ExportCheckDialog'
-import { useExportStore } from '../export/runExport'
+import { runExport, useExportStore } from '../export/runExport'
 import ThemeProvider from '../theme/ThemeProvider'
 import { useUndoRedoShortcuts } from '../hooks/useUndoRedoShortcuts'
 import { useEditorShortcuts } from '../hooks/useEditorShortcuts'
@@ -32,6 +32,7 @@ export default function Builder() {
   const exportPending = useExportStore((s) => s.pending !== null)
   const { projectKey } = useRoute()
   const { t } = useT('common')
+  const { t: tw } = useT('welcome')
   const [skipped, setSkipped] = useState(false)
   // Try to restore the project named in the URL (after a page refresh / shared link).
   const [restoring, setRestoring] = useState(true)
@@ -92,6 +93,18 @@ export default function Builder() {
   return (
     <ThemeProvider>
       <Header />
+      {!directoryHandle && (
+        <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-3 gap-y-1 border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-900 sm:text-sm">
+          <span>{tw('noFolderBanner')}</span>
+          <button
+            type="button"
+            onClick={() => void runExport('project')}
+            className="font-semibold underline underline-offset-2 hover:text-amber-700"
+          >
+            {t('downloadProject')}
+          </button>
+        </div>
+      )}
       <div className="flex min-h-0 flex-1">
         <Sidebar />
         <Workspace />

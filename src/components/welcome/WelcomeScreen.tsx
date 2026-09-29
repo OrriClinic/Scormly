@@ -98,6 +98,13 @@ export default function WelcomeScreen({ onSkip }: WelcomeScreenProps) {
             />
           </div>
 
+          {busy && (
+            <p role="status" className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-brand" />
+              {t('opening')}
+            </p>
+          )}
+
           {recents.length > 0 && (
             <div className="mt-8">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">

@@ -21,6 +21,7 @@ export default function Header() {
   const projectName = useCourseStore((s) => s.projectName)
   const directoryHandle = useCourseStore((s) => s.directoryHandle)
   const saveState = useCourseStore((s) => s.saveState)
+  const lastSavedAt = useCourseStore((s) => s.lastSavedAt)
   const setPreviewOpen = useCourseStore((s) => s.setPreviewOpen)
   const setSidebarOpen = useCourseStore((s) => s.setSidebarOpen)
   const setShortcutsOpen = useCourseStore((s) => s.setShortcutsOpen)
@@ -127,7 +128,13 @@ export default function Header() {
           type="button"
           onClick={() => void saveProject()}
           disabled={!directoryHandle || saveState === 'saving'}
-          title={directoryHandle ? `${tw('save')} (${KEYS.save})` : tw('noFolderTitle')}
+          title={
+            !directoryHandle
+              ? tw('noFolderTitle')
+              : lastSavedAt
+                ? `${t('savedAt', { time: new Date(lastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })} · ${tw('save')} (${KEYS.save})`
+                : `${tw('save')} (${KEYS.save})`
+          }
           className={`rounded-md px-3 py-1.5 text-sm font-medium hover:bg-gray-100 disabled:opacity-40 ${
             saveState === 'error' ? 'text-red-600' : 'text-gray-600'
           }`}

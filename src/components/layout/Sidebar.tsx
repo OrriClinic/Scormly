@@ -75,6 +75,7 @@ export default function Sidebar() {
         <input
           value={course.title}
           aria-label={t('courseTitle')}
+          placeholder={ts('titlePlaceholder')}
           onChange={(e) => updateCourseMeta({ title: e.target.value })}
           className="w-full truncate rounded bg-transparent text-sm font-semibold text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-brand"
         />
