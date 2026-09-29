@@ -383,3 +383,54 @@ describe('SCORM — cmi5-only methods are silent no-ops', () => {
     expect(() => SCORM.reportAbandoned()).not.toThrow()
   })
 })
+
+describe('SCORM — array responses (sequencing / matching / fill-in)', () => {
+  test('2004 joins lists with [,] and matching pairs with [.]', () => {
+    const { SCORM, data } = loadScorm('2004')
+    SCORM.init()
+    SCORM.recordInteraction(0, {
+      id: 'ord1', type: 'sequencing', response: ['b', 'a', 'c'], correct: false,
+      correctResponses: [['a', 'b', 'c']],
+    })
+    SCORM.recordInteraction(1, {
+      id: 'ord2', type: 'matching', response: [['i1', 'x'], ['i2', 'y']], correct: true,
+      correctResponses: [[['i1', 'x'], ['i2', 'y']]],
+    })
+    expect(data['cmi.interactions.0.type']).toBe('sequencing')
+    expect(data['cmi.interactions.0.learner_response']).toBe('b[,]a[,]c')
+    expect(data['cmi.interactions.0.correct_responses.0.pattern']).toBe('a[,]b[,]c')
+    expect(data['cmi.interactions.1.learner_response']).toBe('i1[.]x[,]i2[.]y')
+    expect(data['cmi.interactions.1.correct_responses.0.pattern']).toBe('i1[.]x[,]i2[.]y')
+  })
+
+  test('2004 fill-in: every alternative is a pattern; case_matters only when flagged', () => {
+    const { SCORM, data } = loadScorm('2004')
+    SCORM.init()
+    SCORM.recordInteraction(0, { id: 'fb_1', type: 'fill-in', response: 'paris', correct: true, correctResponses: ['Paris', 'Paname'] })
+    SCORM.recordInteraction(1, { id: 'fb_2', type: 'fill-in', response: 'Oslo', correct: true, correctResponses: ['Oslo'], caseMatters: true })
+    expect(data['cmi.interactions.0.learner_response']).toBe('paris')
+    expect(data['cmi.interactions.0.correct_responses.0.pattern']).toBe('Paris')
+    expect(data['cmi.interactions.0.correct_responses.1.pattern']).toBe('Paname')
+    expect(data['cmi.interactions.1.correct_responses.0.pattern']).toBe('{case_matters=true}Oslo')
+  })
+
+  test('1.2 joins with , and . and caps student_response at 255 chars', () => {
+    const { SCORM, data } = loadScorm('1.2')
+    SCORM.init()
+    SCORM.recordInteraction(0, {
+      id: 'ord1', type: 'sequencing', response: ['b', 'a'], correct: false, correctResponses: [['a', 'b']],
+    })
+    SCORM.recordInteraction(1, {
+      id: 'ord2', type: 'matching', response: [['i1', 'x']], correct: true, correctResponses: [[['i1', 'x']]],
+    })
+    SCORM.recordInteraction(2, {
+      id: 'fb_1', type: 'fill-in', response: 'x'.repeat(300), correct: false, correctResponses: ['Oslo'], caseMatters: true,
+    })
+    expect(data['cmi.interactions.0.student_response']).toBe('b,a')
+    expect(data['cmi.interactions.0.correct_responses.0.pattern']).toBe('a,b')
+    expect(data['cmi.interactions.1.student_response']).toBe('i1.x')
+    expect(data['cmi.interactions.2.student_response']).toHaveLength(255)
+    // No case_matters delimiter in 1.2.
+    expect(data['cmi.interactions.2.correct_responses.0.pattern']).toBe('Oslo')
+  })
+})

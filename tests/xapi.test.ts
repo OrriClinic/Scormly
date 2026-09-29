@@ -286,6 +286,38 @@ describe('xAPI — answered (interaction) statements', () => {
   })
 })
 
+describe('xAPI — array responses', () => {
+  test('sequencing / matching arrays use the [,] and [.] delimiters', async () => {
+    const { SCORM, statements, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: { launchMode: 'Normal' },
+    })
+    SCORM.init()
+    SCORM.recordInteraction(0, {
+      id: 'ord1', type: 'sequencing', interactionType: 'sequencing',
+      response: ['b', 'a'], correct: false, correctResponses: [['a', 'b']],
+      choices: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }],
+    })
+    SCORM.recordInteraction(1, {
+      id: 'ord2', type: 'matching', interactionType: 'matching',
+      response: [['i1', 'x'], ['i2', 'y']], correct: true, correctResponses: [[['i1', 'x'], ['i2', 'y']]],
+    })
+    SCORM.recordInteraction(2, {
+      id: 'fb_1', type: 'fill-in', interactionType: 'fill-in',
+      response: 'oslo', correct: false, correctResponses: ['Oslo'], caseMatters: true,
+    })
+    await wait()
+    const answered = statements().filter((s) => s.verb.id === V.answered)
+    expect(answered).toHaveLength(3)
+    expect(answered[0].result?.response).toBe('b[,]a')
+    expect(answered[0].object.definition?.correctResponsesPattern).toEqual(['a[,]b'])
+    expect(answered[0].object.definition?.choices).toHaveLength(2)
+    expect(answered[1].result?.response).toBe('i1[.]x[,]i2[.]y')
+    expect(answered[1].object.definition?.correctResponsesPattern).toEqual(['i1[.]x[,]i2[.]y'])
+    expect(answered[2].object.definition?.correctResponsesPattern).toEqual(['{case_matters=true}Oslo'])
+  })
+})
+
 describe('xAPI — objectives', () => {
   test('setObjective sends a statement scoped to the objective activity', async () => {
     const { SCORM, statements, wait } = loadXapi({

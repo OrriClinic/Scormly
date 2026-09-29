@@ -16,6 +16,7 @@ import settings from './locales/settings'
 import demo from './locales/demo'
 import help from './locales/help'
 import hotspotTimeline from './locales/hotspotTimeline'
+import assessment from './locales/assessment'
 
 // All translation namespaces. Each lives in its own file (src/i18n/locales/),
 // so they can be worked on in parallel without conflicts.
@@ -38,6 +39,7 @@ export const DICTIONARY = {
   demo,
   help,
   hotspotTimeline,
+  assessment,
 }
 
 export type Namespace = keyof typeof DICTIONARY

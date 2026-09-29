@@ -54,6 +54,28 @@ describe('checkCourse', () => {
     expect(keys(course([[block('quiz', { passingScore: 80, questions: [] })]]))).toEqual(['chkQuizEmpty'])
   })
 
+  test('ordering: too few items, empty items, categories problems', () => {
+    const item = (id: string, text = id, categoryId?: string) => ({ id, text, categoryId })
+    const ordering = (mode: string, items: unknown[], categories: unknown[] = []) =>
+      block('ordering', { mode, prompt: 'P', items, categories, passingScore: 80 })
+    expect(keys(course([[ordering('sequence', [item('a'), item('b')])]]))).toEqual([])
+    expect(keys(course([[ordering('sequence', [item('a')])]]))).toEqual(['chkOrderingFewItems'])
+    expect(keys(course([[ordering('sequence', [item('a'), item('b', ' ')])]]))).toEqual(['chkOrderingEmptyItem'])
+    const cats = [{ id: 'x', title: 'X' }, { id: 'y', title: 'Y' }]
+    expect(keys(course([[ordering('categories', [item('a', 'A', 'x'), item('b', 'B', 'y')], cats)]]))).toEqual([])
+    expect(keys(course([[ordering('categories', [item('a'), item('b')])]])))
+      .toEqual(['chkOrderingFewCategories', 'chkOrderingUncategorized'])
+    // An item pointing at a deleted category counts as uncategorized.
+    expect(keys(course([[ordering('categories', [item('a', 'A', 'x'), item('b', 'B', 'gone')], cats)]])))
+      .toEqual(['chkOrderingUncategorized'])
+  })
+
+  test('fill in the blanks without blanks', () => {
+    const fb = (text: string) => block('fillBlanks', { text, mode: 'type', passingScore: 80 })
+    expect(keys(course([[fb('The capital is [Paris].')]]))).toEqual([])
+    expect(keys(course([[fb('No blanks [] here.')]]))).toEqual(['chkFillBlanksEmpty'])
+  })
+
   test('scenario start and dangling links', () => {
     const node = (id: string, next: string | null) => ({ id, text: 't', emotion: 'neutral', choices: [{ id: 'c', text: 'go', nextNodeId: next }] })
     expect(keys(course([[block('scenario', { characterImages: {}, characterName: 'A', startNodeId: 'x', nodes: [node('n1', null)] })]])))

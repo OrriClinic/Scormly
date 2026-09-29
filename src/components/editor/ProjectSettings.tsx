@@ -14,6 +14,7 @@ import { saveAsset, toastUploadError } from '../../lib/assets'
 import { useAssetUrl } from '../../hooks/useAssetUrl'
 import {
   DEFAULT_COURSE_SETTINGS,
+  isScoredBlock,
   type CompletionRule,
   type NavigationMode,
   type PlayerLanguage,
@@ -362,7 +363,7 @@ function CompletionPanel() {
   const updateSettings = useCourseStore((s) => s.updateSettings)
   const { t } = useT('settings')
   const settings = course.settings ?? DEFAULT_COURSE_SETTINGS
-  const hasQuiz = course.lessons.some((l) => l.blocks.some((b) => b.type === 'quiz'))
+  const hasQuiz = course.lessons.some((l) => l.blocks.some(isScoredBlock))
 
   const setScore = (v: number) =>
     updateSettings({ passingScore: Math.max(0, Math.min(100, Math.round(v) || 0)) }, 'passing-score')

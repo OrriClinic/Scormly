@@ -339,6 +339,41 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockMeta> = {
       },
     }),
   },
+  ordering: {
+    type: 'ordering',
+    category: 'interactive',
+    icon: '⇅',
+    create: () => ({
+      id: uid('block'),
+      type: 'ordering',
+      settings: { ...baseSettings },
+      data: {
+        mode: 'sequence',
+        prompt: c('orderingPrompt'),
+        items: [1, 2, 3].map((n) => ({ id: uid('item'), text: c('orderingItem', { n }) })),
+        categories: [1, 2].map((n) => ({ id: uid('cat'), title: c('orderingCategory', { n }) })),
+        passingScore: 80,
+        showAnswers: true,
+      },
+    }),
+  },
+  fillBlanks: {
+    type: 'fillBlanks',
+    category: 'interactive',
+    icon: '[…]',
+    create: () => ({
+      id: uid('block'),
+      type: 'fillBlanks',
+      settings: { ...baseSettings },
+      data: {
+        text: c('fillBlanksText'),
+        mode: 'type',
+        passingScore: 80,
+        showAnswers: true,
+        caseSensitive: false,
+      },
+    }),
+  },
 }
 
 /** Category order for the add menu (labels come from i18n `common`). */

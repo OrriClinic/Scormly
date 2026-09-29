@@ -53,6 +53,10 @@ const blocks: LocaleTable = {
     hotspotDesc: 'Clickable markers on an image',
     timeline: 'Timeline',
     timelineDesc: 'Timeline or process steps',
+    ordering: 'Sort / order',
+    orderingDesc: 'Put items in order or sort into categories',
+    fillBlanks: 'Fill in the blanks',
+    fillBlanksDesc: 'Type or pick the missing words',
   },
   uk: {
     heading: 'Заголовок',
@@ -104,6 +108,10 @@ const blocks: LocaleTable = {
     hotspotDesc: 'Клікабельні мітки на зображенні',
     timeline: 'Таймлайн',
     timelineDesc: 'Хронологія або кроки процесу',
+    ordering: 'Сортування',
+    orderingDesc: 'Упорядкувати або розсортувати за категоріями',
+    fillBlanks: 'Заповніть пропуски',
+    fillBlanksDesc: 'Введіть або оберіть пропущені слова',
   },
 }
 

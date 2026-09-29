@@ -34,6 +34,10 @@ const content: LocaleTable = {
     quizPrompt: 'Question text?',
     quizCorrect: 'Correct answer',
     quizWrong: 'Wrong answer',
+    orderingPrompt: 'Put the steps in the correct order.',
+    orderingItem: 'Step {n}',
+    orderingCategory: 'Category {n}',
+    fillBlanksText: 'The capital of France is [Paris]. Water boils at [100|one hundred] degrees Celsius.',
 
     // In-block "add" seeds
     newTab: 'New tab',
@@ -83,6 +87,10 @@ const content: LocaleTable = {
     quizPrompt: 'Текст питання?',
     quizCorrect: 'Правильна відповідь',
     quizWrong: 'Неправильна відповідь',
+    orderingPrompt: 'Розставте кроки в правильному порядку.',
+    orderingItem: 'Крок {n}',
+    orderingCategory: 'Категорія {n}',
+    fillBlanksText: 'Столиця Франції — [Париж]. Вода кипить за температури [100|сто] градусів Цельсія.',
 
     // In-block "add" seeds
     newTab: 'Нова вкладка',

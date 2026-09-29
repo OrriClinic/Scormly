@@ -1,5 +1,5 @@
 import type JSZip from 'jszip'
-import type { Course } from '../types/course'
+import { isScoredBlock, type Course } from '../types/course'
 
 // Shared helpers for building the export .zip (SCORM and cmi5). Both targets
 // ship the same vanilla player; only the tracking script and the manifest
@@ -22,11 +22,12 @@ export function sanitize(name: string): string {
 }
 
 // Passing score (0..100) declared in the manifest so the LMS knows the mastery
-// threshold. Undefined when the course is not scored or has no quizzes.
+// threshold. Undefined when the course is not scored or has no scored blocks
+// (quiz, ordering, fill in the blanks).
 export function overallPassingScore(course: Course): number | undefined {
   if (!course.settings?.scored) return undefined
   const hasQuiz = course.lessons.some((l) =>
-    l.blocks.some((b) => b.type === 'quiz'),
+    l.blocks.some(isScoredBlock),
   )
   if (!hasQuiz) return undefined
   return Math.round(course.settings.passingScore)

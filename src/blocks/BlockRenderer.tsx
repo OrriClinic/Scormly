@@ -23,6 +23,8 @@ import ScenarioBlock from './components/ScenarioBlock'
 import QuizBlock from './components/QuizBlock'
 import HotspotBlock from './components/HotspotBlock'
 import TimelineBlock from './components/TimelineBlock'
+import OrderingBlock from './components/OrderingBlock'
+import FillBlanksBlock from './components/FillBlanksBlock'
 
 // Dispatcher: block type → editor component. Each component lives in its own
 // file under ./components/ and implements the BlockComponentProps contract.
@@ -52,6 +54,8 @@ const BLOCK_COMPONENTS: Record<
   quiz: QuizBlock as ComponentType<BlockComponentProps>,
   hotspot: HotspotBlock as ComponentType<BlockComponentProps>,
   timeline: TimelineBlock as ComponentType<BlockComponentProps>,
+  ordering: OrderingBlock as ComponentType<BlockComponentProps>,
+  fillBlanks: FillBlanksBlock as ComponentType<BlockComponentProps>,
 }
 
 export default function BlockRenderer(props: BlockComponentProps) {

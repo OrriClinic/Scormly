@@ -1,4 +1,5 @@
 import type { Block, Course } from '../types/course'
+import { blankAnswers } from '../blocks/fillBlanks'
 
 /** A problem worth fixing before export; `key` is an i18n key in `common`. */
 export interface CourseIssue {
@@ -64,6 +65,23 @@ function checkBlock(block: Block): BlockIssue[] {
     }
     case 'timeline':
       return block.data.items.length ? [] : [{ key: 'chkTimelineEmpty' }]
+    case 'ordering': {
+      const { mode, items, categories } = block.data
+      const out: BlockIssue[] = []
+      if (items.length < 2) out.push({ key: 'chkOrderingFewItems' })
+      if (items.some((it) => !it.text.trim())) out.push({ key: 'chkOrderingEmptyItem' })
+      if (mode === 'categories') {
+        if (categories.length < 2) out.push({ key: 'chkOrderingFewCategories' })
+        // A missing or deleted category makes the item impossible to score.
+        const ids = new Set(categories.map((c) => c.id))
+        if (items.some((it) => !it.categoryId || !ids.has(it.categoryId))) {
+          out.push({ key: 'chkOrderingUncategorized' })
+        }
+      }
+      return out
+    }
+    case 'fillBlanks':
+      return blankAnswers(block.data.text).length ? [] : [{ key: 'chkFillBlanksEmpty' }]
     default:
       return []
   }

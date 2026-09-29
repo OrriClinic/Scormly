@@ -246,6 +246,13 @@
 
   // Build a richer xAPI interaction object for `answered`. Mirrors the SCORM
   // 2004 interaction model: type, choices/source/target, correctResponsesPattern.
+  // Array responses (see scorm.js formatResponse) use the xAPI delimiters:
+  // `[,]` between items, `[.]` inside a matching pair.
+  function formatResponse(value) {
+    if (!Array.isArray(value)) return value == null ? '' : String(value);
+    return value.map(function (p) { return Array.isArray(p) ? p.join('[.]') : String(p); }).join('[,]');
+  }
+
   function buildInteractionObject(data) {
     var id = activityId + '/interactions/' + encodeURIComponent(data.id);
     var def = { type: 'http://adlnet.gov/expapi/activities/cmi.interaction' };
@@ -267,7 +274,8 @@
       });
     }
     if (Array.isArray(data.correctResponses) && data.correctResponses.length) {
-      def.correctResponsesPattern = data.correctResponses;
+      var prefix = data.interactionType === 'fill-in' && data.caseMatters ? '{case_matters=true}' : '';
+      def.correctResponsesPattern = data.correctResponses.map(function (r) { return prefix + formatResponse(r); });
     }
     return { id: id, objectType: 'Activity', definition: def };
   }
@@ -395,7 +403,7 @@
     recordInteraction: function (i, data) {
       if (!active || !trackingAllowed()) return;
       enqueue(function () {
-        var res = { response: String(data.response), success: !!data.correct };
+        var res = { response: formatResponse(data.response), success: !!data.correct };
         if (typeof data.latencySec === 'number') res.duration = 'PT' + Math.max(0, Math.floor(data.latencySec)) + 'S';
         var s = statement(V.answered, res, { cmi5: false });
         s.object = buildInteractionObject(data);

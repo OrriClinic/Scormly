@@ -9,7 +9,7 @@
    - progress:  progress_measure (2004 only)
    - resume:    suspend_data, location, exit=suspend
    - time:      session_time
-   - objectives: cmi.objectives.n.* (one per quiz)
+   - objectives: cmi.objectives.n.* (one per scored block: quiz / ordering / fill-in)
    - interactions: cmi.interactions.n.* incl. weighting / latency / description /
                    correct_responses.0.pattern / timestamp
    - LMS context (read-only): learner id/name, mode, entry (resume), launch_data,
@@ -87,6 +87,16 @@
     if (v2004) return 'PT' + hh + 'H' + mm + 'M' + ss + 'S';
     function pad(n, w) { return ('0000' + n).slice(-w); }
     return pad(hh, 4) + ':' + pad(mm, 2) + ':' + pad(ss, 2) + '.00';
+  }
+
+  // Interaction responses/patterns may be passed pre-formatted (string) or as
+  // an array: a list of ids/strings (sequencing, multi-part fill-in) or of
+  // [source, target] pairs (matching). Arrays are joined with the delimiters
+  // of the active data model: 2004 uses `[,]` / `[.]`, 1.2 uses `,` / `.`.
+  function formatResponse(value) {
+    if (!Array.isArray(value)) return value == null ? '' : String(value);
+    var list = v2004 ? '[,]' : ',', pair = v2004 ? '[.]' : '.';
+    return value.map(function (p) { return Array.isArray(p) ? p.join(pair) : String(p); }).join(list);
   }
 
   // Cached LMS-context snapshot (read once after Initialize).
@@ -235,7 +245,9 @@
       var p = 'cmi.interactions.' + i + '.';
       set(p + 'id', data.id);
       set(p + 'type', data.type);
-      set(p + (v2004 ? 'learner_response' : 'student_response'), data.response);
+      // 1.2 student_response is CMIFeedback (max 255 chars).
+      var resp = formatResponse(data.response);
+      set(p + (v2004 ? 'learner_response' : 'student_response'), v2004 ? resp : resp.slice(0, 255));
       set(p + 'result', v2004 ? (data.correct ? 'correct' : 'incorrect') : (data.correct ? 'correct' : 'wrong'));
       // Optional fields.
       if (typeof data.weight === 'number') set(p + 'weighting', data.weight);
@@ -253,7 +265,9 @@
       if (cr && cr.length) {
         // 1.2 supports only correct_responses.0.pattern reliably.
         var limit = v2004 ? cr.length : 1;
-        for (var j = 0; j < limit; j++) set(p + 'correct_responses.' + j + '.pattern', cr[j]);
+        // 2004 fill-in patterns are case-insensitive unless flagged.
+        var prefix = v2004 && data.type === 'fill-in' && data.caseMatters ? '{case_matters=true}' : '';
+        for (var j = 0; j < limit; j++) set(p + 'correct_responses.' + j + '.pattern', prefix + formatResponse(cr[j]));
       }
       // Link interaction to its objective so per-quiz analytics line up.
       if (data.objectiveId) set(p + 'objectives.0.id', data.objectiveId);

@@ -13,6 +13,8 @@ import AccordionPreview from './components/AccordionPreview'
 import FlashcardsPreview from './components/FlashcardsPreview'
 import ScenarioPreview from './components/ScenarioPreview'
 import QuizPreview from './components/QuizPreview'
+import OrderingPreview from './components/OrderingPreview'
+import FillBlanksPreview from './components/FillBlanksPreview'
 import CourseOutlinePreview from './components/CourseOutlinePreview'
 import HotspotPreview from './components/HotspotPreview'
 import TimelinePreview from './components/TimelinePreview'
@@ -140,5 +142,9 @@ export default function BlockPreview({
       return <HotspotPreview block={block} />
     case 'timeline':
       return <TimelinePreview block={block} />
+    case 'ordering':
+      return <OrderingPreview block={block} />
+    case 'fillBlanks':
+      return <FillBlanksPreview block={block} />
   }
 }

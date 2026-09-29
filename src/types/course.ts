@@ -27,6 +27,8 @@ export type BlockType =
   | 'quiz'
   | 'hotspot'
   | 'timeline'
+  | 'ordering'
+  | 'fillBlanks'
 
 // Shared visual settings for a block (spacing, background, etc.).
 export interface BlockSettings {
@@ -312,6 +314,47 @@ export interface TimelineData {
   items: TimelineItem[]
 }
 
+// ── Scored exercises (count toward the course score like quizzes) ──────────
+
+export interface OrderingItem {
+  id: string
+  text: string
+  /** 'categories' mode: the id of the category this item belongs to. */
+  categoryId?: string
+}
+
+export interface OrderingCategory {
+  id: string
+  title: string
+}
+
+export interface OrderingData {
+  /** 'sequence': items are authored in the correct order and shown shuffled.
+   *  'categories': the learner sorts each item into a category. */
+  mode: 'sequence' | 'categories'
+  prompt: string
+  items: OrderingItem[]
+  categories: OrderingCategory[]
+  /** Passing score as a percentage (0–100). */
+  passingScore: number
+  /** Reveal correct positions/categories after submitting (default true). */
+  showAnswers?: boolean
+}
+
+export interface FillBlanksData {
+  /** Text with blanks in square brackets: "The capital is [Paris|paris]."
+   *  Alternatives are separated by `|`; the first one is canonical. */
+  text: string
+  /** 'type': free-text inputs; 'select': a dropdown of every blank's answer. */
+  mode: 'type' | 'select'
+  /** Passing score as a percentage (0–100). */
+  passingScore: number
+  /** Reveal correct answers after submitting (default true). */
+  showAnswers?: boolean
+  /** Compare typed answers case-sensitively (default false). */
+  caseSensitive?: boolean
+}
+
 // ── Block: discriminated union ──────────────────────────────────────────────
 
 export type Block =
@@ -337,9 +380,19 @@ export type Block =
   | (BaseBlock & { type: 'quiz'; data: QuizData })
   | (BaseBlock & { type: 'hotspot'; data: HotspotData })
   | (BaseBlock & { type: 'timeline'; data: TimelineData })
+  | (BaseBlock & { type: 'ordering'; data: OrderingData })
+  | (BaseBlock & { type: 'fillBlanks'; data: FillBlanksData })
 
 /** Narrow Block to a specific type (for renderers/editors). */
 export type BlockOfType<T extends BlockType> = Extract<Block, { type: T }>
+
+/** Block types that produce a score (0–100) and count toward the course score,
+ *  per-block objectives and the 'quiz' completion rule. */
+export const SCORED_BLOCK_TYPES: readonly BlockType[] = ['quiz', 'ordering', 'fillBlanks']
+
+export function isScoredBlock(block: Block): boolean {
+  return SCORED_BLOCK_TYPES.includes(block.type)
+}
 
 export type LessonStatus = 'draft' | 'published'
 

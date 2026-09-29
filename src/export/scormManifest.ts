@@ -1,4 +1,4 @@
-import type { Course } from '../types/course'
+import { isScoredBlock, type Course } from '../types/course'
 
 export type ScormVersion = '1.2' | '2004'
 
@@ -11,14 +11,15 @@ function escapeXml(s: string): string {
     .replace(/'/g, '&apos;')
 }
 
-// Collect quiz block IDs in order — used to declare one non-primary objective
-// per quiz in the SCORM 2004 manifest, so the LMS recognises the runtime
-// `cmi.objectives.n.id = 'QUIZ_<id>'` writes from the player.
+// Collect scored block IDs (quiz, ordering, fill in the blanks) in order — used
+// to declare one non-primary objective per scored block in the SCORM 2004
+// manifest, so the LMS recognises the runtime `cmi.objectives.n.id =
+// 'QUIZ_<id>'` writes from the player (the prefix is shared by all of them).
 function quizIds(course: Course): string[] {
   const ids: string[] = []
   for (const lesson of course.lessons || []) {
     for (const block of lesson.blocks || []) {
-      if (block.type === 'quiz') ids.push(block.id)
+      if (isScoredBlock(block)) ids.push(block.id)
     }
   }
   return ids

@@ -133,6 +133,27 @@ const BLOCK_DOCS: Record<BlockType, BlockDoc> = {
     items: { id: string, label: string, title: string, text: string }[]
   }  // label: short marker such as a date or "Step 1"`,
   },
+  ordering: {
+    summary: 'Scored "sort / order" exercise: put items in sequence, or sort them into categories.',
+    data: `{
+    mode: 'sequence' | 'categories',
+    prompt: string,
+    items: { id: string, text: string, categoryId?: string }[],  // sequence: list items in the CORRECT order (shown shuffled); categories: categoryId = the item's correct category
+    categories: { id: string, title: string }[],  // used in 'categories' mode
+    passingScore: number,  // 0–100; score = % of items placed correctly
+    showAnswers?: boolean  // reveal correct positions/categories after submitting (default true)
+  }`,
+  },
+  fillBlanks: {
+    summary: 'Scored fill-in-the-blanks exercise.',
+    data: `{
+    text: string,  // blanks in square brackets: "The capital of France is [Paris|Paname]." — '|' separates accepted answers, the first is canonical
+    mode: 'type' | 'select',  // type = text inputs; select = dropdowns listing every blank's canonical answer
+    passingScore: number,  // 0–100; score = % of blanks answered correctly
+    showAnswers?: boolean,  // default true
+    caseSensitive?: boolean  // default false
+  }`,
+  },
 }
 
 function blockReference(): string {
@@ -176,7 +197,7 @@ Course
   coverImage?: string,
   theme: 'rose' | 'ocean' | 'forest' | 'sunset',
   settings: {
-    completion: 'view' | 'quiz',   // 'quiz' also requires every quiz answered
+    completion: 'view' | 'quiz',   // 'quiz' also requires every scored block (quiz, ordering, fillBlanks) answered
     scored: boolean,               // report a pass/fail result
     passingScore: number,          // 0–100, used when scored
     navigation: 'free' | 'linear', // linear: Next unlocks once the lesson's gates/quizzes are done
@@ -222,6 +243,12 @@ ${blockReference()}
   the correct match for each pair is its own \`right\` value — keep every
   \`right\` text unique within a question (learners pick answers by that text),
   and give at least 2 pairs.
+- **Ordering**: give at least 2 items with non-empty text. In \`sequence\`
+  mode list the items in the correct order. In \`categories\` mode give at
+  least 2 categories and set every item's \`categoryId\` to one of them.
+- **Fill in the blanks**: the \`text\` must contain at least one \`[answer]\`.
+- **Scored blocks** (\`quiz\`, \`ordering\`, \`fillBlanks\`) each produce a
+  0–100 score; the course score is their average.
 - **Scenarios**: \`startNodeId\` and every non-null \`nextNodeId\` must be the
   \`id\` of a node in the same scenario.
 - **Don't** invent block \`type\`s or \`data\` fields beyond those listed above —
@@ -237,6 +264,9 @@ passes them is ready to export:
   image, embeds have a \`url\`;
 - quizzes have questions; every question has text, enough options/pairs and a
   correct answer, and matching answers are unique;
+- ordering blocks have at least 2 items with text; in categories mode at least
+  2 categories and every item assigned to one;
+- fill-in-the-blanks blocks contain at least one \`[blank]\`;
 - scenarios start at an existing node and have no links to missing nodes.
 
 ## Typical agent workflow
