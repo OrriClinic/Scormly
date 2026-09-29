@@ -295,3 +295,14 @@ body {
   .chatd-typing i { animation: none; }
   .fcard-inner { transition: none; }
 }
+
+/* Blinking terminal caret in the landing "AI-ready" visual. */
+.ai-caret {
+  display: inline-block; width: 0.5em; height: 1.1em; margin-left: 0.2em; vertical-align: -0.2em;
+  background: color-mix(in srgb, var(--color-brand-light) 85%, transparent);
+  animation: ai-blink 1.1s steps(1) infinite;
+}
+@keyframes ai-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .ai-caret { animation: none; }
+}

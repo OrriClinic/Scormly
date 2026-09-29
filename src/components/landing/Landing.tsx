@@ -5,6 +5,7 @@ import { useT } from '../../i18n/I18nProvider'
 import { useReveal } from '../../hooks/useReveal'
 import { navigate } from '../../hooks/useRoute'
 import { GITHUB_URL, GITHUB_ISSUES_URL } from '../../lib/links'
+import { RELEASES } from '../../help/releaseNotes'
 import ChatDemo from './demos/ChatDemo'
 import Playground from './demos/Playground'
 
@@ -108,6 +109,53 @@ const ICON_PATHS: Record<string, ReactNode> = {
   heart: (
     <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z" />
   ),
+  undo: (
+    <>
+      <path d="M9 14 4 9l5-5" />
+      <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    </>
+  ),
+  route: (
+    <>
+      <circle cx="6" cy="19" r="3" />
+      <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+      <circle cx="18" cy="5" r="3" />
+    </>
+  ),
+  keyboard: (
+    <>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M6 13h.01M18 13h.01M10 13h4M7 16h10" />
+    </>
+  ),
+  help: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" />
+      <path d="M12 17h.01" />
+    </>
+  ),
+  download: (
+    <>
+      <rect x="3" y="3" width="18" height="14" rx="2" />
+      <path d="M12 7v6M9 10l3 3 3-3M8 21h8M12 17v4" />
+    </>
+  ),
+  file: (
+    <>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v5h6M8 13h8M8 17h5" />
+    </>
+  ),
+  plug: (
+    <>
+      <path d="M12 22v-5" />
+      <path d="M9 8V2M15 8V2" />
+      <path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />
+    </>
+  ),
+  check: <path d="M20 6 9 17l-5-5" />,
+  arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
 }
 
 function Icon({ name, className }: { name: string; className?: string }) {
@@ -142,18 +190,20 @@ function DotGrid({ id, className }: { id: string; className?: string }) {
 }
 
 export default function Landing() {
-  const { t } = useT('landing')
+  const { t, lang } = useT('landing')
 
   return (
-    <div className="h-full overflow-y-auto bg-white text-gray-900">
+    <div className="h-full overflow-y-auto overflow-x-hidden bg-white text-gray-900">
       <Nav />
       <main>
         <Hero />
         <Pillars />
         <Demo />
         <Features />
+        <AiReady />
         <Privacy />
         <HowItWorks />
+        <WhatsNew />
         <Faq />
         <Contribute />
       </main>
@@ -164,19 +214,25 @@ export default function Landing() {
   function Nav() {
     return (
       <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <a href="#/" aria-label="Scormly">
             <Logo />
           </a>
-          <nav className="hidden items-center gap-8 text-sm font-medium text-gray-600 md:flex">
+          <nav className="hidden items-center gap-6 text-sm font-medium text-gray-600 lg:flex">
             <a href="#demo" className="hover:text-brand">
               {t('navDemo')}
             </a>
             <a href="#features" className="hover:text-brand">
               {t('navFeatures')}
             </a>
+            <a href="#ai" className="hover:text-brand">
+              {t('navAi')}
+            </a>
             <a href="#how" className="hover:text-brand">
               {t('navHow')}
+            </a>
+            <a href="#whats-new" className="hover:text-brand">
+              {t('navNews')}
             </a>
             <a href="#faq" className="hover:text-brand">
               {t('navFaq')}
@@ -216,7 +272,7 @@ export default function Landing() {
           <div className="absolute -top-24 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-brand/10 blur-3xl" />
           <div className="absolute right-[-10%] top-40 h-72 w-72 rounded-full bg-brand/5 blur-3xl" />
         </div>
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 lg:py-28">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 py-16 sm:py-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 lg:py-28">
           <div className="text-center lg:text-left">
             <span className="reveal-visible inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-sm font-medium text-brand-dark">
               <span className="chatd-dot" /> {t('heroBadge')}
@@ -264,7 +320,7 @@ export default function Landing() {
     ]
     return (
       <section className="border-y border-gray-100 bg-gradient-to-b from-gray-50/80 to-white py-20 sm:py-24">
-        <div className="mx-auto max-w-6xl px-6">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <Reveal>
             <h2 className="max-w-2xl text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
               {t('pillarsTitle')}
@@ -304,7 +360,7 @@ export default function Landing() {
           <div className="absolute left-[-10%] top-10 h-72 w-72 rounded-full bg-brand/10 blur-3xl" />
           <div className="absolute bottom-0 right-[-5%] h-72 w-72 rounded-full bg-brand/5 blur-3xl" />
         </div>
-        <div className="mx-auto max-w-6xl px-6">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <Reveal>
             <div className="mx-auto max-w-2xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-sm font-medium text-brand-dark">
@@ -329,9 +385,9 @@ export default function Landing() {
   function Privacy() {
     return (
       <section className="py-20">
-        <div className="mx-auto max-w-5xl px-6">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <Reveal>
-            <div className="relative overflow-hidden rounded-3xl bg-gray-900 px-8 py-14 text-center sm:px-16">
+            <div className="relative overflow-hidden rounded-3xl bg-gray-900 px-5 py-14 text-center sm:px-16">
               <DotGrid id="privacy-dots" className="absolute inset-0 text-white/[0.06]" />
               <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-brand/30 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-brand/10 blur-3xl" />
@@ -355,15 +411,19 @@ export default function Landing() {
 
   function Features() {
     // Order tuned for the bento layout: the two "anchor" tiles (index 0 and 3)
-    // span two columns, so [2,1,1,2,1,1,1] tiles cleanly into a 3-col grid.
+    // span two columns, so [2,1,1,2,1,1,1,1,1,1] tiles cleanly into a 3-col
+    // grid (and into a 2-col grid on tablets).
     const features = [
       { icon: 'blocks', title: t('f1Title'), text: t('f1Text'), anchor: true },
-      { icon: 'book', title: t('f2Title'), text: t('f2Text') },
-      { icon: 'quiz', title: t('f3Title'), text: t('f3Text') },
-      { icon: 'package', title: t('f5Title'), text: t('f5Text'), anchor: true },
-      { icon: 'theme', title: t('f4Title'), text: t('f4Text') },
-      { icon: 'globe', title: t('f6Title'), text: t('f6Text') },
-      { icon: 'sparkles', title: t('f7Title'), text: t('f7Text') },
+      { icon: 'quiz', title: t('f2Title'), text: t('f2Text') },
+      { icon: 'undo', title: t('f3Title'), text: t('f3Text') },
+      { icon: 'package', title: t('f4Title'), text: t('f4Text'), anchor: true },
+      { icon: 'route', title: t('f5Title'), text: t('f5Text') },
+      { icon: 'keyboard', title: t('f6Title'), text: t('f6Text') },
+      { icon: 'help', title: t('f7Title'), text: t('f7Text') },
+      { icon: 'theme', title: t('f8Title'), text: t('f8Text') },
+      { icon: 'download', title: t('f9Title'), text: t('f9Text') },
+      { icon: 'globe', title: t('f10Title'), text: t('f10Text') },
     ]
     return (
       <section
@@ -371,7 +431,7 @@ export default function Landing() {
         className="relative scroll-mt-20 overflow-hidden border-t border-gray-100 bg-gray-50/60 py-24"
       >
         <div className="pointer-events-none absolute left-1/2 top-0 -z-0 h-80 w-80 -translate-x-1/2 rounded-full bg-brand/5 blur-3xl" />
-        <div className="relative mx-auto max-w-6xl px-6">
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
           <Reveal>
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -380,7 +440,7 @@ export default function Landing() {
               <p className="mt-4 text-lg text-gray-600">{t('featuresSubtitle')}</p>
             </div>
           </Reveal>
-          <div className="mt-14 grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-14 grid gap-4 sm:auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f, i) => (
               <Reveal key={f.title} delay={(i % 3) * 90} className={f.anchor ? 'sm:col-span-2' : undefined}>
                 {f.anchor ? (
@@ -409,6 +469,167 @@ export default function Landing() {
     )
   }
 
+  // AI-ready: AGENTS.md in every project + the local scormly-mcp server.
+  function AiReady() {
+    const points = [
+      { icon: 'file', title: t('aiPoint1Title'), text: t('aiPoint1Text') },
+      { icon: 'plug', title: t('aiPoint2Title'), text: t('aiPoint2Text') },
+      { icon: 'shield', title: t('aiPoint3Title'), text: t('aiPoint3Text') },
+    ]
+    const steps = [t('aiStep1'), t('aiStep2'), t('aiStep3'), t('aiStep4'), t('aiStep5')]
+    return (
+      <section id="ai" className="relative scroll-mt-20 overflow-hidden py-24">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute right-[-10%] top-10 h-80 w-80 rounded-full bg-brand/10 blur-3xl" />
+          <div className="absolute bottom-0 left-[-5%] h-72 w-72 rounded-full bg-brand/5 blur-3xl" />
+        </div>
+        <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1fr_1fr] lg:gap-12">
+          <Reveal>
+            <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-sm font-medium text-brand-dark">
+              <Icon name="sparkles" className="h-4 w-4" /> {t('aiBadge')}
+            </span>
+            <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">{t('aiTitle')}</h2>
+            <p className="mt-4 text-lg leading-relaxed text-gray-600">{t('aiSubtitle')}</p>
+            <ul className="mt-8 space-y-5">
+              {points.map((p) => (
+                <li key={p.title} className="flex gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand/15 to-brand/5 text-brand ring-1 ring-brand/15">
+                    <Icon name={p.icon} className="h-[22px] w-[22px]" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-semibold">{p.title}</span>
+                    <span className="mt-1 block leading-relaxed text-gray-600">{p.text}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+
+          {/* Illustrative visual: a terminal wiring up the MCP server, then an
+              assistant working through the project. Static on purpose. */}
+          <Reveal delay={120}>
+            <div role="img" aria-label={t('aiVisualLabel')} className="relative mx-auto w-full max-w-lg">
+              <div className="overflow-hidden rounded-2xl bg-gray-900 shadow-2xl shadow-gray-900/25 ring-1 ring-white/10">
+                <div className="flex items-center gap-1.5 border-b border-white/10 px-4 py-3">
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
+                  <span className="ml-2 font-mono text-xs text-white/45">~/my-course</span>
+                </div>
+                <div className="space-y-1.5 break-words p-4 pb-8 font-mono text-[12.5px] leading-relaxed text-gray-200 sm:p-5 sm:pb-10 sm:text-[13px]">
+                  <p>
+                    <span className="text-brand-light">$</span> ls
+                  </p>
+                  <p className="flex flex-wrap gap-x-5 text-gray-400">
+                    <span className="font-semibold text-brand-light">AGENTS.md</span>
+                    <span>assets/</span>
+                    <span>project.json</span>
+                  </p>
+                  <p className="pt-2 text-white/40">{t('aiTermComment')}</p>
+                  <p>
+                    <span className="text-brand-light">$</span> claude mcp add scormly -- npx scormly-mcp
+                    --project{' '}
+                    <span className="whitespace-nowrap">
+                      ./my-course<span className="ai-caret" />
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="relative -mt-4 ml-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-xl shadow-gray-900/10 sm:-mt-6 sm:ml-12 sm:p-5">
+                <p className="ml-auto max-w-[90%] rounded-2xl rounded-br-md bg-brand px-3.5 py-2 text-sm leading-snug text-white">
+                  {t('aiChatPrompt')}
+                </p>
+                <ul className="mt-4 space-y-2">
+                  {steps.map((s) => (
+                    <li key={s} className="flex items-center gap-2.5 text-sm text-gray-700">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+                        <Icon name="check" className="h-3 w-3" />
+                      </span>
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+    )
+  }
+
+  // Compact changelog: the newest builder releases from the in-app notes.
+  function WhatsNew() {
+    const releases = RELEASES.slice(0, 2)
+    const fmt = new Intl.DateTimeFormat(lang, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    })
+    return (
+      <section id="whats-new" className="scroll-mt-20 border-t border-gray-100 py-24">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <Reveal>
+            <div className="mx-auto max-w-2xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-sm font-medium text-brand-dark">
+                <span className="chatd-dot" /> {t('newsBadge')}
+              </span>
+              <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">{t('newsTitle')}</h2>
+              <p className="mt-4 text-lg text-gray-600">{t('newsSubtitle')}</p>
+            </div>
+          </Reveal>
+          <div className="relative mt-12">
+            <div className="pointer-events-none absolute bottom-4 left-[11.25rem] top-4 hidden border-l-2 border-dashed border-brand/20 md:block" />
+            <ol className="space-y-8">
+              {releases.map((r, i) => (
+                <li key={r.id}>
+                  <Reveal delay={i * 110}>
+                    <div className="grid gap-3 md:grid-cols-[10rem_1fr] md:gap-10">
+                      <div className="flex items-center gap-3 md:flex-col md:items-end md:pt-6 md:text-right">
+                        <time dateTime={r.date} className="font-semibold text-gray-900">
+                          {fmt.format(new Date(r.date))}
+                        </time>
+                        {i === 0 && (
+                          <span className="rounded-full bg-brand px-2.5 py-0.5 text-xs font-semibold text-white">
+                            {t('newsLatest')}
+                          </span>
+                        )}
+                      </div>
+                      <div className="relative rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+                        <span className="absolute -left-[1.625rem] top-7 hidden h-3 w-3 rounded-full bg-brand ring-4 ring-white md:block" />
+                        <ul className="space-y-2.5">
+                          {r.items[lang].map((item) => (
+                            <li key={item} className="flex gap-3 leading-relaxed text-gray-700">
+                              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+                              <span className="min-w-0">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </Reveal>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <Reveal>
+            <div className="mt-10 text-center">
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 font-semibold text-brand-dark hover:text-brand"
+              >
+                {t('newsMore')} <Icon name="arrow" className="h-4 w-4" />
+              </a>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+    )
+  }
+
   function HowItWorks() {
     const steps = [
       { n: 1, title: t('how1Title'), text: t('how1Text') },
@@ -417,7 +638,7 @@ export default function Landing() {
     ]
     return (
       <section id="how" className="scroll-mt-20 py-24">
-        <div className="mx-auto max-w-6xl px-6">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <Reveal>
             <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl">
               {t('howTitle')}
@@ -462,10 +683,12 @@ export default function Landing() {
       { q: t('faqQ5'), a: t('faqA5') },
       { q: t('faqQ6'), a: t('faqA6') },
       { q: t('faqQ7'), a: t('faqA7') },
+      { q: t('faqQ8'), a: t('faqA8') },
+      { q: t('faqQ9'), a: t('faqA9') },
     ]
     return (
       <section id="faq" className="scroll-mt-20 border-t border-gray-100 bg-gray-50/60 py-24">
-        <div className="mx-auto max-w-3xl px-6">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
           <Reveal>
             <h2 className="text-center text-3xl font-bold tracking-tight sm:text-4xl">
               {t('faqTitle')}
@@ -485,9 +708,9 @@ export default function Landing() {
 
   function Contribute() {
     return (
-      <section className="px-6 pb-24 pt-4">
+      <section className="px-4 pb-24 pt-4 sm:px-6">
         <Reveal>
-          <div className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl bg-gradient-to-br from-brand to-brand-dark px-8 py-14 text-center text-white sm:px-16">
+          <div className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl bg-gradient-to-br from-brand to-brand-dark px-5 py-14 text-center text-white sm:px-16">
             <DotGrid id="contribute-dots" className="absolute inset-0 text-white/[0.08]" />
             <div className="pointer-events-none absolute -left-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 -right-10 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
@@ -529,7 +752,7 @@ export default function Landing() {
   function Footer() {
     return (
       <footer className="border-t border-gray-100 bg-white py-12">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 text-center">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 sm:px-6 text-center">
           <Logo />
           <p className="text-sm text-gray-500">{t('footerTagline')}</p>
           <div className="flex items-center gap-4 text-sm text-gray-500">

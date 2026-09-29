@@ -7,16 +7,23 @@
 
 ## What it does
 
-- **Block-based course editor** with inline editing, drag-and-drop, undo/redo.
+- **Block-based course editor** with inline editing, drag-and-drop, insert-a-block-anywhere,
+  undo/redo (also straight from the notification after a delete).
 - **Blocks:** headings, rich-text paragraphs, lists, callouts, images, galleries, video
   (with optional "require watch" gate and disabled download), audio, embeds, code, tables,
   quotes, a "Continue" gate, a divider, a course outline (links to other lessons), tabs,
-  accordions, flashcards, a branching **dialogue scenario** (classic or **chat/messenger**
-  layout with avatars), and **quizzes** (single / multiple / matching, with feedback, a
-  passing score, and an optional "show answers" toggle).
-- **Exports:** SCORM 1.2, SCORM 2004, and cmi5 (xAPI) — generated in the browser with JSZip.
-  SCORM is verified on SCORM Cloud.
+  accordions, flashcards, image hotspots, timelines / process steps, sort-the-order and
+  fill-in-the-blanks exercises, a branching **dialogue scenario** (classic or
+  **chat/messenger** layout with avatars), and **quizzes** (single / multiple / matching,
+  with feedback, a passing score, and an optional "show answers" toggle).
+- **Exports:** SCORM 1.2, SCORM 2004, and cmi5 (xAPI, with resume) — generated in the browser
+  with JSZip. Quiz objectives, question interactions and progress are reported to the LMS.
+  A course check runs before export (empty lessons, missing media, questions without a
+  correct answer…). SCORM is verified on SCORM Cloud.
 - **Course settings:** completion rule, pass/fail scoring, and a free/linear navigation mode.
+- **Help & accessibility:** guided tour, in-app Q&A, a "What's new" page, keyboard shortcuts
+  (press ?) and full keyboard support in menus, dialogs and reordering.
+- **Installable app (PWA)** from Chrome or Edge; English and Ukrainian interface.
 - **Privacy by architecture:** nothing is uploaded, stored remotely, or transmitted.
 
 ## For AI agents
@@ -24,6 +31,10 @@
 Every Scormly project folder contains an `AGENTS.md` that documents `project.json` (the entire
 course as JSON) and every block type's `data` shape, so an AI assistant can read, edit, or
 author whole courses by editing that single file.
+
+A local MCP server, `scormly-mcp`, connects Claude Desktop, Claude Code or Cursor to a project
+folder, with tools to add lessons and blocks, check the course, and export SCORM / cmi5 — still
+fully local. Example: `claude mcp add scormly -- npx scormly-mcp --project ./my-course`.
 
 ## Links
 
