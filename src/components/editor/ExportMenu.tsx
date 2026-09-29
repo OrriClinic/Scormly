@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../../i18n/I18nProvider'
-import { exportScorm } from '../../export/exportScorm'
-import { exportCmi5 } from '../../export/exportCmi5'
-import type { ScormVersion } from '../../export/scormManifest'
+import { runExport, useExportStore, type ExportTarget } from '../../export/runExport'
 
 // Export button with a SCORM version menu (1.2 / 2004).
 export default function ExportMenu() {
   const { t } = useT('common')
   const [open, setOpen] = useState(false)
-  const [exporting, setExporting] = useState(false)
+  const exporting = useExportStore((s) => s.exporting)
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -20,24 +18,9 @@ export default function ExportMenu() {
     return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [open])
 
-  async function runScorm(version: ScormVersion) {
+  function run(target: ExportTarget) {
     setOpen(false)
-    setExporting(true)
-    try {
-      await exportScorm(version)
-    } finally {
-      setExporting(false)
-    }
-  }
-
-  async function runCmi5() {
-    setOpen(false)
-    setExporting(true)
-    try {
-      await exportCmi5()
-    } finally {
-      setExporting(false)
-    }
+    void runExport(target)
   }
 
   return (
@@ -56,21 +39,21 @@ export default function ExportMenu() {
         <div className="absolute right-0 top-full z-30 mt-2 w-52 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
           <button
             type="button"
-            onClick={() => runScorm('2004')}
+            onClick={() => run('scorm2004')}
             className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
           >
             {t('export2004')}
           </button>
           <button
             type="button"
-            onClick={() => runScorm('1.2')}
+            onClick={() => run('scorm12')}
             className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
           >
             {t('export12')}
           </button>
           <button
             type="button"
-            onClick={runCmi5}
+            onClick={() => run('cmi5')}
             className="block w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
           >
             {t('exportCmi5')}

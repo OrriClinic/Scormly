@@ -7,7 +7,7 @@ import { AGENT_GUIDE_FILE, buildAgentGuide } from './agentGuide'
 // referenced media (assets/) + the AGENTS.md guide. Deliberately excludes the
 // undo/redo history sidecar (.scormly-history.json) — a fresh project to hand to
 // someone else. The recipient unzips it into a folder and opens it in Scormly.
-export async function downloadProjectZip(): Promise<void> {
+export async function downloadProjectZip(): Promise<string> {
   const { course, directoryHandle } = useCourseStore.getState()
   const zip = new JSZip()
 
@@ -17,5 +17,5 @@ export async function downloadProjectZip(): Promise<void> {
   // (in that mode media lives as data URLs inside project.json).
   await addAssets(zip, directoryHandle, course)
 
-  await downloadZip(zip, `${sanitize(course.title)}-project.zip`)
+  return downloadZip(zip, `${sanitize(course.title)}-project.zip`)
 }

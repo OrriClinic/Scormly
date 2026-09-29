@@ -134,6 +134,26 @@ body {
   outline-offset: 2px;
 }
 
+/* Builder toast notifications (components/editor/Toaster). */
+@keyframes scormly-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.toast-in {
+  animation: scormly-toast-in 0.2s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-in {
+    animation: none;
+  }
+}
+
 /*
  * Landing page animations. .reveal is the initial hidden state; adding
  * .reveal-visible (via IntersectionObserver, the useReveal hook) triggers the appearance.

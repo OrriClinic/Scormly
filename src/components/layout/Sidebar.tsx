@@ -14,6 +14,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useCourseStore } from '../../store/courseStore'
+import { deleteLessonWithUndo } from '../../lib/deleteWithUndo'
 import type { Lesson } from '../../types/course'
 import { useT } from '../../i18n/I18nProvider'
 
@@ -135,7 +136,6 @@ function SortableLesson({
   const setActiveLesson = useCourseStore((s) => s.setActiveLesson)
   const setSidebarOpen = useCourseStore((s) => s.setSidebarOpen)
   const renameLesson = useCourseStore((s) => s.renameLesson)
-  const deleteLesson = useCourseStore((s) => s.deleteLesson)
   const { t } = useT('common')
   const isActive = lesson.id === activeLessonId
 
@@ -217,7 +217,7 @@ function SortableLesson({
               aria-label={t('deleteLesson')}
               onClick={(e) => {
                 e.stopPropagation()
-                deleteLesson(lesson.id)
+                deleteLessonWithUndo(lesson.id)
               }}
               className="flex h-6 w-6 items-center justify-center rounded text-gray-400 hover:text-red-600"
             >

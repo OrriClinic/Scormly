@@ -3,7 +3,7 @@ import type { BlockComponentProps } from '../types'
 import type { BlockOfType, ImageRef } from '../../types/course'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
-import { saveAsset, UnsupportedFormatError } from '../../lib/assets'
+import { saveAsset, UnsupportedFormatError, toastUploadError } from '../../lib/assets'
 import { useAssetUrl } from '../../hooks/useAssetUrl'
 
 const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml'
@@ -30,6 +30,7 @@ export default function GalleryBlock({
         added.push({ src, alt: '' })
       } catch (err) {
         if (err instanceof UnsupportedFormatError) setError(t('unsupportedImage'))
+        else toastUploadError(err)
       }
     }
     if (added.length) update(lessonId, block.id, { images: [...images, ...added] })

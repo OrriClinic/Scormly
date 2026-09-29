@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useCourseStore } from '../store/courseStore'
 import { editorShortcutsBlocked, isEditableTarget } from '../lib/keyboard'
+import { deleteBlockWithUndo } from '../lib/deleteWithUndo'
 
 // Editor keyboard shortcuts acting on the selected block:
 //   Delete, Backspace — delete block
@@ -29,7 +30,7 @@ export function useEditorShortcuts() {
       // Macs have no Delete key on laptops, so Backspace deletes too.
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault()
-        s.deleteBlock(lesson.id, id)
+        deleteBlockWithUndo(lesson.id, id)
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
         e.preventDefault()
         s.duplicateBlock(lesson.id, id)

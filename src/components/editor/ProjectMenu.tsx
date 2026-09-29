@@ -1,14 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
-import { createNewProject, flushSave, openExistingProject } from '../../lib/projectService'
-import { downloadProjectZip } from '../../lib/exportProjectZip'
+import {
+  createNewProject,
+  flushSave,
+  NoProjectError,
+  openExistingProject,
+} from '../../lib/projectService'
+import { runExport } from '../../export/runExport'
+import { toast } from '../../store/toastStore'
 
 // Dropdown on the project name: switch to another project or close the current.
 export default function ProjectMenu() {
   const projectName = useCourseStore((s) => s.projectName)
   const closeProject = useCourseStore((s) => s.closeProject)
   const { t } = useT('common')
+  const { t: tw } = useT('welcome')
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -35,8 +42,10 @@ export default function ProjectMenu() {
       await action()
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
-      // Opening another project can fail (e.g. no project.json); ignore here,
-      // the welcome screen handles first-run errors.
+      toast({
+        tone: 'error',
+        message: err instanceof NoProjectError ? tw('noProject') : t('openFailed'),
+      })
     }
   }
 
@@ -71,7 +80,10 @@ export default function ProjectMenu() {
             {t('openProject')}
           </MenuItem>
           <div className="my-1 h-px bg-gray-100" />
-          <MenuItem icon={<DownloadIcon />} onClick={() => pick(downloadProjectZip)}>
+          <MenuItem icon={<DownloadIcon />} onClick={() => {
+              setOpen(false)
+              void runExport('project')
+            }}>
             {t('downloadProject')}
           </MenuItem>
           <div className="my-1 h-px bg-gray-100" />

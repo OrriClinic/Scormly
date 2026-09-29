@@ -6,6 +6,8 @@
 import { useCourseStore } from '../store/courseStore'
 import { writeBlobToSubdir, getSubdirectory } from './fileSystem'
 import { uid } from './id'
+import { toast } from '../store/toastStore'
+import { translate } from '../i18n/I18nProvider'
 
 export type AssetKind = 'image' | 'video' | 'audio'
 
@@ -146,4 +148,19 @@ export async function resolveAssetUrl(src: string): Promise<string | null> {
   } catch {
     return null
   }
+}
+
+/**
+ * Report a failed media upload as a toast. Callers that show their own inline
+ * message for unsupported formats only pass the other errors here.
+ */
+export function toastUploadError(err: unknown): void {
+  console.error('[upload]', err)
+  toast({
+    tone: 'error',
+    message: translate(
+      'common',
+      err instanceof UnsupportedFormatError ? 'uploadUnsupported' : 'uploadFailed',
+    ),
+  })
 }

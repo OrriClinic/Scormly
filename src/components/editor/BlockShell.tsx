@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useCourseStore } from '../../store/courseStore'
+import { deleteBlockWithUndo } from '../../lib/deleteWithUndo'
 import type { Block } from '../../types/course'
 import BlockRenderer from '../../blocks/BlockRenderer'
 import { useT } from '../../i18n/I18nProvider'
@@ -26,7 +27,6 @@ export default function BlockShell({
   const selectBlock = useCourseStore((s) => s.selectBlock)
   const moveBlock = useCourseStore((s) => s.moveBlock)
   const duplicateBlock = useCourseStore((s) => s.duplicateBlock)
-  const deleteBlock = useCourseStore((s) => s.deleteBlock)
 
   const { t } = useT('common')
   const selected = block.id === selectedBlockId
@@ -36,7 +36,7 @@ export default function BlockShell({
     { label: t('moveUp'), icon: '↑', disabled: index === 0, onClick: () => moveBlock(lessonId, index, index - 1) },
     { label: t('moveDown'), icon: '↓', disabled: index === total - 1, onClick: () => moveBlock(lessonId, index, index + 1) },
     { label: t('duplicate'), icon: '⧉', onClick: () => duplicateBlock(lessonId, block.id) },
-    { label: t('delete'), icon: '✕', danger: true, onClick: () => deleteBlock(lessonId, block.id) },
+    { label: t('delete'), icon: '✕', danger: true, onClick: () => deleteBlockWithUndo(lessonId, block.id) },
   ]
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -98,7 +98,7 @@ export default function BlockShell({
           <ToolbarButton
             label={t('delete')}
             danger
-            onClick={() => deleteBlock(lessonId, block.id)}
+            onClick={() => deleteBlockWithUndo(lessonId, block.id)}
           >
             ✕
           </ToolbarButton>

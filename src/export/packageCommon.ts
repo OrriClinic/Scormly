@@ -132,7 +132,8 @@ export async function addAssets(
   }
 }
 
-export async function downloadZip(zip: JSZip, filename: string): Promise<void> {
+/** Generate the zip and trigger a browser download; resolves to the filename. */
+export async function downloadZip(zip: JSZip, filename: string): Promise<string> {
   const blob = await zip.generateAsync({ type: 'blob' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -142,4 +143,5 @@ export async function downloadZip(zip: JSZip, filename: string): Promise<void> {
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
+  return filename
 }

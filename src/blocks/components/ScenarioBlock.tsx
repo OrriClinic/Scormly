@@ -9,7 +9,7 @@ import type {
 import { useCourseStore } from '../../store/courseStore'
 import { uid } from '../../lib/id'
 import { useT, translate } from '../../i18n/I18nProvider'
-import { saveAsset, UnsupportedFormatError } from '../../lib/assets'
+import { saveAsset, toastUploadError } from '../../lib/assets'
 import { useAssetUrl } from '../../hooks/useAssetUrl'
 
 const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml'
@@ -67,9 +67,7 @@ export default function ScenarioBlock({
         characterImages: { ...characterImages, [emotion]: src },
       })
     } catch (err) {
-      if (err instanceof UnsupportedFormatError) {
-        // Silently ignore unsupported character images in the editor.
-      }
+      toastUploadError(err)
     }
   }
 
@@ -81,9 +79,7 @@ export default function ScenarioBlock({
       const src = await saveAsset(file, 'image')
       update(lessonId, block.id, { userAvatar: src })
     } catch (err) {
-      if (err instanceof UnsupportedFormatError) {
-        // Silently ignore unsupported avatars in the editor.
-      }
+      toastUploadError(err)
     }
   }
 

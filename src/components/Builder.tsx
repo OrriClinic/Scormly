@@ -5,6 +5,7 @@ import Workspace from './layout/Workspace'
 import WelcomeScreen from './welcome/WelcomeScreen'
 import PreviewOverlay from './preview/PreviewOverlay'
 import ProjectSettings from './editor/ProjectSettings'
+import Toaster from './editor/Toaster'
 import ThemeProvider from '../theme/ThemeProvider'
 import { useUndoRedoShortcuts } from '../hooks/useUndoRedoShortcuts'
 import { useEditorShortcuts } from '../hooks/useEditorShortcuts'
@@ -85,6 +86,7 @@ export default function Builder() {
       </div>
       {previewOpen && <PreviewOverlay />}
       {settingsOpen && <ProjectSettings onClose={() => setSettingsOpen(false)} />}
+      <Toaster />
     </ThemeProvider>
   )
 }

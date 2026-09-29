@@ -3,7 +3,7 @@ import type { BlockComponentProps } from '../types'
 import type { BlockOfType } from '../../types/course'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
-import { saveAsset, UnsupportedFormatError } from '../../lib/assets'
+import { saveAsset, UnsupportedFormatError, toastUploadError } from '../../lib/assets'
 import { useAssetUrl } from '../../hooks/useAssetUrl'
 
 const VIDEO_ACCEPT = 'video/mp4,video/webm'
@@ -32,6 +32,8 @@ export default function VideoBlock({
     } catch (err) {
       if (err instanceof UnsupportedFormatError) {
         setError(t(key === 'src' ? 'unsupportedVideo' : 'unsupportedImage'))
+      } else {
+        toastUploadError(err)
       }
     }
   }

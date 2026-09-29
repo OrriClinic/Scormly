@@ -2,7 +2,7 @@ import { useEffect, type ChangeEvent } from 'react'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import { THEME_LIST } from '../../theme/themes'
-import { saveAsset } from '../../lib/assets'
+import { saveAsset, toastUploadError } from '../../lib/assets'
 import { useAssetUrl } from '../../hooks/useAssetUrl'
 import {
   DEFAULT_COURSE_SETTINGS,
@@ -40,8 +40,8 @@ export default function ProjectSettings({ onClose }: { onClose: () => void }) {
     try {
       const src = await saveAsset(file, 'image')
       updateCourseMeta({ coverImage: src })
-    } catch {
-      // ignore unsupported format
+    } catch (err) {
+      toastUploadError(err)
     }
   }
 

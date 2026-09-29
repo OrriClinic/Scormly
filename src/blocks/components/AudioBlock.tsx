@@ -3,7 +3,7 @@ import type { BlockComponentProps } from '../types'
 import type { BlockOfType } from '../../types/course'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
-import { saveAsset, UnsupportedFormatError } from '../../lib/assets'
+import { saveAsset, UnsupportedFormatError, toastUploadError } from '../../lib/assets'
 import { useAssetUrl } from '../../hooks/useAssetUrl'
 
 const AUDIO_ACCEPT = 'audio/mpeg,audio/ogg,audio/wav'
@@ -29,6 +29,7 @@ export default function AudioBlock({
       update(lessonId, block.id, { src: path })
     } catch (err) {
       if (err instanceof UnsupportedFormatError) setError(t('unsupportedAudio'))
+      else toastUploadError(err)
     }
   }
 

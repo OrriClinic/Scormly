@@ -18,6 +18,7 @@ import {
 } from './fileSystem'
 import { AGENT_GUIDE_FILE, buildAgentGuide } from './agentGuide'
 import { rememberRecentProject, listRecentProjects } from './recentProjects'
+import { dismissToast, toast } from '../store/toastStore'
 import { navigate } from '../hooks/useRoute'
 
 const PROJECT_FILE = 'project.json'
@@ -195,7 +196,7 @@ async function writeProject(): Promise<void> {
   store.setSaveState('saving')
   try {
     if (!(await ensurePermission(directoryHandle, true))) {
-      store.setSaveState('error')
+      saveFailed('savePermission')
       return
     }
     await writeJson(directoryHandle, PROJECT_FILE, course)
@@ -204,7 +205,24 @@ async function writeProject(): Promise<void> {
       future: future.slice(0, PERSISTED_HISTORY),
     })
     store.setSaveState('saved')
-  } catch {
-    store.setSaveState('error')
+    dismissToast(SAVE_TOAST)
+  } catch (err) {
+    console.error('[save]', err)
+    saveFailed('saveFailed')
   }
+}
+
+const SAVE_TOAST = 'save-error'
+
+// One sticky-ish toast for save failures (autosave retries on every edit, so
+// reuse the id instead of stacking). Retry is a user gesture, which is what the
+// browser needs to re-grant folder access.
+function saveFailed(messageKey: 'saveFailed' | 'savePermission') {
+  useCourseStore.getState().setSaveState('error')
+  toast({
+    id: SAVE_TOAST,
+    tone: 'error',
+    message: translate('common', messageKey),
+    action: { label: translate('common', 'retry'), onClick: () => void saveProject() },
+  })
 }

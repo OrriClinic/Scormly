@@ -7,8 +7,7 @@ import { useCourseStore } from '../../store/courseStore'
 import { useT, useLang } from '../../i18n/I18nProvider'
 import { saveProject } from '../../lib/projectService'
 import ExportMenu from '../editor/ExportMenu'
-import { exportScorm } from '../../export/exportScorm'
-import { exportCmi5 } from '../../export/exportCmi5'
+import { runExport, useExportStore } from '../../export/runExport'
 import { GITHUB_ISSUES_URL } from '../../lib/links'
 
 export default function Header() {
@@ -22,6 +21,7 @@ export default function Header() {
   const saveState = useCourseStore((s) => s.saveState)
   const setPreviewOpen = useCourseStore((s) => s.setPreviewOpen)
   const setSidebarOpen = useCourseStore((s) => s.setSidebarOpen)
+  const exporting = useExportStore((s) => s.exporting)
   const { t } = useT('common')
   const { t: tw } = useT('welcome')
   const { t: tp } = useT('preview')
@@ -121,8 +121,10 @@ export default function Header() {
           type="button"
           onClick={() => void saveProject()}
           disabled={!directoryHandle || saveState === 'saving'}
-          title={`${tw('save')} (Ctrl+S)`}
-          className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+          title={directoryHandle ? `${tw('save')} (Ctrl+S)` : tw('noFolderTitle')}
+          className={`rounded-md px-3 py-1.5 text-sm font-medium hover:bg-gray-100 disabled:opacity-40 ${
+            saveState === 'error' ? 'text-red-600' : 'text-gray-600'
+          }`}
         >
           {saveLabel}
         </button>
@@ -143,7 +145,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setMoreOpen((v) => !v)}
-            aria-label="Menu"
+            aria-label={t('menu')}
             className="flex h-9 w-9 items-center justify-center rounded-md text-gray-600 hover:bg-gray-100"
           >
             ⋯
@@ -151,7 +153,7 @@ export default function Header() {
           {moreOpen && (
             <div className="absolute right-0 top-full z-40 mt-2 w-52 rounded-xl border border-gray-200 bg-white p-1.5 shadow-lg">
               <MoreItem
-                label={tw('save')}
+                label={saveLabel}
                 disabled={!directoryHandle || saveState === 'saving'}
                 onClick={() => {
                   void saveProject()
@@ -160,22 +162,25 @@ export default function Header() {
               />
               <MoreItem
                 label={t('export2004')}
+                disabled={exporting}
                 onClick={() => {
-                  void exportScorm('2004')
+                  void runExport('scorm2004')
                   setMoreOpen(false)
                 }}
               />
               <MoreItem
                 label={t('export12')}
+                disabled={exporting}
                 onClick={() => {
-                  void exportScorm('1.2')
+                  void runExport('scorm12')
                   setMoreOpen(false)
                 }}
               />
               <MoreItem
                 label={t('exportCmi5')}
+                disabled={exporting}
                 onClick={() => {
-                  void exportCmi5()
+                  void runExport('cmi5')
                   setMoreOpen(false)
                 }}
               />
