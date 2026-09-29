@@ -70,7 +70,12 @@
 
     SCORM.init();
     state.sessionStart = Date.now();
+    // cmi5 loads its launch context and resume data over the network; SCORM
+    // calls back immediately.
+    SCORM.whenReady(resume);
+  }
 
+  function resume() {
     // LMS may push a preferred language (SCORM learner_preference.language /
     // cmi5 languagePreference). Switch the player UI if it matches a supported
     // locale; otherwise keep the browser-based default.

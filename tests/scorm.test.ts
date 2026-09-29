@@ -23,6 +23,14 @@ describe('SCORM wrapper — discovery + lifecycle', () => {
     expect(calls.terminate).toBe(1)
   })
 
+  test('whenReady calls back synchronously (SCORM API is synchronous)', () => {
+    const { SCORM } = loadScorm('2004', { 'cmi.suspend_data': '{"l":1}' })
+    SCORM.init()
+    let got = ''
+    SCORM.whenReady(() => { got = SCORM.getSuspend() })
+    expect(got).toBe('{"l":1}')
+  })
+
   test('finish is idempotent', () => {
     const { SCORM } = loadScorm('1.2')
     SCORM.init()

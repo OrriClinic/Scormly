@@ -59,6 +59,7 @@ export function makeScormApi(version: ScormVersion, preload: Record<string, stri
 // runtime — tests assert via this surface.
 export interface ScormWrapper {
   init(): boolean
+  whenReady(cb: () => void): void
   report(completed: boolean, success: 'passed' | 'failed' | null): void
   setScore(raw: number, min?: number, max?: number): void
   setProgress(fraction: number): void
@@ -117,7 +118,7 @@ export interface XapiFetchMock {
   calls: XapiCall[]
 }
 
-export function makeXapiFetch(opts: { launchData?: Record<string, unknown>; resumeBlob?: string } = {}): XapiFetchMock {
+export function makeXapiFetch(opts: { launchData?: Record<string, unknown>; resumeBlob?: string; learnerPrefs?: Record<string, unknown> } = {}): XapiFetchMock {
   const launchData = opts.launchData || {}
   const resumeBlob = opts.resumeBlob || ''
   const calls: XapiCall[] = []
@@ -129,6 +130,10 @@ export function makeXapiFetch(opts: { launchData?: Record<string, unknown>; resu
     }
     if (url.indexOf('stateId=LMS.LaunchData') >= 0) {
       return Promise.resolve({ ok: true, json: () => Promise.resolve(launchData) })
+    }
+    if (url.indexOf('profileId=cmi5LearnerPreferences') >= 0) {
+      const prefs = opts.learnerPrefs
+      return Promise.resolve({ ok: !!prefs, json: () => Promise.resolve(prefs || {}) })
     }
     if (url.indexOf('stateId=suspendData') >= 0 && method !== 'PUT') {
       return Promise.resolve({ ok: !!resumeBlob, text: () => Promise.resolve(resumeBlob) })
@@ -189,10 +194,11 @@ export interface LoadedXapi {
 export function loadXapi(opts: {
   launchData?: Record<string, unknown>
   resumeBlob?: string
+  learnerPrefs?: Record<string, unknown>
   params?: XapiLaunchParams
   course?: Record<string, unknown>
 } = {}): LoadedXapi {
-  const { fetch, calls } = makeXapiFetch({ launchData: opts.launchData, resumeBlob: opts.resumeBlob })
+  const { fetch, calls } = makeXapiFetch({ launchData: opts.launchData, resumeBlob: opts.resumeBlob, learnerPrefs: opts.learnerPrefs })
   const win: Record<string, unknown> = {
     __SCORMLY_COURSE__: opts.course || { settings: { passingScore: 80 } },
   }

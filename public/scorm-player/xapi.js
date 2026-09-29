@@ -199,6 +199,11 @@
   }
 
   var resumedSuspend = '';
+  var learnerPrefs = null;   // cmi5LearnerPreferences agent profile (languagePreference, audioPreference)
+  var readyPromise = null;
+  // Upper bound on waiting for the launch handshake before rendering anyway,
+  // so an unresponsive LRS can't leave the learner on a blank page.
+  var READY_TIMEOUT_MS = 8000;
 
   // Fetch the auth token, then the LMS.LaunchData state, then the resume state,
   // then send initialized.
@@ -225,6 +230,16 @@
       })
       .then(function (sd) {
         resumedSuspend = sd || '';
+        // cmi5 §11: the LMS keeps the learner's language in an agent profile,
+        // not in LaunchData.
+        var url = endpoint + 'agents/profile?profileId=cmi5LearnerPreferences'
+          + '&agent=' + encodeURIComponent(JSON.stringify(actor));
+        return fetch(url, { headers: headers() })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .catch(function () { return null; });
+      })
+      .then(function (prefs) {
+        learnerPrefs = prefs;
         return post(statement(V.initialized, null, { cmi5: true }));
       });
   }
@@ -262,8 +277,25 @@
       if (!active || !actor) { active = false; return false; }
       startTime = Date.now();
       sent.initialized = true;
-      enqueue(setup);
+      // enqueue() swallows errors, so this resolves even if the handshake fails.
+      readyPromise = enqueue(setup);
       return true;
+    },
+
+    // Resume data, LaunchData (mode, mastery, language) and the auth token
+    // arrive asynchronously; the player must not read them or write progress
+    // before this fires, or it would start over and overwrite the saved state.
+    whenReady: function (cb) {
+      if (!readyPromise) { cb(); return; }
+      var done = false, timer = null;
+      function once() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        cb();
+      }
+      timer = setTimeout(once, READY_TIMEOUT_MS);
+      readyPromise.then(once);
     },
 
     // completed: boolean; success: 'passed' | 'failed' | null
@@ -411,7 +443,11 @@
       return typeof m === 'number' ? m * 100 : null;
     },
     getPreferredLanguage: function () {
-      return (launchData && launchData.languagePreference) || '';
+      // languagePreference is a comma-separated list in priority order; the
+      // player matches on the first entry's two-letter code.
+      var p = (learnerPrefs && learnerPrefs.languagePreference)
+        || (launchData && launchData.languagePreference) || '';
+      return String(p).split(',')[0].trim();
     },
 
     commit: function () {}, // statements are sent immediately

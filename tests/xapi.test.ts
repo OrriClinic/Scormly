@@ -71,6 +71,33 @@ describe('xAPI — launch handshake', () => {
     expect(SCORM.isResuming()).toBe(true)
   })
 
+  test('whenReady fires only after the resume blob and LaunchData have loaded', async () => {
+    const { SCORM, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: { launchMode: 'Review' },
+      resumeBlob: '{"l":2}',
+      learnerPrefs: { languagePreference: 'uk' },
+    })
+    SCORM.init()
+    // The player reads these synchronously at boot; before the handshake they're empty.
+    expect(SCORM.getSuspend()).toBe('')
+    let seen: { suspend: string; mode: string; lang: string } | null = null
+    SCORM.whenReady(() => {
+      seen = { suspend: SCORM.getSuspend(), mode: SCORM.getMode(), lang: SCORM.getPreferredLanguage() }
+    })
+    expect(seen).toBe(null)
+    await wait()
+    expect(seen).toEqual({ suspend: '{"l":2}', mode: 'review', lang: 'uk' })
+  })
+
+  test('whenReady calls back immediately when there is no cmi5 launch', () => {
+    const { SCORM } = loadXapi()
+    SCORM.init()
+    let called = false
+    SCORM.whenReady(() => { called = true })
+    expect(called).toBe(true)
+  })
+
   test('initialized statement is sent first, carries cmi5 category + session id', async () => {
     const { SCORM, statements, wait } = loadXapi({
       params: defaultLaunch(),
@@ -422,5 +449,17 @@ describe('xAPI — LMS context readers', () => {
     SCORM.init()
     await wait()
     expect(SCORM.getPreferredLanguage()).toBe('uk')
+  })
+
+  test('getPreferredLanguage prefers the cmi5LearnerPreferences agent profile', async () => {
+    const { SCORM, calls, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: { launchMode: 'Normal' },
+      learnerPrefs: { languagePreference: 'uk-UA,en-US', audioPreference: 'on' },
+    })
+    SCORM.init()
+    await wait()
+    expect(calls.some((c) => c.url.indexOf('agents/profile?profileId=cmi5LearnerPreferences') >= 0)).toBe(true)
+    expect(SCORM.getPreferredLanguage()).toBe('uk-UA')
   })
 })

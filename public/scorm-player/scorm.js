@@ -152,6 +152,8 @@
       }
       return ready;
     },
+    // The SCORM API is synchronous: context and suspend_data are readable now.
+    whenReady: function (cb) { cb(); },
 
     // completed: boolean; success: 'passed' | 'failed' | null
     report: function (completed, success) {

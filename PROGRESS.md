@@ -15,14 +15,14 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 - [x] Basic store (active lesson)
 - [x] CI + deploy to GitHub Pages
 
-## Phase 1 — Editor foundation (done, except DnD)
+## Phase 1 — Editor foundation (done)
 
 - [x] Typed `data` interfaces for each `BlockType` (discriminated union)
 - [x] Store CRUD: blocks (add/update/delete/duplicate/move), lessons (add/rename/delete/move/status)
 - [x] Undo/redo with `Course` snapshots + typing coalescing; Ctrl+Z/Y shortcuts
 - [x] Block render dispatcher (`BlockRenderer`) + `BlockComponentProps` contract
 - [x] Editor infrastructure: block selection, "+ Add block" menu, toolbar (`BlockShell`)
-- [ ] Drag-and-drop reordering of blocks (dnd-kit) and lessons — up/down buttons for now
+- [x] Drag-and-drop reordering of blocks and lessons (dnd-kit)
 
 ## Phase 1.5 — Global project themes (done)
 
@@ -66,7 +66,7 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 - [x] `docs/adding-blocks.md` — how to add a new block type (4 steps)
 - [x] All docs and code comments in English; `CLAUDE.md` / `AGENTS.md` updated
 
-## Phase 3 — Local persistence (in progress)
+## Phase 3 — Local persistence (done)
 
 - [x] File System Access API wrapper (`lib/fileSystem.ts`): picker, permissions, JSON/blob I/O, feature detect
 - [x] Save/load `project.json` (autosave + Ctrl+S); store holds the directory handle, project name, save state
@@ -89,7 +89,7 @@ Legend: `[ ]` planned · `[~]` in progress · `[x]` done
 
 > Note: File System Access flows need a real Chromium browser + user gesture; not yet verified live in this environment.
 
-## UX phase — Extra requirements (planned, beyond spec v2)
+## UX phase — Extra requirements (beyond spec v2)
 
 Added by the user during development. The original `.txt` spec has a corrupted
 encoding, so these requirements are tracked here as the living list.
@@ -97,9 +97,8 @@ encoding, so these requirements are tracked here as the living list.
 - [x] Bilingual EN/UK interface (i18n + language switcher)
 - [x] Global project themes
 - [x] SEO landing page before the builder (FAQ, animations, open-source/free/local messaging)
-- [ ] Full keyboard shortcuts (currently only undo/redo): add/delete/duplicate block,
-      navigation between blocks/lessons, save, etc.
-- [ ] Right-click context menu (actions on blocks and lessons)
+- [x] Editor keyboard shortcuts (undo/redo, save, add/delete/duplicate block, navigation)
+- [x] Right-click context menu (actions on blocks and lessons)
 - [x] Welcome screen on startup: "Open project from computer" / "Create new" (folder picker)
 - [x] GitHub issue templates + a "Report an issue" link in the app (Header + landing footer)
 
@@ -128,7 +127,7 @@ encoding, so these requirements are tracked here as the living list.
 
 > Note: the player no-ops the SCORM API gracefully outside an LMS. Runtime is now exercised in jsdom with a mock LMS (both versions); still needs sign-off on a live TalentLMS instance.
 
-## Phase 5 — xAPI / cmi5 export (planned)
+## Phase 5 — xAPI / cmi5 export (cmi5 done, plain xAPI planned)
 
 TalentLMS supports xAPI (Tin Can) and cmi5. Add these as additional export
 targets once SCORM is confirmed working. Reuse the same player; swap the
@@ -140,7 +139,8 @@ tracking layer.
 - [x] Completion/score mapped: player's `report(completed, success)` + `setScore` → cmi5 `completed`/`passed`/`failed` with `result.score.scaled`; quiz answers → `answered`. (Resume/suspend across launches not yet implemented for cmi5.)
 - [x] Export target added to the Header export menu (SCORM 2004 / 1.2 / cmi5) + mobile menu; i18n `exportCmi5`.
 - [ ] Verify on a real LRS/LMS (SCORM Cloud cmi5, TalentLMS): import, launch, statements land, pass/fail + score recorded.
-- [ ] (Later) Plain xAPI target + cmi5 resume via the State API.
+- [x] cmi5 resume via the State API (`stateId=suspendData`); the player waits for the launch handshake (`SCORM.whenReady`) before reading it.
+- [ ] (Later) Plain xAPI target (own LRS endpoint/auth).
 
 ---
 
@@ -251,3 +251,12 @@ tracking layer.
   - **B. LMS context.** Added read-only `SCORM.getLearner / getMode / isResuming / getLaunchData / getLmsMastery / getPreferredLanguage`. Wrapper reads them once after `Initialize`. Player switches UI language when the LMS exposes a supported `learner_preference.language` (1.2) / `learner_preference.language` (2004); the learner name and the lesson mode (browse/review) are shown in the header. When `mode === 'review' | 'browse'`, ALL writes are no-op'd at the wrapper level (the LMS prohibits tracking those attempts). Verified via mock LMS that review mode writes 0 keys. Added `SCORM.setComment(text)` mapping to `cmi.comments_from_learner.n.comment` (2004) / append-only `cmi.comments` (1.2).
   - **C. cmi5 / xAPI completeness.** `xapi.js`: full `progressed` (with `https://w3id.org/xapi/cmi5/result/extensions/progress`, 10% milestone debounce); `abandoned` (ADL verb) emitted from player's `beforeunload` when the course is not complete; **State API resume** — `setSuspend` PUTs the player's resume blob under `stateId=suspendData` (coalesced flushes, `keepalive`); `getSuspend` returns the GET'd blob fetched during launch handshake, so cmi5 resume across launches works at parity with SCORM `cmi.suspend_data`. `launchMode` from LaunchData (Browse/Review → tracking no-op). `answered` statements now carry full `definition` (`interactionType`, `choices`/`source`/`target`, `correctResponsesPattern`, description, `result.duration`). Per-quiz objectives sent as objective-scoped `passed/failed/completed` with `result.score`. Added `commented` statement for learner comments. Learner/mode/lang/mastery readers map from cmi5 actor + LaunchData. `moveon` category added to cmi5 result statements.
   - Verified in node+vm with mock LMS: SCORM 1.2/2004 mock returns objectives, full interactions, learner data, mastery_score, comments, suspend_data, review-mode lockout; cmi5 mock returns full statement sequence (initialized → progressed×N → passed[objective] → answered → passed[result] → completed → commented → terminated) plus State API GET LaunchData + GET/PUT suspendData. `npm run build` clean.
+- 2026-09-29 — **cmi5 launch-timing fixes.** The player read resume data and LMS context
+  (`getSuspend`, mode, learner, language) synchronously right after `SCORM.init()`, but cmi5
+  loads them asynchronously (auth token → LaunchData → suspendData), so cmi5 resume never
+  kicked in and the first progress write overwrote the saved state. Added `SCORM.whenReady(cb)`
+  (sync in `scorm.js`; after the handshake in `xapi.js`, with an 8s fallback so an unresponsive
+  LRS can't leave a blank page); the player's resume/boot now runs inside it. Also read the
+  learner's language from the `cmi5LearnerPreferences` agent profile (where cmi5 puts it) with
+  LaunchData as fallback. Tests: 60 passing. Refreshed stale checkboxes (DnD, shortcuts,
+  context menu were already done).
