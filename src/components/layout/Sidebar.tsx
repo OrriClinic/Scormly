@@ -249,42 +249,43 @@ function SortableLesson({
         )}
 
         {!editing && (
-          <span
-            title={t('blockCount', { n: blockCount })}
-            className={`shrink-0 rounded-full px-1.5 text-xs tabular-nums group-hover:hidden group-focus-within:hidden pointer-coarse:hidden ${
-              blockCount === 0 ? 'text-gray-300' : isActive ? 'text-brand-dark/60' : 'text-gray-400'
-            }`}
-          >
-            {blockCount === 0 ? t('emptyLessonShort') : blockCount}
-          </span>
-        )}
-
-        {!editing && (
-          <span className="hidden shrink-0 items-center group-hover:flex group-focus-within:flex pointer-coarse:flex">
-            <button
-              type="button"
-              title={t('renameLesson')}
-              aria-label={t('renameLesson')}
-              onClick={(e) => {
-                e.stopPropagation()
-                onStartEdit()
-              }}
-              className="flex h-6 w-6 items-center justify-center rounded text-gray-400 hover:text-gray-700"
+          // Count and actions share one grid cell and only toggle visibility,
+          // so hovering a row doesn't change its size (no jumping).
+          <span className="grid shrink-0 items-center justify-items-end">
+            <span
+              title={t('blockCount', { n: blockCount })}
+              className={`col-start-1 row-start-1 rounded-full px-1.5 text-xs tabular-nums group-hover:invisible group-focus-within:invisible pointer-coarse:invisible ${
+                blockCount === 0 ? 'text-gray-300' : isActive ? 'text-brand-dark/60' : 'text-gray-400'
+              }`}
             >
-              ✎
-            </button>
-            <button
-              type="button"
-              title={t('deleteLesson')}
-              aria-label={t('deleteLesson')}
-              onClick={(e) => {
-                e.stopPropagation()
-                deleteLessonWithUndo(lesson.id)
-              }}
-              className="flex h-6 w-6 items-center justify-center rounded text-gray-400 hover:text-red-600"
-            >
-              ✕
-            </button>
+              {blockCount === 0 ? t('emptyLessonShort') : blockCount}
+            </span>
+            <span className="invisible col-start-1 row-start-1 flex items-center group-hover:visible group-focus-within:visible pointer-coarse:visible">
+              <button
+                type="button"
+                title={t('renameLesson')}
+                aria-label={t('renameLesson')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onStartEdit()
+                }}
+                className="flex h-6 w-6 items-center justify-center rounded text-gray-400 hover:text-gray-700"
+              >
+                ✎
+              </button>
+              <button
+                type="button"
+                title={t('deleteLesson')}
+                aria-label={t('deleteLesson')}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  deleteLessonWithUndo(lesson.id)
+                }}
+                className="flex h-6 w-6 items-center justify-center rounded text-gray-400 hover:text-red-600"
+              >
+                ✕
+              </button>
+            </span>
           </span>
         )}
       </div>
