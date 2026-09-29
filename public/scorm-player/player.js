@@ -79,9 +79,12 @@
     // LMS may push a preferred language (SCORM learner_preference.language /
     // cmi5 languagePreference). Switch the player UI if it matches a supported
     // locale; otherwise keep the browser-based default.
+    // An explicit course setting wins over both.
+    var fixedLang = settings().playerLanguage;
     var lmsLang = (SCORM.getPreferredLanguage && SCORM.getPreferredLanguage()) || '';
     var twoLetter = lmsLang.toLowerCase().slice(0, 2);
-    if (T[twoLetter]) lang = twoLetter;
+    if (fixedLang !== 'auto') lang = fixedLang;
+    else if (T[twoLetter]) lang = twoLetter;
     document.documentElement.lang = lang;
 
     state.learner = SCORM.getLearner && SCORM.getLearner();
@@ -206,6 +209,9 @@
       scored: s.scored !== false,
       passingScore: typeof s.passingScore === 'number' ? s.passingScore : DEFAULT_SETTINGS.passingScore,
       navigation: s.navigation === 'linear' ? 'linear' : 'free',
+      playerLanguage: s.playerLanguage === 'en' || s.playerLanguage === 'uk' ? s.playerLanguage : 'auto',
+      showProgress: s.showProgress !== false,
+      finishMessage: typeof s.finishMessage === 'string' ? s.finishMessage.trim() : '',
     };
   }
 
@@ -288,7 +294,9 @@
 
     var titleRow = [
       h('span', { class: 'player-title', text: state.course.title || '' }),
-      h('span', { class: 'player-progress', text: t('progress', { n: i + 1, total: lessons.length }) }),
+      settings().showProgress
+        ? h('span', { class: 'player-progress', text: t('progress', { n: i + 1, total: lessons.length }) })
+        : null,
     ];
     // Show the LMS-reported learner name (greeting) when available.
     if (state.learner && state.learner.name) {
@@ -348,7 +356,7 @@
       h('h1', { class: 'finish-title', text: t('courseComplete') }),
       s.score != null ? h('p', { class: 'finish-score', text: t('yourScore', { s: Math.round(s.score) }) }) : null,
       s.success ? h('p', { class: 'finish-status ' + s.success, text: s.success === 'passed' ? t('passed') : t('failed') }) : null,
-      h('p', { class: 'finish-text', text: t('courseCompleteText') }),
+      h('p', { class: 'finish-text', text: settings().finishMessage || t('courseCompleteText') }),
     ]);
     var body = h('div', { class: 'player-body' }, [h('div', { class: 'lesson' }, card)]);
     app.appendChild(header);

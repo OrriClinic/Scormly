@@ -334,7 +334,15 @@ export interface CourseSettings {
   passingScore: number
   /** Lesson navigation behaviour in the player. */
   navigation: NavigationMode
+  /** Player UI language; 'auto' = LMS preference, else the browser. */
+  playerLanguage?: PlayerLanguage
+  /** Show "Lesson n of N" in the player header (default true). */
+  showProgress?: boolean
+  /** Custom text on the completion screen; empty = the built-in message. */
+  finishMessage?: string
 }
+
+export type PlayerLanguage = 'auto' | 'en' | 'uk'
 
 export const DEFAULT_COURSE_SETTINGS: CourseSettings = {
   completion: 'quiz',
