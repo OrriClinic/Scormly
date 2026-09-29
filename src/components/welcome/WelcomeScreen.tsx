@@ -53,9 +53,7 @@ export default function WelcomeScreen({ onSkip }: WelcomeScreenProps) {
   return (
     <div className="flex h-full flex-col bg-gray-50">
       <div className="flex items-center justify-between px-6 py-4">
-        <a href="#/" aria-label="Scormly">
-          <Logo />
-        </a>
+        <Logo />
         <LanguagePicker />
       </div>
 

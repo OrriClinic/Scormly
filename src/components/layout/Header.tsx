@@ -57,9 +57,9 @@ export default function Header() {
         >
           ☰
         </button>
-        <a href="#/" aria-label="Scormly" className="shrink-0">
+        <div className="shrink-0">
           <Logo />
-        </a>
+        </div>
         {projectName ? (
           <ProjectMenu />
         ) : (
