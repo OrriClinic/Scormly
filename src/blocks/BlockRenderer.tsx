@@ -21,6 +21,8 @@ import AccordionBlock from './components/AccordionBlock'
 import FlashcardsBlock from './components/FlashcardsBlock'
 import ScenarioBlock from './components/ScenarioBlock'
 import QuizBlock from './components/QuizBlock'
+import HotspotBlock from './components/HotspotBlock'
+import TimelineBlock from './components/TimelineBlock'
 
 // Dispatcher: block type → editor component. Each component lives in its own
 // file under ./components/ and implements the BlockComponentProps contract.
@@ -48,6 +50,8 @@ const BLOCK_COMPONENTS: Record<
   flashcards: FlashcardsBlock as ComponentType<BlockComponentProps>,
   scenario: ScenarioBlock as ComponentType<BlockComponentProps>,
   quiz: QuizBlock as ComponentType<BlockComponentProps>,
+  hotspot: HotspotBlock as ComponentType<BlockComponentProps>,
+  timeline: TimelineBlock as ComponentType<BlockComponentProps>,
 }
 
 export default function BlockRenderer(props: BlockComponentProps) {

@@ -141,6 +141,56 @@ hr.divider { border: 0; border-top: 2px solid #d1d5db; margin: 0.5rem 0; }
 .flashcard-front { background: var(--brand); color: #fff; font-weight: 600; }
 .flashcard-back { background: #fff; border: 1px solid #e5e7eb; transform: rotateY(180deg); }
 
+/* Image hotspots */
+.hotspot-stage { position: relative; }
+.hotspot-stage img { display: block; width: 100%; border-radius: 0.5rem; }
+.hotspot-marker { position: absolute; width: 2rem; height: 2rem; padding: 0; border: 0; background: transparent;
+  transform: translate(-50%, -50%); cursor: pointer; border-radius: 9999px; }
+.hotspot-marker::before { content: ''; position: absolute; inset: 0; border-radius: 9999px;
+  background: var(--brand); opacity: 0.6; animation: hotspot-pulse 1.6s ease-out infinite; }
+.hotspot-marker.visited::before { display: none; }
+.hotspot-dot { position: relative; display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%; border-radius: 9999px; border: 2px solid #fff; background: var(--brand);
+  color: #fff; font-size: 0.875rem; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+.hotspot-marker.visited .hotspot-dot { background: #fff; color: var(--brand-dark); border-color: var(--brand); }
+.hotspot-marker.active .hotspot-dot { background: var(--brand); color: #fff; border-color: #fff; }
+.hotspot-marker:focus-visible { outline: 3px solid var(--brand-dark); outline-offset: 2px; }
+@keyframes hotspot-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .hotspot-marker::before { animation: none; } }
+.hotspot-pop { position: absolute; z-index: 5; width: 16rem; max-width: 80%; padding: 1rem;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: var(--radius-surface);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+.hotspot-pop-head { display: flex; align-items: flex-start; gap: 0.5rem; }
+.hotspot-pop-title { flex: 1; margin: 0; font-weight: 600; color: #111827; }
+.hotspot-close { border: 0; background: transparent; cursor: pointer; color: #9ca3af;
+  width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; }
+.hotspot-close:hover { background: #f3f4f6; color: #374151; }
+.hotspot-pop-text { margin: 0.25rem 0 0; font-size: 0.875rem; line-height: 1.6; color: #374151; white-space: pre-line; }
+.hotspot-progress { margin: 0.5rem 0 0; text-align: center; font-size: 0.875rem; color: #6b7280; }
+
+/* Timeline — vertical */
+.timeline { list-style: none; margin: 0 0 0 0.5rem; padding: 0; border-left: 2px solid #e5e7eb; }
+.timeline-item { position: relative; padding: 0 0 1.5rem 1.5rem; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-dot { position: absolute; left: -9px; top: 0.25rem; width: 1rem; height: 1rem; border-radius: 9999px;
+  background: var(--brand); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+.timeline-label { margin: 0; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--brand-dark); }
+.timeline-title { margin: 0.125rem 0 0; font-weight: 600; color: #111827; }
+.timeline-text { margin: 0.25rem 0 0; line-height: 1.6; color: #374151; white-space: pre-line; }
+
+/* Timeline — stepper */
+.stepper { border: 1px solid #e5e7eb; border-radius: var(--radius-surface); background: #fff; padding: 1.25rem; }
+.stepper-dots { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.stepper-dot { width: 2rem; height: 2rem; border-radius: 9999px; border: 2px solid transparent; cursor: pointer;
+  background: #f3f4f6; color: #6b7280; font: inherit; font-size: 0.875rem; font-weight: 600; }
+.stepper-dot:hover { background: #e5e7eb; }
+.stepper-dot.seen { background: #fff; border-color: var(--brand); color: var(--brand-dark); }
+.stepper-dot.active { background: var(--brand); color: #fff; }
+.stepper-body { min-height: 5rem; }
+.stepper-nav { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 1.25rem; }
+.stepper-count { font-size: 0.875rem; color: #6b7280; }
+
 /* Scenario */
 .scenario { border: 1px solid #e5e7eb; border-radius: var(--radius-surface); background: #fff; padding: 1.25rem; }
 .scenario-row { display: flex; gap: 1rem; align-items: flex-start; }

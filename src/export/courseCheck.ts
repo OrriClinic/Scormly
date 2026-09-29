@@ -56,6 +56,14 @@ function checkBlock(block: Block): BlockIssue[] {
       )
       return broken ? [{ key: 'chkScenarioLink' }] : []
     }
+    case 'hotspot': {
+      const out: BlockIssue[] = []
+      if (!block.data.src) out.push({ key: 'chkHotspotNoImage' })
+      if (block.data.hotspots.length === 0) out.push({ key: 'chkHotspotEmpty' })
+      return out
+    }
+    case 'timeline':
+      return block.data.items.length ? [] : [{ key: 'chkTimelineEmpty' }]
     default:
       return []
   }

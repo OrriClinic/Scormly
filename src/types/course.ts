@@ -25,6 +25,8 @@ export type BlockType =
   | 'flashcards'
   | 'scenario'
   | 'quiz'
+  | 'hotspot'
+  | 'timeline'
 
 // Shared visual settings for a block (spacing, background, etc.).
 export interface BlockSettings {
@@ -270,6 +272,46 @@ export interface QuizData {
   showAnswers?: boolean
 }
 
+// ── Image hotspots ──────────────────────────────────────────────────────────
+
+export interface Hotspot {
+  id: string
+  /** Marker position as a percentage (0–100) of the image width. */
+  x: number
+  /** Marker position as a percentage (0–100) of the image height. */
+  y: number
+  title: string
+  text: string
+}
+
+export interface HotspotData {
+  /** Relative path to the image in assets/images/ (or a data URL). */
+  src: string
+  alt: string
+  hotspots: Hotspot[]
+}
+
+// ── Timeline / process steps ────────────────────────────────────────────────
+
+export type TimelineLayout =
+  /** All items in a vertical timeline. */
+  | 'vertical'
+  /** One step at a time with Previous/Next and step dots. */
+  | 'stepper'
+
+export interface TimelineItem {
+  id: string
+  /** Short marker label, e.g. a date or "Step 1". */
+  label: string
+  title: string
+  text: string
+}
+
+export interface TimelineData {
+  layout: TimelineLayout
+  items: TimelineItem[]
+}
+
 // ── Block: discriminated union ──────────────────────────────────────────────
 
 export type Block =
@@ -293,6 +335,8 @@ export type Block =
   | (BaseBlock & { type: 'flashcards'; data: FlashcardsData })
   | (BaseBlock & { type: 'scenario'; data: ScenarioData })
   | (BaseBlock & { type: 'quiz'; data: QuizData })
+  | (BaseBlock & { type: 'hotspot'; data: HotspotData })
+  | (BaseBlock & { type: 'timeline'; data: TimelineData })
 
 /** Narrow Block to a specific type (for renderers/editors). */
 export type BlockOfType<T extends BlockType> = Extract<Block, { type: T }>

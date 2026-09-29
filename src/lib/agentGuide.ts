@@ -118,6 +118,21 @@ const BLOCK_DOCS: Record<BlockType, BlockDoc> = {
     )[]
   }`,
   },
+  hotspot: {
+    summary: 'Image with numbered clickable markers; each opens a card with a title and text (not scored).',
+    data: `{
+    src: string,  // relative path under assets/images/
+    alt: string,
+    hotspots: { id: string, x: number, y: number, title: string, text: string }[]
+  }  // x/y: marker position as a percentage (0–100) of the image width/height`,
+  },
+  timeline: {
+    summary: 'Timeline or process steps (not scored).',
+    data: `{
+    layout: 'vertical' | 'stepper',  // stepper = one step at a time with Previous/Next
+    items: { id: string, label: string, title: string, text: string }[]
+  }  // label: short marker such as a date or "Step 1"`,
+  },
 }
 
 function blockReference(): string {

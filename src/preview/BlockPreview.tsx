@@ -14,6 +14,8 @@ import FlashcardsPreview from './components/FlashcardsPreview'
 import ScenarioPreview from './components/ScenarioPreview'
 import QuizPreview from './components/QuizPreview'
 import CourseOutlinePreview from './components/CourseOutlinePreview'
+import HotspotPreview from './components/HotspotPreview'
+import TimelinePreview from './components/TimelinePreview'
 
 // Read-only learner rendering of a single block (no editing affordances).
 export default function BlockPreview({
@@ -134,5 +136,9 @@ export default function BlockPreview({
       return <ScenarioPreview block={block} />
     case 'quiz':
       return <QuizPreview block={block} />
+    case 'hotspot':
+      return <HotspotPreview block={block} />
+    case 'timeline':
+      return <TimelinePreview block={block} />
   }
 }

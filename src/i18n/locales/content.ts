@@ -45,6 +45,13 @@ const content: LocaleTable = {
     tableCell: 'Cell',
     quoteText: 'Your quote goes here.',
     outlineTitle: 'Course outline',
+
+    // Image hotspots / timeline
+    hotspotTitle: 'Point {n}',
+    hotspotText: 'Describe what the learner sees here.',
+    timelineLabel: 'Step {n}',
+    timelineTitle: 'Stage {n}',
+    timelineText: 'Describe what happens at this stage.',
   },
   uk: {
     newCourse: 'Новий курс',
@@ -87,6 +94,13 @@ const content: LocaleTable = {
     tableCell: 'Клітинка',
     quoteText: 'Тут ваша цитата.',
     outlineTitle: 'Зміст курсу',
+
+    // Image hotspots / timeline
+    hotspotTitle: 'Точка {n}',
+    hotspotText: 'Опишіть, що студент бачить тут.',
+    timelineLabel: 'Крок {n}',
+    timelineTitle: 'Етап {n}',
+    timelineText: 'Опишіть, що відбувається на цьому етапі.',
   },
 }
 

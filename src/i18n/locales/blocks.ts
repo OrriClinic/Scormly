@@ -49,6 +49,10 @@ const blocks: LocaleTable = {
     scenarioDesc: 'Branching scenario',
     quiz: 'Quiz',
     quizDesc: 'Graded questions',
+    hotspot: 'Image hotspots',
+    hotspotDesc: 'Clickable markers on an image',
+    timeline: 'Timeline',
+    timelineDesc: 'Timeline or process steps',
   },
   uk: {
     heading: 'Заголовок',
@@ -96,6 +100,10 @@ const blocks: LocaleTable = {
     scenarioDesc: 'Сценарій з вибором',
     quiz: 'Квіз',
     quizDesc: 'Питання з оцінюванням',
+    hotspot: 'Гарячі точки',
+    hotspotDesc: 'Клікабельні мітки на зображенні',
+    timeline: 'Таймлайн',
+    timelineDesc: 'Хронологія або кроки процесу',
   },
 }
 

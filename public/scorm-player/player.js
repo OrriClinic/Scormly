@@ -17,14 +17,18 @@
       passed: 'Passed', failed: 'Not passed', restart: 'Restart', end: 'The end',
       finish: 'Finish', courseComplete: 'Course complete',
       courseCompleteText: 'You have reached the end of the course. You can close this window.',
-      review: 'Review the course', watchToContinue: 'Watch the video to continue.' },
+      review: 'Review the course', watchToContinue: 'Watch the video to continue.',
+      close: 'Close', hotspotMarker: 'Marker {n}: {title}', hotspotProgress: 'Explored {n} of {total}',
+      stepOf: 'Step {n} of {total}', goToStep: 'Go to step {n}' },
     uk: { prev: 'Назад', next: 'Далі', progress: 'Урок {n} з {total}',
       empty: 'У цьому уроці ще немає контенту.', submit: 'Відповісти', retry: 'Спробувати ще раз',
       correct: 'Правильно', incorrect: 'Неправильно', yourScore: 'Ваш результат: {s}%',
       passed: 'Складено', failed: 'Не складено', restart: 'Спочатку', end: 'Кінець',
       finish: 'Завершити', courseComplete: 'Курс завершено',
       courseCompleteText: 'Ви пройшли курс до кінця. Це вікно можна закрити.',
-      review: 'Переглянути курс', watchToContinue: 'Перегляньте відео, щоб продовжити.' },
+      review: 'Переглянути курс', watchToContinue: 'Перегляньте відео, щоб продовжити.',
+      close: 'Закрити', hotspotMarker: 'Мітка {n}: {title}', hotspotProgress: 'Переглянуто {n} з {total}',
+      stepOf: 'Крок {n} з {total}', goToStep: 'Перейти до кроку {n}' },
   };
   var lang = (navigator.language || 'en').toLowerCase().indexOf('uk') === 0 ? 'uk' : 'en';
   function t(key, vars) {
@@ -440,6 +444,8 @@
       case 'flashcards': return renderFlashcards(b);
       case 'scenario': return renderScenario(b);
       case 'quiz': return renderQuiz(b);
+      case 'hotspot': return renderHotspot(b);
+      case 'timeline': return renderTimeline(b);
       default: return null;
     }
   }
@@ -570,6 +576,132 @@
       grid.appendChild(fc);
     });
     return grid;
+  }
+
+  // Image hotspots: numbered pulsing markers; a click opens a card with the
+  // marker's title and text. Esc closes it and returns focus to the marker.
+  function renderHotspot(b) {
+    if (!b.data.src) return null;
+    var spots = b.data.hotspots || [];
+    var visited = {};
+    var visitedCount = 0;
+    var openIdx = -1;
+    var markers = [];
+    var stage = h('div', { class: 'hotspot-stage' }, h('img', { src: b.data.src, alt: b.data.alt || '' }));
+    var progress = spots.length ? h('p', { class: 'hotspot-progress' }) : null;
+    var pop = null;
+
+    function updateProgress() {
+      if (progress) progress.textContent = t('hotspotProgress', { n: visitedCount, total: spots.length });
+    }
+    function close(focus) {
+      if (pop) { pop.parentNode.removeChild(pop); pop = null; }
+      if (openIdx >= 0) {
+        markers[openIdx].setAttribute('aria-expanded', 'false');
+        markers[openIdx].classList.remove('active');
+        if (focus) markers[openIdx].focus();
+      }
+      openIdx = -1;
+    }
+    function open(i) {
+      var s = spots[i];
+      close(false);
+      openIdx = i;
+      if (!visited[s.id]) { visited[s.id] = true; visitedCount++; markers[i].classList.add('visited'); updateProgress(); }
+      markers[i].setAttribute('aria-expanded', 'true');
+      markers[i].classList.add('active');
+      // Anchor the card to the marker's nearer edge so it stays over the image.
+      var tx = s.x < 33 ? '0%' : s.x > 67 ? '-100%' : '-50%';
+      var ty = s.y <= 55 ? '1.5rem' : 'calc(-100% - 1.5rem)';
+      pop = h('div', { class: 'hotspot-pop', role: 'dialog', 'aria-label': s.title || '' }, [
+        h('div', { class: 'hotspot-pop-head' }, [
+          h('p', { class: 'hotspot-pop-title', text: s.title || '' }),
+          h('button', { class: 'hotspot-close', type: 'button', 'aria-label': t('close'), text: '✕',
+            onclick: function () { close(true); } }),
+        ]),
+        s.text ? h('p', { class: 'hotspot-pop-text', text: s.text }) : null,
+      ]);
+      pop.style.left = s.x + '%';
+      pop.style.top = s.y + '%';
+      pop.style.transform = 'translate(' + tx + ', ' + ty + ')';
+      stage.appendChild(pop);
+    }
+
+    spots.forEach(function (s, i) {
+      var m = h('button', { class: 'hotspot-marker', type: 'button', 'aria-expanded': 'false',
+        'aria-label': t('hotspotMarker', { n: i + 1, title: s.title || '' }),
+        onclick: function () { if (openIdx === i) close(false); else open(i); } },
+        h('span', { class: 'hotspot-dot', text: String(i + 1) }));
+      m.style.left = s.x + '%';
+      m.style.top = s.y + '%';
+      markers.push(m);
+      stage.appendChild(m);
+    });
+    updateProgress();
+
+    var wrap = h('div', { class: 'hotspot' }, [stage, progress]);
+    wrap.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && openIdx >= 0) { e.stopPropagation(); close(true); }
+    });
+    return wrap;
+  }
+
+  // Timeline: 'vertical' lists every item; 'stepper' shows one step at a time
+  // with Previous/Next and clickable step dots.
+  function timelineItemBody(it) {
+    return [
+      it.label ? h('p', { class: 'timeline-label', text: it.label }) : null,
+      it.title ? h('p', { class: 'timeline-title', text: it.title }) : null,
+      it.text ? h('p', { class: 'timeline-text', text: it.text }) : null,
+    ];
+  }
+
+  function renderTimeline(b) {
+    var items = b.data.items || [];
+    if (!items.length) return null;
+    if (b.data.layout !== 'stepper') {
+      var ol = h('ol', { class: 'timeline' });
+      items.forEach(function (it) {
+        ol.appendChild(h('li', { class: 'timeline-item' },
+          [h('span', { class: 'timeline-dot' })].concat(timelineItemBody(it))));
+      });
+      return ol;
+    }
+
+    var index = 0;
+    var seen = { 0: true };
+    var dots = h('div', { class: 'stepper-dots' });
+    var body = h('div', { class: 'stepper-body', 'aria-live': 'polite' });
+    var counter = h('span', { class: 'stepper-count' });
+    var prev = h('button', { class: 'btn btn-outline', type: 'button', text: t('prev'),
+      onclick: function () { go(index - 1); } });
+    var next = h('button', { class: 'btn', type: 'button', text: t('next'),
+      onclick: function () { go(index + 1); } });
+    var dotEls = items.map(function (it, n) {
+      var d = h('button', { class: 'stepper-dot', type: 'button', text: String(n + 1),
+        'aria-label': t('goToStep', { n: n + 1 }), onclick: function () { go(n); } });
+      dots.appendChild(d);
+      return d;
+    });
+
+    function go(n) {
+      if (n < 0 || n >= items.length) return;
+      index = n;
+      seen[n] = true;
+      dotEls.forEach(function (d, i) {
+        d.className = 'stepper-dot' + (i === n ? ' active' : seen[i] ? ' seen' : '');
+        if (i === n) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current');
+      });
+      body.innerHTML = '';
+      timelineItemBody(items[n]).forEach(function (el) { if (el) body.appendChild(el); });
+      counter.textContent = t('stepOf', { n: n + 1, total: items.length });
+      prev.disabled = n === 0;
+      next.disabled = n === items.length - 1;
+    }
+    go(0);
+
+    return h('div', { class: 'stepper' }, [dots, body,
+      h('div', { class: 'stepper-nav' }, [prev, counter, next])]);
   }
 
   function renderScenario(b) {

@@ -63,4 +63,20 @@ describe('checkCourse', () => {
     expect(keys(course([[block('scenario', { characterImages: {}, characterName: 'A', startNodeId: 'n1', nodes: [node('n1', null)] })]])))
       .toEqual([])
   })
+
+  test('hotspots without an image or markers', () => {
+    const spot = { id: 'h1', x: 10, y: 20, title: 'T', text: '' }
+    expect(keys(course([[block('hotspot', { src: '', alt: '', hotspots: [] })]])))
+      .toEqual(['chkHotspotNoImage', 'chkHotspotEmpty'])
+    expect(keys(course([[block('hotspot', { src: 'assets/images/a.png', alt: '', hotspots: [] })]])))
+      .toEqual(['chkHotspotEmpty'])
+    expect(keys(course([[block('hotspot', { src: 'assets/images/a.png', alt: '', hotspots: [spot] })]])))
+      .toEqual([])
+  })
+
+  test('timeline without items', () => {
+    expect(keys(course([[block('timeline', { layout: 'vertical', items: [] })]]))).toEqual(['chkTimelineEmpty'])
+    const item = { id: 's1', label: '2024', title: 'T', text: '' }
+    expect(keys(course([[block('timeline', { layout: 'stepper', items: [item] })]]))).toEqual([])
+  })
 })

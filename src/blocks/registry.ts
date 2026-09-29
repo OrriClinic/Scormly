@@ -309,6 +309,36 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockMeta> = {
       },
     }),
   },
+  hotspot: {
+    type: 'hotspot',
+    category: 'interactive',
+    icon: '◎',
+    create: () => ({
+      id: uid('block'),
+      type: 'hotspot',
+      settings: { ...baseSettings },
+      data: { src: '', alt: '', hotspots: [] },
+    }),
+  },
+  timeline: {
+    type: 'timeline',
+    category: 'interactive',
+    icon: '⋮',
+    create: () => ({
+      id: uid('block'),
+      type: 'timeline',
+      settings: { ...baseSettings },
+      data: {
+        layout: 'vertical',
+        items: [1, 2, 3].map((n) => ({
+          id: uid('step'),
+          label: c('timelineLabel', { n }),
+          title: c('timelineTitle', { n }),
+          text: c('timelineText', { n }),
+        })),
+      },
+    }),
+  },
 }
 
 /** Category order for the add menu (labels come from i18n `common`). */
