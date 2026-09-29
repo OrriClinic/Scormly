@@ -57,7 +57,7 @@ body {
 .finish-status { font-weight: 600; margin: 0.25rem 0 0; }
 .finish-status.passed { color: #16a34a; }
 .finish-status.failed { color: #dc2626; }
-.finish-text { margin: 1rem 0 0; color: #6b7280; }
+.finish-text { margin: 1rem 0 0; color: #6b7280; white-space: pre-line; }
 
 /* Text blocks */
 .rich-text { line-height: 1.7; }

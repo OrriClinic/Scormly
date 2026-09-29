@@ -10,6 +10,8 @@ export default function PreviewOverlay() {
   const activeLessonId = useCourseStore((s) => s.activeLessonId)
   const setPreviewOpen = useCourseStore((s) => s.setPreviewOpen)
   const { t } = useT('preview')
+  const showProgress = course.settings?.showProgress !== false
+  const finishMessage = course.settings?.finishMessage?.trim() ?? ''
 
   const startIndex = Math.max(
     0,
@@ -73,12 +75,16 @@ export default function PreviewOverlay() {
           <span className="truncate font-semibold text-gray-900">
             {course.title}
           </span>
-          <span className="hidden shrink-0 text-sm text-gray-400 sm:inline">
-            {t('progress', { n: index + 1, total })}
-          </span>
-          <span className="shrink-0 text-sm tabular-nums text-gray-400 sm:hidden">
-            {index + 1}/{total}
-          </span>
+          {showProgress && (
+            <>
+              <span className="hidden shrink-0 text-sm text-gray-400 sm:inline">
+                {t('progress', { n: index + 1, total })}
+              </span>
+              <span className="shrink-0 text-sm tabular-nums text-gray-400 sm:hidden">
+                {index + 1}/{total}
+              </span>
+            </>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {finished ? (
@@ -142,7 +148,9 @@ export default function PreviewOverlay() {
               <h1 className="text-2xl font-bold text-gray-900">
                 {t('courseComplete')}
               </h1>
-              <p className="mt-3 text-gray-500">{t('courseCompleteText')}</p>
+              <p className="mt-3 whitespace-pre-line text-gray-500">
+                {finishMessage || t('courseCompleteText')}
+              </p>
             </div>
           ) : lesson ? (
             <>

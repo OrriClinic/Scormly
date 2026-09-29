@@ -82,7 +82,8 @@ export interface CourseState {
     patch: Partial<Pick<Course, 'title' | 'description' | 'coverImage'>>,
   ) => void
   setTheme: (theme: ThemeId) => void
-  updateSettings: (patch: Partial<CourseSettings>) => void
+  /** `coalesceKey` merges consecutive edits (typing, slider drags) into one undo step. */
+  updateSettings: (patch: Partial<CourseSettings>, coalesceKey?: string) => void
   loadCourse: (course: Course) => void
   /** Reset to a fresh in-memory demo course, localized to the current UI language. */
   newDemoCourse: () => void
@@ -203,10 +204,10 @@ export const useCourseStore = create<CourseState>((set, get) => {
         c.theme = theme
       }),
 
-    updateSettings: (patch) =>
+    updateSettings: (patch, coalesceKey) =>
       mutate((c) => {
         c.settings = { ...DEFAULT_COURSE_SETTINGS, ...c.settings, ...patch }
-      }),
+      }, coalesceKey),
 
     loadCourse: (input) => {
       const course = migrateCourse(input)
