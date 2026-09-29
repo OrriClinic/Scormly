@@ -22,6 +22,15 @@ const GROUPS: { title: string; items: { label: string; keys: string }[] }[] = [
       { label: 'moveUp', keys: KEYS.moveUp },
       { label: 'moveDown', keys: KEYS.moveDown },
       { label: 'scDeselect', keys: KEYS.deselect },
+      { label: 'scDragKeys', keys: 'Space' },
+    ],
+  },
+  {
+    title: 'scFocusedLesson',
+    items: [
+      { label: 'renameLesson', keys: 'F2' },
+      { label: 'moveUp', keys: KEYS.moveUp },
+      { label: 'moveDown', keys: KEYS.moveDown },
     ],
   },
 ]

@@ -80,7 +80,7 @@ export default function BlockShell({
         {...attributes}
         {...listeners}
         onClick={(e) => e.stopPropagation()}
-        className="absolute -left-1 top-1/2 z-10 hidden h-8 w-6 -translate-y-1/2 cursor-grab touch-none items-center justify-center rounded text-gray-300 hover:text-gray-500 group-hover:flex pointer-coarse:flex"
+        className="absolute -left-1 top-1/2 z-10 flex h-8 w-6 -translate-y-1/2 cursor-grab touch-none items-center justify-center rounded text-gray-300 opacity-0 outline-none hover:text-gray-500 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-brand group-hover:opacity-100 pointer-coarse:opacity-100"
       >
         ⠿
       </button>

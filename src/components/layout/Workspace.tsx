@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import {
   DndContext,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -9,6 +10,7 @@ import {
 } from '@dnd-kit/core'
 import {
   SortableContext,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useCourseStore, selectActiveLesson } from '../../store/courseStore'
@@ -27,6 +29,8 @@ export default function Workspace() {
   // Small distance so a click still selects/edits; drag starts only past 5px.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    // Focus a drag handle, Space to pick up, arrows to move, Space to drop.
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
   function onDragEnd(e: DragEndEvent) {

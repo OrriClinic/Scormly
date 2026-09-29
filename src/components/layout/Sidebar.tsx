@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   DndContext,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -10,6 +11,7 @@ import {
 import {
   SortableContext,
   useSortable,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -31,6 +33,8 @@ export default function Sidebar() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    // Focus a drag handle, Space to pick up, arrows to move, Space to drop.
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
   // Esc closes the mobile drawer.
@@ -153,6 +157,8 @@ function SortableLesson({
   const setActiveLesson = useCourseStore((s) => s.setActiveLesson)
   const setSidebarOpen = useCourseStore((s) => s.setSidebarOpen)
   const renameLesson = useCourseStore((s) => s.renameLesson)
+  const moveLesson = useCourseStore((s) => s.moveLesson)
+  const lessonCount = useCourseStore((s) => s.course.lessons.length)
   const { t } = useT('common')
   const isActive = lesson.id === activeLessonId
   const blockCount = lesson.blocks.length
@@ -185,6 +191,14 @@ function SortableLesson({
           } else if (e.key === 'F2') {
             e.preventDefault()
             onStartEdit()
+          } else if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+            const to = index + (e.key === 'ArrowUp' ? -1 : 1)
+            if (to < 0 || to >= lessonCount) return
+            e.preventDefault()
+            moveLesson(index, to)
+            // The row re-renders in its new slot; keep keyboard focus on it.
+            const row = e.currentTarget
+            requestAnimationFrame(() => row.focus())
           }
         }}
         className={`flex w-full outline-none focus-visible:ring-2 focus-visible:ring-brand items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors ${
