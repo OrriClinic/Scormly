@@ -15,7 +15,9 @@ export const RELEASES: Release[] = [
     date: '2026-09-29',
     items: {
       en: [
-        'Guided tour, builder Q&A and this “What’s new” page in the new Help menu.',
+        'Four new interactive blocks: image hotspots, timeline / process steps, and two scored exercises — sort / order and fill in the blanks — that report to the LMS like quizzes.',
+        'Redesigned project settings with tabs, plus new options: player language, show or hide lesson progress, and a custom finish message.',
+        'A Help menu with a guided tour, builder Q&A and release notes.',
         'Insert a block anywhere: hover between two blocks and press “+”.',
         'Undo right from the notification after deleting a block or lesson.',
         'Export now checks the course first (empty lessons, missing media, quiz questions without a correct answer…).',
@@ -23,9 +25,12 @@ export const RELEASES: Release[] = [
         'Keyboard shortcuts help (press ?), full keyboard support in menus and dialogs, and reordering lessons and blocks from the keyboard.',
         'Block counts in the lesson list, new lessons open ready to rename.',
         'cmi5: learners now resume where they left off, and the LMS language preference is respected.',
+        'The AGENTS.md guide in every project now covers every block, the course check rules and a workflow for AI assistants.',
       ],
       uk: [
-        'Тур конструктором, питання й відповіді та ця сторінка «Що нового» — у новому меню «Довідка».',
+        'Чотири нові інтерактивні блоки: hotspots на зображенні, таймлайн / кроки процесу і дві оцінювані вправи — сортування та заповнення пропусків, які звітують у LMS як тести.',
+        'Оновлені налаштування проєкту з вкладками й нові опції: мова плеєра, показ прогресу уроків і власний текст фінального екрана.',
+        'Меню «Довідка» з туром, питаннями й відповідями та списком змін.',
         'Вставляйте блок будь-де: наведіть між двома блоками й натисніть «+».',
         'Скасування просто зі сповіщення після видалення блоку чи уроку.',
         'Перед експортом курс перевіряється (порожні уроки, відсутні медіа, питання без правильної відповіді…).',
@@ -33,6 +38,7 @@ export const RELEASES: Release[] = [
         'Довідка з гарячими клавішами (натисніть ?), повна підтримка клавіатури в меню й діалогах і зміна порядку уроків і блоків з клавіатури.',
         'Кількість блоків у списку уроків; новий урок одразу можна перейменувати.',
         'cmi5: слухачі продовжують з місця, де зупинилися, а мова з LMS враховується.',
+        'Інструкція AGENTS.md у кожному проєкті тепер описує всі блоки, правила перевірки курсу й порядок роботи для AI-асистентів.',
       ],
     },
   },

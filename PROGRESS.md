@@ -278,4 +278,17 @@ tracking layer.
     context menu (⌘/⌥ on Mac). Empty-course state with Add lesson, spinner while restoring.
   - Verified headlessly (Chromium + CDP): insert-between, Enter-to-add, delete toast + Undo,
     shortcuts help, preview isolation, rename-on-add.
+- 2026-09-29 — **Agents batch** (parallel worktrees, merged by the coordinator):
+  - Project settings redesigned: large tabbed dialog (General / Appearance / Learner experience /
+    Completion & scoring); new `CourseSettings.playerLanguage`, `showProgress`, `finishMessage`
+    honoured by the player and preview.
+  - New blocks: `hotspot` (image hotspots), `timeline` (vertical / stepper) — not scored;
+    `ordering` (sequence / categories) and `fillBlanks` (type / select) — scored like quizzes
+    (`SCORED_BLOCK_TYPES` / `isScoredBlock`), with objectives, interactions (`sequencing`,
+    `matching`, `fill-in`), resume and linear gating; course-check rules and tests for all four.
+  - Help: guided tour (remembered in localStorage), What's new (`help/releaseNotes.ts`), builder Q&A.
+  - Landing: AI-ready section (AGENTS.md workflow), refreshed features/FAQ, What's new changelog.
+  - `docs/character-brief.md`: art brief for a built-in scenario character library (not built yet).
+  - MCP server (`mcp/`, `scormly-mcp`) + builder reload of external project.json edits live on the
+    `feature/mcp` branch until the package is published.
 
