@@ -1,10 +1,12 @@
 @import "tailwindcss";
 
-/* Default brand tokens (Rose theme). Overridden per-theme below. */
+/* Default brand tokens (Rose theme). Overridden per-theme below.
+ * Every theme keeps white text on --color-brand and --color-brand-dark text on
+ * white at >= 4.5:1 (WCAG AA). */
 @theme {
-  --color-brand: #ec4899;
+  --color-brand: #db2777;
   --color-brand-light: #f9a8d4;
-  --color-brand-dark: #db2777;
+  --color-brand-dark: #be185d;
 }
 
 /*
@@ -18,35 +20,87 @@
 }
 
 [data-theme="rose"] {
-  --color-brand: #ec4899;
+  --color-brand: #db2777;
   --color-brand-light: #f9a8d4;
-  --color-brand-dark: #db2777;
+  --color-brand-dark: #be185d;
   --radius-btn: 0.5rem;
   --radius-interactive: 0.5rem;
 }
 
 [data-theme="ocean"] {
-  --color-brand: #0ea5e9;
+  --color-brand: #0369a1;
   --color-brand-light: #7dd3fc;
-  --color-brand-dark: #0284c7;
+  --color-brand-dark: #075985;
   --radius-btn: 9999px;
   --radius-interactive: 1rem;
 }
 
 [data-theme="forest"] {
-  --color-brand: #16a34a;
+  --color-brand: #15803d;
   --color-brand-light: #86efac;
-  --color-brand-dark: #15803d;
+  --color-brand-dark: #166534;
   --radius-btn: 0.25rem;
   --radius-interactive: 0.25rem;
 }
 
 [data-theme="sunset"] {
-  --color-brand: #f97316;
+  --color-brand: #c2410c;
   --color-brand-light: #fdba74;
-  --color-brand-dark: #ea580c;
+  --color-brand-dark: #9a3412;
   --radius-btn: 0.75rem;
   --radius-interactive: 0.75rem;
+}
+
+/* Sharp-cornered themes. */
+[data-theme="mono"] {
+  --color-brand: #334155;
+  --color-brand-light: #94a3b8;
+  --color-brand-dark: #1e293b;
+  --radius-btn: 0;
+  --radius-interactive: 0;
+}
+
+[data-theme="indigo"] {
+  --color-brand: #4f46e5;
+  --color-brand-light: #a5b4fc;
+  --color-brand-dark: #4338ca;
+  --radius-btn: 2px;
+  --radius-interactive: 2px;
+}
+
+[data-theme="crimson"] {
+  --color-brand: #dc2626;
+  --color-brand-light: #fca5a5;
+  --color-brand-dark: #b91c1c;
+  --radius-btn: 0;
+  --radius-interactive: 2px;
+}
+
+[data-theme="mint"] {
+  --color-brand: #0f766e;
+  --color-brand-light: #5eead4;
+  --color-brand-dark: #115e59;
+  --radius-btn: 1.25rem;
+  --radius-interactive: 1.5rem;
+}
+
+[data-theme="grape"] {
+  --color-brand: #9333ea;
+  --color-brand-light: #d8b4fe;
+  --color-brand-dark: #7e22ce;
+  --radius-btn: 9999px;
+  --radius-interactive: 0.375rem;
+}
+
+/* Hacker terminal: monospace everywhere, black buttons with phosphor text. */
+[data-theme="terminal"] {
+  --color-brand: #15803d;
+  --color-brand-light: #86efac;
+  --color-brand-dark: #166534;
+  --radius-btn: 0;
+  --radius-interactive: 0;
+  font-family: ui-monospace, "JetBrains Mono", "Fira Code", SFMono-Regular,
+    Menlo, Consolas, monospace;
 }
 
 html,
@@ -83,6 +137,14 @@ body {
     opacity: 0.5;
     cursor: not-allowed;
   }
+  [data-theme="terminal"] .btn-primary {
+    background-color: #0a0f0a;
+    color: #4ade80;
+    box-shadow: inset 0 0 0 1px #16a34a;
+  }
+  [data-theme="terminal"] .btn-primary:hover:not(:disabled) {
+    background-color: #052e16;
+  }
 
   .btn-secondary {
     border-radius: var(--radius-btn);
@@ -95,6 +157,10 @@ body {
   }
   .btn-secondary:hover:not(:disabled) {
     background-color: color-mix(in srgb, var(--color-brand) 12%, transparent);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
   .btn-primary:focus-visible,
   .btn-secondary:focus-visible {
@@ -305,4 +371,117 @@ body {
 @keyframes ai-blink { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .ai-caret { animation: none; }
+}
+
+/* ==========================================================================
+ * Learner accessibility settings (builder preview only).
+ * Classes are set on the PreviewOverlay root by src/preview/a11y.ts, so none
+ * of this reaches the editor UI. Rules are intentionally unlayered so they
+ * win over Tailwind utilities (which live in @layer utilities).
+ * ========================================================================== */
+
+/* Visible keyboard focus (brand-dark keeps >= 3:1 on white in all themes).
+ * Programmatic focus targets (h1, main, dialog root) use tabindex=-1. */
+.a11y-root :focus-visible:not([tabindex="-1"]) {
+  outline: 2px solid var(--color-brand-dark);
+  outline-offset: 2px;
+}
+
+/* Text size: zoom scales rem-based Tailwind sizes and layout together. */
+.a11y-text-large .a11y-content {
+  zoom: 1.15;
+}
+.a11y-text-xlarge .a11y-content {
+  zoom: 1.3;
+}
+
+/* Readable spacing (WCAG 1.4.12 text-spacing values, no extra fonts). */
+.a11y-spacing .a11y-content,
+.a11y-spacing .a11y-content * {
+  line-height: 1.8;
+  letter-spacing: 0.03em;
+  word-spacing: 0.1em;
+}
+.a11y-spacing .a11y-content .rich-text p:not(:last-child) {
+  margin-bottom: 1.2em;
+}
+
+/* High contrast. The accent is darkened on the root's children (not the root
+ * itself, which holds data-theme, to avoid a custom-property cycle) so white
+ * text on brand buttons reaches ~7:1 in every theme. */
+.a11y-contrast > * {
+  --color-brand: color-mix(in srgb, var(--color-brand-dark) 60%, #000);
+}
+.a11y-contrast .text-gray-300,
+.a11y-contrast .text-gray-400,
+.a11y-contrast .text-gray-500,
+.a11y-contrast .text-gray-600 {
+  color: #1f2937;
+}
+.a11y-contrast .text-gray-700,
+.a11y-contrast .text-gray-800 {
+  color: #111827;
+}
+.a11y-contrast [class*="border-gray-"],
+.a11y-contrast [class*="divide-gray-"] > * + *,
+.a11y-contrast input,
+.a11y-contrast select,
+.a11y-contrast details {
+  border-color: #4b5563;
+}
+.a11y-contrast .border-green-300,
+.a11y-contrast .border-green-400 {
+  border-color: #15803d;
+}
+.a11y-contrast .border-red-300,
+.a11y-contrast .border-red-400 {
+  border-color: #b91c1c;
+}
+.a11y-contrast ::placeholder {
+  color: #4b5563;
+}
+.a11y-contrast a,
+.a11y-contrast .rich-text a {
+  text-decoration: underline;
+}
+.a11y-contrast .btn-secondary {
+  border-width: 2px;
+  color: var(--color-brand);
+}
+.a11y-contrast .btn-primary:hover:not(:disabled) {
+  background-color: #000;
+}
+.a11y-contrast :focus-visible:not([tabindex="-1"]) {
+  outline: 3px solid #000;
+}
+/* Terminal keeps its black/phosphor buttons (already high contrast); only
+ * brighten the secondary text so it isn't dim green on white. */
+[data-theme="terminal"].a11y-contrast .btn-secondary {
+  color: #14532d;
+  border-color: #14532d;
+}
+
+/* Reduced motion: the learner toggle (defaults to the OS setting) ... */
+.a11y-reduce-motion *,
+.a11y-reduce-motion *::before,
+.a11y-reduce-motion *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+.a11y-reduce-motion .animate-ping {
+  display: none;
+}
+/* ... and the OS preference itself, unless the learner explicitly opted out. */
+@media (prefers-reduced-motion: reduce) {
+  .a11y-root:not(.a11y-motion-ok) *,
+  .a11y-root:not(.a11y-motion-ok) *::before,
+  .a11y-root:not(.a11y-motion-ok) *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .a11y-root:not(.a11y-motion-ok) .animate-ping {
+    display: none;
+  }
 }
