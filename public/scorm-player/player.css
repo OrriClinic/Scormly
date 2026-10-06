@@ -64,6 +64,7 @@ body {
 .finish-status.failed { color: #dc2626; }
 .finish-text { margin: 1rem 0 0; color: #6b7280; white-space: pre-line; }
 .finish-check.incomplete { background: #fef3c7; color: #92400e; }
+.finish-check.failed { background: #fee2e2; color: #991b1b; }
 .finish-todo { list-style: none; padding: 0; margin: 1.25rem auto 0; max-width: 28rem; display: grid; gap: 0.5rem; }
 .finish-todo .btn { width: 100%; }
 

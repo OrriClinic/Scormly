@@ -382,3 +382,15 @@ captions and larger text, in the builder preview and in the exported player alik
   - Exit course: 2004 sends `adl.nav.request=suspendAll` before Terminate; cmi5 waits for
     `terminated` before redirecting to returnURL; no cmi5 statements after `terminated`.
   - Verified end-to-end in jsdom with the sample course and a mock 2004 LMS (20 checks).
+- 2026-10-06 — Follow-ups from live TalentLMS tests:
+  - Completion screen for a **failed** attempt: "not passed yet", the pass mark (LMS mastery if
+    set) and links to lessons with scored blocks below 100% — instead of "Course complete" + the
+    author's congratulations. With cmi5 moveOn `CompletedAndPassed` (scored course) TalentLMS
+    correctly keeps a failed AU "Pending unit completion" until a passing retake.
+  - Export: schema files are best-effort/all-or-nothing (a failed download skips them with a
+    warning); player-file download failures (`PlayerFilesError`) get their own toast instead of
+    the media-files hint. A user's SCORM 2004 export failed right during the Pages deploy; the
+    same export verified OK afterwards in headless Chrome for 2004 / 1.2 / cmi5.
+  - TalentLMS SCORM 1.2 launch showed a CloudFront `MissingKey` (no Key-Pair-Id) error: CloudFront
+    checks the signed cookie/query before reading any file, so this is TalentLMS access
+    (third-party cookies / expired signature), not package content — pending re-test.

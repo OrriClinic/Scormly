@@ -30,6 +30,9 @@
       courseIncomplete: 'The course is not complete yet',
       courseIncompleteText: 'Some activities still need your answer. Finish them to complete the course — your progress is saved.',
       unfinishedLessons: 'Unfinished lessons',
+      courseFailed: 'The course is not passed yet',
+      courseFailedText: 'You need {p}% to pass. Retake the tests in these lessons — your progress is saved.',
+      retakeLessons: 'Lessons with tests to retake',
       review: 'Review the course', watchToContinue: 'Watch the video to continue.',
       close: 'Close', hotspotMarker: 'Marker {n}: {title}', hotspotProgress: 'Explored {n} of {total}',
       stepOf: 'Step {n} of {total}', goToStep: 'Go to step {n}',
@@ -53,6 +56,9 @@
       courseIncomplete: 'Курс ще не завершено',
       courseIncompleteText: 'Деякі завдання ще чекають на вашу відповідь. Виконайте їх, щоб завершити курс — ваш прогрес збережено.',
       unfinishedLessons: 'Незавершені уроки',
+      courseFailed: 'Курс ще не складено',
+      courseFailedText: 'Щоб скласти, потрібно {p}%. Перескладіть тести в цих уроках — ваш прогрес збережено.',
+      retakeLessons: 'Уроки з тестами для перескладання',
       review: 'Переглянути курс', watchToContinue: 'Перегляньте відео, щоб продовжити.',
       close: 'Закрити', hotspotMarker: 'Мітка {n}: {title}', hotspotProgress: 'Переглянуто {n} з {total}',
       stepOf: 'Крок {n} з {total}', goToStep: 'Перейти до кроку {n}',
@@ -770,7 +776,17 @@
     // Free navigation lets the learner reach Finish with activities left
     // undone. Then the LMS rightly shows the course as not completed, so the
     // screen must not claim otherwise: list the unfinished lessons instead.
-    var card = s.completed ? h('div', { class: 'finish-card' }, [
+    // Failed: the LMS doesn't count the course as done either (cmi5 moveOn
+    // CompletedAndPassed; SCORM success_status failed), so no "Course
+    // complete" / author's congratulations — show the pass mark and the
+    // lessons where points can still be won.
+    var card = s.completed && s.success === 'failed' ? h('div', { class: 'finish-card' }, [
+      h('div', { class: 'finish-check failed', 'aria-hidden': 'true', text: '!' }),
+      h('h1', { class: 'finish-title', tabindex: '-1', text: t('courseFailed') }),
+      h('p', { class: 'finish-score', text: t('yourScore', { s: Math.round(s.score) }) }),
+      h('p', { class: 'finish-text', text: t('courseFailedText', { p: Math.round(settings().passingScore) }) }),
+      lessonLinks(retakeLessons(), t('retakeLessons')),
+    ]) : s.completed ? h('div', { class: 'finish-card' }, [
       h('div', { class: 'finish-check', 'aria-hidden': 'true', text: '✓' }),
       h('h1', { class: 'finish-title', tabindex: '-1', text: t('courseComplete') }),
       s.score != null ? h('p', { class: 'finish-score', text: t('yourScore', { s: Math.round(s.score) }) }) : null,
@@ -780,17 +796,31 @@
       h('div', { class: 'finish-check incomplete', 'aria-hidden': 'true', text: '!' }),
       h('h1', { class: 'finish-title', tabindex: '-1', text: t('courseIncomplete') }),
       h('p', { class: 'finish-text', text: t('courseIncompleteText') }),
-      h('ul', { class: 'finish-todo', 'aria-label': t('unfinishedLessons') }, unfinishedLessons().map(function (i) {
-        var lesson = state.course.lessons[i];
-        return h('li', {}, h('button', { class: 'btn btn-outline', lang: contentLang(), text: lesson.title || t('progress', { n: i + 1, total: state.course.lessons.length }),
-          disabled: canReachLesson(i) ? null : 'true',
-          onclick: function () { state.finished = false; visit(i); } }));
-      })),
+      lessonLinks(unfinishedLessons(), t('unfinishedLessons')),
     ]);
     var body = h('main', { class: 'player-body', id: 'main-content' }, [h('div', { class: 'lesson' }, card)]);
     app.appendChild(skipLink());
     app.appendChild(header);
     app.appendChild(body);
+  }
+
+  // Completion-screen list of lesson buttons (by index) that reopen the lesson.
+  function lessonLinks(indexes, label) {
+    var lessons = state.course.lessons || [];
+    return h('ul', { class: 'finish-todo', 'aria-label': label }, indexes.map(function (i) {
+      return h('li', {}, h('button', { class: 'btn btn-outline', lang: contentLang(),
+        text: lessons[i].title || t('progress', { n: i + 1, total: lessons.length }),
+        disabled: canReachLesson(i) ? null : 'true',
+        onclick: function () { state.finished = false; visit(i); } }));
+    }));
+  }
+  // Lessons with a scored block below 100%, i.e. where a retake can raise the score.
+  function retakeLessons() {
+    var out = [];
+    (state.course.lessons || []).forEach(function (lesson, i) {
+      if ((lesson.blocks || []).some(function (b) { return SCORED[b.type] && state.quizResults[b.id] < 100; })) out.push(i);
+    });
+    return out;
   }
 
   // Decorative images get an empty alt so screen readers skip them.
