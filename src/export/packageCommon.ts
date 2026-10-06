@@ -97,13 +97,24 @@ async function addDir(
   return paths
 }
 
+/**
+ * The player runtime couldn't be downloaded from the site (offline, or a
+ * deploy in progress) — unrelated to the project's own media files.
+ */
+export class PlayerFilesError extends Error {}
+
 // Fetch one of the bundled player files. Fail loudly: silently zipping an
 // HTML 404 page as player.js would produce a package that just shows a blank
 // screen in the LMS.
 async function fetchPlayerFile(base: string, name: string): Promise<string> {
-  const res = await fetch(`${base}scorm-player/${name}`)
+  let res: Response
+  try {
+    res = await fetch(`${base}scorm-player/${name}`)
+  } catch (err) {
+    throw new PlayerFilesError(`Could not load player file "${name}": ${String(err)}`)
+  }
   if (!res.ok) {
-    throw new Error(`Could not load player file "${name}" (HTTP ${res.status})`)
+    throw new PlayerFilesError(`Could not load player file "${name}" (HTTP ${res.status})`)
   }
   return res.text()
 }
@@ -166,16 +177,28 @@ export const SCHEMA_FILES: Record<'scorm12' | 'scorm2004', string[]> = {
   ],
 }
 
-/** Add the SCORM schema files for `set` at the package root (byte-for-byte). */
-export async function addSchemas(zip: JSZip, set: 'scorm12' | 'scorm2004'): Promise<void> {
+/**
+ * Add the SCORM schema files for `set` at the package root (byte-for-byte).
+ * Best effort: the schemas are optional for nearly every LMS, so failing to
+ * load them must not fail the export. All or nothing — a partial set would
+ * break validators that follow the imports. Resolves to whether they were added.
+ */
+export async function addSchemas(zip: JSZip, set: 'scorm12' | 'scorm2004'): Promise<boolean> {
   const base = `${import.meta.env.BASE_URL}scorm-player/schemas/${set}/`
-  await Promise.all(
-    SCHEMA_FILES[set].map(async (name) => {
-      const res = await fetch(base + name)
-      if (!res.ok) throw new Error(`Could not load schema "${name}" (HTTP ${res.status})`)
-      zip.file(name, await res.arrayBuffer())
-    }),
-  )
+  try {
+    const files = await Promise.all(
+      SCHEMA_FILES[set].map(async (name) => {
+        const res = await fetch(base + name)
+        if (!res.ok) throw new Error(`Could not load schema "${name}" (HTTP ${res.status})`)
+        return [name, await res.arrayBuffer()] as const
+      }),
+    )
+    for (const [name, data] of files) zip.file(name, data)
+    return true
+  } catch (err) {
+    console.warn('[export] SCORM schema files skipped:', err)
+    return false
+  }
 }
 
 // Add media from the project's assets/ folder — only the files the course

@@ -6,6 +6,7 @@ import { toast } from '../store/toastStore'
 import { translate } from '../i18n/I18nProvider'
 import { useCourseStore } from '../store/courseStore'
 import { checkCourse, hasBlockingIssues, type CourseIssue } from './courseCheck'
+import { PlayerFilesError } from './packageCommon'
 
 export type ExportTarget = 'scorm2004' | 'scorm12' | 'cmi5' | 'project'
 
@@ -47,7 +48,8 @@ export async function runExport(target: ExportTarget): Promise<void> {
     toast({ id: progress, tone: 'success', message: translate('common', 'exportDone', { file: filename }) })
   } catch (err) {
     console.error('[export]', err)
-    toast({ id: progress, tone: 'error', message: translate('common', 'exportFailed') })
+    const key = err instanceof PlayerFilesError ? 'exportFailedPlayer' : 'exportFailed'
+    toast({ id: progress, tone: 'error', message: translate('common', key) })
   } finally {
     useExportStore.setState({ exporting: false })
   }
