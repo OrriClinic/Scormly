@@ -103,6 +103,7 @@
   var A11Y_KEY = 'scormly-a11y';
   var a11y = { text: 'normal', contrast: false, spacing: false, motion: undefined, captions: undefined };
   var lmsCaptions = false; // LMS learner preference said "captions on"
+  var lmsAudioOff = false; // LMS learner preference said "sound off"
   try {
     var storedA11y = JSON.parse(window.localStorage.getItem(A11Y_KEY) || 'null');
     if (storedA11y && typeof storedA11y === 'object') {
@@ -334,10 +335,13 @@
 
     // LMS learner preference "captions on" (SCORM audio_captioning / 1.2
     // student_preference.text). A local override in the a11y menu still wins.
+    // Sound muted in the LMS (cmi5 audioPreference 'off' must be applied at
+    // startup; SCORM audio level 0 / -1): media starts muted.
     try {
       var prefs = SCORM.getLearnerPreferences && SCORM.getLearnerPreferences();
       lmsCaptions = !!prefs && Number(prefs.captions) === 1;
-    } catch (e) { lmsCaptions = false; }
+      lmsAudioOff = !!prefs && prefs.audio === 'off';
+    } catch (e) { lmsCaptions = false; lmsAudioOff = false; }
 
     state.learner = SCORM.getLearner && SCORM.getLearner();
     state.lmsMode = (SCORM.getMode && SCORM.getMode()) || 'normal';
@@ -871,7 +875,7 @@
         return renderVideo(b);
       case 'audio':
         if (!b.data.src) return null;
-        return withTranscript(h('audio', { controls: 'true', src: b.data.src, style: 'width:100%' }), b.data.transcript);
+        return withTranscript(h('audio', { controls: 'true', src: b.data.src, style: 'width:100%', muted: lmsAudioOff ? '' : null }), b.data.transcript);
       case 'embed': {
         var em = toEmbedUrl(b.data.url || '');
         if (!em) return null;
@@ -967,7 +971,7 @@
     if (!b.data.src) return null;
     var video = h('video', {
       controls: 'true', controlslist: 'nodownload', disablepictureinpicture: 'true',
-      src: b.data.src, poster: b.data.poster || null,
+      src: b.data.src, poster: b.data.poster || null, muted: lmsAudioOff ? '' : null,
     });
     video.addEventListener('contextmenu', function (e) { e.preventDefault(); });
     // WebVTT captions; shown by default per the learner's / LMS preference.

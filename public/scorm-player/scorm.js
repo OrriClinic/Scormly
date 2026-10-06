@@ -423,12 +423,16 @@
     // Learner preferences, read live. captions: 1 = on, 0 = no change,
     // -1 = off (1.2 cmi.student_preference.text / 2004
     // learner_preference.audio_captioning). Unsupported/errored → 0 / ''.
+    // audio: 'off' when the learner muted sound (2004 audio_level 0, 1.2
+    // student_preference.audio -1), else ''.
     getLearnerPreferences: function () {
-      var prefs = { captions: 0, language: '' };
+      var prefs = { captions: 0, language: '', audio: '' };
       try {
         var c = parseInt(get(v2004 ? 'cmi.learner_preference.audio_captioning' : 'cmi.student_preference.text'), 10);
         if (c === 1 || c === -1) prefs.captions = c;
         prefs.language = String(get(v2004 ? 'cmi.learner_preference.language' : 'cmi.student_preference.language') || '');
+        var a = get(v2004 ? 'cmi.learner_preference.audio_level' : 'cmi.student_preference.audio');
+        if (a !== '' && parseFloat(a) === (v2004 ? 0 : -1)) prefs.audio = 'off';
       } catch (e) { /* LMS API threw: keep defaults */ }
       return prefs;
     },

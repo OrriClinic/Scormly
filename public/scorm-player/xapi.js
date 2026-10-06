@@ -102,9 +102,13 @@
   // the registration and session id. cmi5-defined statements add the cmi5
   // category activity; moveOn-relevant statements also add the moveon category.
   function context(opts) {
+    // cmi5 §10: values from the contextTemplate may be added to but MUST NOT
+    // be overwritten — notably the LMS-issued session ID (§9.6.3.1), which
+    // the LMS uses to tie statements to the launch session (and evaluate
+    // moveOn). Our own session ID is only a fallback when the LMS sent none.
     var ctx = launchData && launchData.contextTemplate
       ? JSON.parse(JSON.stringify(launchData.contextTemplate)) : {};
-    if (registration) ctx.registration = registration;
+    if (registration && !ctx.registration) ctx.registration = registration;
     ctx.contextActivities = ctx.contextActivities || {};
     var cats = ctx.contextActivities.category || [];
     function pushCat(c) { if (!cats.some(function (a) { return a && a.id === c.id; })) cats.push(c); }
@@ -112,7 +116,7 @@
     if (opts && opts.moveOn) pushCat(MOVEON_CATEGORY);
     ctx.contextActivities.category = cats;
     ctx.extensions = ctx.extensions || {};
-    ctx.extensions[SESSION_EXT] = sessionId;
+    if (!ctx.extensions[SESSION_EXT]) ctx.extensions[SESSION_EXT] = sessionId;
     return ctx;
   }
 
@@ -521,9 +525,11 @@
       return String(p).split(',')[0].trim();
     },
     // Same shape as the SCORM runtime. cmi5LearnerPreferences has no caption
-    // preference, so captions is always 0 (no change).
+    // preference, so captions is always 0 (no change). audioPreference
+    // ('on' / 'off') must be applied at startup (cmi5 §11.2).
     getLearnerPreferences: function () {
-      return { captions: 0, language: SCORM.getPreferredLanguage() };
+      var a = learnerPrefs && learnerPrefs.audioPreference;
+      return { captions: 0, language: SCORM.getPreferredLanguage(), audio: a === 'on' || a === 'off' ? a : '' };
     },
     suspendLimit: function () { return 0; },
 

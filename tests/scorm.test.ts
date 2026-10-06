@@ -571,3 +571,17 @@ describe('SCORM — statuses never downgrade', () => {
     expect(c.data['cmi.core.lesson_status']).toBe('completed')
   })
 })
+
+describe('SCORM — audio preference', () => {
+  test('2004 audio_level 0 and 1.2 audio -1 mean sound off', () => {
+    const a = loadScorm('2004', { 'cmi.learner_preference.audio_level': '0' })
+    a.SCORM.init()
+    expect((a.SCORM.getLearnerPreferences() as { audio: string }).audio).toBe('off')
+    const b = loadScorm('1.2', { 'cmi.student_preference.audio': '-1' })
+    b.SCORM.init()
+    expect((b.SCORM.getLearnerPreferences() as { audio: string }).audio).toBe('off')
+    const c = loadScorm('2004', { 'cmi.learner_preference.audio_level': '1' })
+    c.SCORM.init()
+    expect((c.SCORM.getLearnerPreferences() as { audio: string }).audio).toBe('')
+  })
+})

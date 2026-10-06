@@ -82,6 +82,7 @@ export interface ScormWrapper {
   getReturnUrl(): string
   getLmsMastery(): number | null
   getPreferredLanguage(): string
+  getLearnerPreferences(): { captions: number; language: string; audio?: string }
   commit(): void
   finish(unloading?: boolean): Promise<void> | null | void
   available(): boolean

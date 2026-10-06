@@ -562,3 +562,41 @@ describe('xAPI — cmi5 conformance guards', () => {
     await wait()
   })
 })
+
+describe('xAPI — contextTemplate is never overwritten (cmi5 §9.6.3.1, §10)', () => {
+  test('uses the LMS-issued session ID from the contextTemplate in every statement', async () => {
+    const { SCORM, statements, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: {
+        launchMode: 'Normal',
+        contextTemplate: {
+          contextActivities: { grouping: [{ id: 'https://lms.example/course/1' }] },
+          extensions: { [SESSION_EXT]: 'lms-session-42' },
+        },
+      },
+    })
+    SCORM.init()
+    await wait()
+    SCORM.setScore(100, 0, 100)
+    SCORM.report(true, 'passed')
+    SCORM.finish()
+    await wait()
+    const stmts = statements()
+    expect(stmts.length).toBeGreaterThanOrEqual(4)
+    expect(stmts.every((s) => s.context?.extensions?.[SESSION_EXT] === 'lms-session-42')).toBe(true)
+    expect(stmts.every((s) => (s.context?.contextActivities as { grouping?: Array<{ id: string }> })?.grouping?.[0]?.id === 'https://lms.example/course/1')).toBe(true)
+  })
+})
+
+describe('xAPI — learner preferences', () => {
+  test('surfaces audioPreference off (to be applied at startup, cmi5 §11.2)', async () => {
+    const { SCORM, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: { launchMode: 'Normal' },
+      learnerPrefs: { languagePreference: 'en-US', audioPreference: 'off' },
+    })
+    SCORM.init()
+    await wait()
+    expect((SCORM.getLearnerPreferences() as { audio: string }).audio).toBe('off')
+  })
+})

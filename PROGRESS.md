@@ -394,3 +394,13 @@ captions and larger text, in the builder preview and in the exported player alik
   - TalentLMS SCORM 1.2 launch showed a CloudFront `MissingKey` (no Key-Pair-Id) error: CloudFront
     checks the signed cookie/query before reading any file, so this is TalentLMS access
     (third-party cookies / expired signature), not package content — pending re-test.
+- 2026-10-06 — **cmi5 session ID fix** (TalentLMS kept a passed AU "Pending unit completion"):
+  xapi.js generated its own session ID and overwrote the one in LaunchData's `contextTemplate`,
+  violating cmi5 §9.6.3.1 ("AU MUST include the session ID provided by the LMS") and §10 ("MUST
+  NOT overwrite any values provided in the contextTemplate"). It now keeps every template value
+  (own UUID only as a fallback). Verified in real Firefox 156 and Chrome 154 against a mock cmi5
+  LMS/LRS running the exported package (18 statement-level checks; the old runtime fails the
+  session-ID one). Also from the AU-obligations sweep of the spec: `audioPreference` 'off' (cmi5
+  §11.2) — and SCORM audio_level 0 / audio -1 — now start media muted. Note: TalentLMS supports
+  only SCORM 1.2, xAPI and cmi5 (not SCORM 2004); its Reports → Timeline shows `[TC] completion` /
+  `[TC] failure`, and xAPI must be enabled under Account & Settings → Integrations.
