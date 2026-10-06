@@ -146,6 +146,38 @@ export async function addPlayer(
   return files
 }
 
+// ADL/IMS control documents (XSD/DTD) referenced by imsmanifest.xml's
+// xsi:schemaLocation. Modern LMSes ignore them, but legacy and validating
+// importers (and the ADL conformance suite) expect them at the package root.
+// Unmodified copies from the ADL sample packages, in public/scorm-player/schemas/.
+export const SCHEMA_FILES: Record<'scorm12' | 'scorm2004', string[]> = {
+  scorm12: ['adlcp_rootv1p2.xsd', 'ims_xml.xsd', 'imscp_rootv1p1p2.xsd', 'imsmd_rootv1p2p1.xsd'],
+  scorm2004: [
+    'adlcp_v1p3.xsd', 'adlnav_v1p3.xsd', 'adlseq_v1p3.xsd', 'imscp_v1p1.xsd',
+    'imsss_v1p0.xsd', 'imsss_v1p0auxresource.xsd', 'imsss_v1p0control.xsd',
+    'imsss_v1p0delivery.xsd', 'imsss_v1p0limit.xsd', 'imsss_v1p0objective.xsd',
+    'imsss_v1p0random.xsd', 'imsss_v1p0rollup.xsd', 'imsss_v1p0seqrule.xsd',
+    'imsss_v1p0util.xsd', 'xml.xsd', 'datatypes.dtd', 'XMLSchema.dtd',
+    // IEEE LOM binding, for the inline <lom:lom> course metadata.
+    'lom.xsd', 'common/anyElement.xsd', 'common/dataTypes.xsd',
+    'common/elementNames.xsd', 'common/elementTypes.xsd', 'common/rootElement.xsd',
+    'common/vocabTypes.xsd', 'common/vocabValues.xsd', 'extend/strict.xsd',
+    'unique/strict.xsd', 'vocab/strict.xsd',
+  ],
+}
+
+/** Add the SCORM schema files for `set` at the package root (byte-for-byte). */
+export async function addSchemas(zip: JSZip, set: 'scorm12' | 'scorm2004'): Promise<void> {
+  const base = `${import.meta.env.BASE_URL}scorm-player/schemas/${set}/`
+  await Promise.all(
+    SCHEMA_FILES[set].map(async (name) => {
+      const res = await fetch(base + name)
+      if (!res.ok) throw new Error(`Could not load schema "${name}" (HTTP ${res.status})`)
+      zip.file(name, await res.arrayBuffer())
+    }),
+  )
+}
+
 // Add media from the project's assets/ folder — only the files the course
 // references (orphans from replaced/removed media are skipped).
 export async function addAssets(

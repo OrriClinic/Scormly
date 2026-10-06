@@ -33,27 +33,22 @@ function quizIds(course: Course): string[] {
   return ids
 }
 
-// LOM metadata (title / description / language) so the LMS catalog can show
-// the course description without the author re-typing it at import time.
-// 2004 uses the IEEE LOM binding; 1.2 uses the IMS MD 1.2 binding.
-function lomMetadata(course: Course, lang: string, v2004: boolean): string {
+// IEEE LOM metadata (title / language / description) for SCORM 2004, so the LMS
+// catalog can show the course description without the author re-typing it at
+// import time. Not emitted for 1.2: its <metadata> holds a strict wildcard, so
+// inline IMS MD requires imsmd_rootv1p2p1.xsd, whose content model is not
+// deterministic — strict validators (libxml2, i.e. PHP schemaValidate) fail to
+// compile it and reject the whole manifest.
+function lomMetadata(course: Course, lang: string): string {
   const title = escapeXml(course.title || 'Course')
   const description = escapeXml(course.description || '')
   const l = escapeXml(lang)
-  if (v2004) {
-    return `    <lom:lom>
+  return `    <lom:lom>
       <lom:general>
         <lom:title><lom:string language="${l}">${title}</lom:string></lom:title>
-${description ? `        <lom:description><lom:string language="${l}">${description}</lom:string></lom:description>\n` : ''}        <lom:language>${l}</lom:language>
-      </lom:general>
+        <lom:language>${l}</lom:language>
+${description ? `        <lom:description><lom:string language="${l}">${description}</lom:string></lom:description>\n` : ''}      </lom:general>
     </lom:lom>`
-  }
-  return `    <imsmd:lom>
-      <imsmd:general>
-        <imsmd:title><imsmd:langstring xml:lang="${l}">${title}</imsmd:langstring></imsmd:title>
-${description ? `        <imsmd:description><imsmd:langstring xml:lang="${l}">${description}</imsmd:langstring></imsmd:description>\n` : ''}        <imsmd:language>${l}</imsmd:language>
-      </imsmd:general>
-    </imsmd:lom>`
 }
 
 // Build an imsmanifest.xml for a single-SCO package launching index.html.
@@ -115,7 +110,7 @@ ${quizObjs}
   <metadata>
     <schema>ADL SCORM</schema>
     <schemaversion>2004 4th Edition</schemaversion>
-${lomMetadata(course, lang, true)}
+${lomMetadata(course, lang)}
   </metadata>
   <organizations default="ORG-1">
     <organization identifier="ORG-1">
@@ -142,13 +137,11 @@ ${fileEntries}
 <manifest identifier="${escapeXml(id)}" version="1.2"
   xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
   xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
-  xmlns:imsmd="http://www.imsglobal.org/xsd/imsmd_rootv1p2p1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd">
+  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
   <metadata>
     <schema>ADL SCORM</schema>
     <schemaversion>1.2</schemaversion>
-${lomMetadata(course, lang, false)}
   </metadata>
   <organizations default="ORG-1">
     <organization identifier="ORG-1">
