@@ -241,7 +241,7 @@ Course
 
 ### Block
 
-Every block is \`{ id: string, type: BlockType, settings: { spacing?: 'compact' | 'normal' | 'spacious', background?: 'none' | 'muted' | 'soft' | 'accent' | 'gradient' | 'dark' | 'image', backgroundImage?: string, width?: 'normal' | 'full' }, data: <type-specific> }\`.
+Every block is \`{ id: string, type: BlockType, settings: { spacing?: 'compact' | 'normal' | 'spacious', background?: 'none' | 'muted' | 'soft' | 'accent' | 'gradient' | 'dark' | 'image', backgroundImage?: string, width?: 'narrow' | 'normal' | 'wide' | 'full' }, data: <type-specific> }\`.
 The \`type\` field selects the shape of \`data\` (a discriminated union).
 
 \`settings.background\` paints the block as a panel in a color derived from the
@@ -249,7 +249,8 @@ theme (muted = light gray, soft = accent tint, accent / gradient = accent color
 with white text, dark = near-black with white text, image = \`backgroundImage\`
 (assets/images/ path) dimmed under white text); consecutive blocks with
 the same background join into one panel. \`settings.spacing\` is its inner padding.
-\`settings.width: 'full'\` stretches the block edge to edge of the page: with a
+\`settings.width\`: 'narrow' (~60% of the column, centered), 'normal' (default),
+'wide' (breaks out past the column), 'full' stretches the block edge to edge of the page: with a
 background it becomes a full-width band (content stays in the column); without
 one, media blocks (text on image, carousel, quote on image) span the page.
 

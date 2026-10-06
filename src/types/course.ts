@@ -44,6 +44,8 @@ export type BlockBackground =
   | 'dark'
   | 'image'
 
+export type BlockWidth = 'narrow' | 'normal' | 'wide' | 'full'
+
 // Shared visual settings for a block (spacing, background, etc.).
 export interface BlockSettings {
   /** Inner padding of the block (most visible with a background). */
@@ -52,10 +54,11 @@ export interface BlockSettings {
   background?: BlockBackground
   /** Photo for background 'image' (assets/ path); dimmed so text stays readable. */
   backgroundImage?: string
-  /** 'full' stretches the block edge to edge of the page: a full-width band
-   *  (with a background the content stays in the column; without one, media
-   *  such as text on image or a carousel spans the whole width). */
-  width?: 'normal' | 'full'
+  /** Block width: narrow (~60% of the column), normal (the column, default),
+   *  wide (breaks out past the column) or full — edge to edge of the page: a
+   *  full-width band (with a background the content stays in the column;
+   *  without one, media such as text on image or a carousel spans the page). */
+  width?: BlockWidth
 }
 
 interface BaseBlock {

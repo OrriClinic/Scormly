@@ -446,6 +446,9 @@ captions and larger text, in the builder preview and in the exported player alik
     editor joins same-background neighbours into one panel too. The style
     popover opens above/below the block instead of covering it. The player CSS
     sync runs automatically before `npm run dev` / `npm run build`.
+  - Block width now has four steps: narrow (~60% of the column), column, wide
+    (breaks out up to 20rem past the column) and full width. Select/callout/
+    attachment corners are capped so pill-shaped themes don't make them round.
   - Course cover page (`Course.intro`) as a separate sidebar item, not a lesson.
   - Appearance settings: content width, typography (modern / editorial /
     rounded, system fonts only), block entrance animation, lesson transition.

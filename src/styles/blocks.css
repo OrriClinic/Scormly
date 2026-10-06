@@ -65,6 +65,17 @@
   padding-bottom: 1rem;
 }
 
+/* Narrow / wide blocks (settings.width): centered, smaller or larger than the
+ * text column. Wide breaks out of the column up to 20rem (never past the page). */
+.blk-narrow { max-width: min(100%, max(60%, 22rem)); margin-inline: auto; }
+.blk-wide {
+  --wide-w: min(calc(var(--page-w, 100%) - 3rem), calc(var(--col-w, 768px) + 20rem));
+  width: var(--wide-w);
+  max-width: none;
+  margin-left: calc(50% - var(--wide-w) / 2);
+}
+@media (max-width: 639px) { .blk-wide { width: 100%; margin-left: 0; } }
+
 /* Full-width blocks (settings.width = 'full'): a band from edge to edge of the
  * page. --page-w is the scroll container's width, --col-w the content column.
  * With a background the content stays aligned to the column; without one,
@@ -330,7 +341,7 @@
 .lesson select {
   -webkit-appearance: none; appearance: none;
   min-height: 2.5rem; padding: 0.45rem 2.25rem 0.45rem 0.8rem;
-  border: 1px solid #d4d4dc; border-radius: calc(var(--radius-interactive) + 2px);
+  border: 1px solid #d4d4dc; border-radius: calc(min(var(--radius-interactive), 0.375rem) + 2px);
   background-color: #fff;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 0.7rem center; background-size: 1rem 1rem;
@@ -351,7 +362,7 @@
 .sc-attach-item {
   display: flex; align-items: center; gap: 0.875rem; padding: 0.75rem 0.875rem;
   background: #fff; border: 1px solid #e7e7ec;
-  border-radius: calc(var(--radius-interactive) + 4px);
+  border-radius: calc(min(var(--radius-interactive), 0.625rem) + 4px);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .sc-attach-item:hover {
@@ -382,7 +393,7 @@
   --note: #2563eb; --note-bg: #eff6ff; --note-text: #1e3a8a;
   display: flex; gap: 0.875rem; align-items: flex-start;
   padding: 1rem 1.25rem; border-left: 4px solid var(--note);
-  border-radius: calc(var(--radius-interactive) + 2px);
+  border-radius: calc(min(var(--radius-interactive), 0.625rem) + 2px);
   background: var(--note-bg); color: var(--note-text);
 }
 .sc-note-tip { --note: var(--color-brand); --note-bg: color-mix(in srgb, var(--color-brand) 9%, #fff); --note-text: color-mix(in srgb, var(--color-brand-dark) 80%, #000); }

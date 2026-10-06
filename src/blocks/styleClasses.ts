@@ -40,7 +40,8 @@ export function blockWrapperProps(
   const bg = settings?.background ?? 'none'
   const pad = settings?.spacing ?? 'normal'
   let className = `blk blk-pad-${pad}`
-  if (settings?.width === 'full') className += ' blk-full'
+  const width = settings?.width ?? 'normal'
+  if (width !== 'normal') className += ` blk-${width}`
   if (bg === 'none') return { className }
   className += ' blk-has-bg'
   if (DARK_BACKGROUNDS.includes(bg)) className += ' blk-on-dark'

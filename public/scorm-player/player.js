@@ -998,7 +998,7 @@
     var s = b.settings || {};
     var bg = BACKGROUNDS[s.background] ? s.background : null;
     var cls = 'blk blk-pad-' + (PADDINGS[s.spacing] ? s.spacing : 'normal');
-    if (s.width === 'full') cls += ' blk-full';
+    if (s.width === 'narrow' || s.width === 'wide' || s.width === 'full') cls += ' blk-' + s.width;
     if (bg) cls += ' blk-has-bg' + (DARK_BG[bg] ? ' blk-on-dark' : '');
     if (anim !== 'none' && !state.revealed[b.id]) cls += ' anim-' + anim;
     var w = h('div', { class: cls, 'data-bg': bg, 'data-block': b.id }, el);

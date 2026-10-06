@@ -22,8 +22,10 @@ const design: LocaleTable = {
     pad_spacious: 'Spacious',
     blockWidth: 'Width',
     width_column: 'Column',
+    width_narrowBlock: 'Narrow',
+    width_wideBlock: 'Wide',
     width_fullBleed: 'Full width',
-    blockWidthHelp: 'Full width stretches the block edge to edge — a wide band for photos or text on a background.',
+    blockWidthHelp: 'Narrow and wide make a block smaller or bigger than the text column; full width stretches it edge to edge — a band for photos or text on a background.',
 
     // Image
     imageSize: 'Size',
@@ -224,8 +226,10 @@ const design: LocaleTable = {
     pad_spacious: 'Просторо',
     blockWidth: 'Ширина',
     width_column: 'Колонка',
+    width_narrowBlock: 'Вузька',
+    width_wideBlock: 'Широка',
     width_fullBleed: 'На всю ширину',
-    blockWidthHelp: '«На всю ширину» розтягує блок від краю до краю — широка смуга для фото чи тексту на фоні.',
+    blockWidthHelp: '«Вузька» і «Широка» роблять блок меншим чи більшим за колонку тексту, а «На всю ширину» розтягує його від краю до краю — смуга для фото чи тексту на фоні.',
 
     imageSize: 'Розмір',
     size_small: 'Малий',

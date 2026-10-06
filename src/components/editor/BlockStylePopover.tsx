@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { Block, BlockBackground, BlockSettings } from '../../types/course'
+import type { Block, BlockBackground, BlockSettings, BlockWidth } from '../../types/course'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import { BLOCK_BACKGROUNDS } from '../../blocks/styleClasses'
@@ -66,7 +66,7 @@ export default function BlockStylePopover({
       role="dialog"
       aria-label={t('blockStyle')}
       onClick={(e) => e.stopPropagation()}
-      className={`pop-in absolute right-3 z-30 w-[20rem] ${placement === 'up' ? 'bottom-full mb-5' : 'top-full mt-2'} max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white p-4 text-gray-700 shadow-xl`}
+      className={`pop-in absolute right-3 z-30 w-[22rem] ${placement === 'up' ? 'bottom-full mb-5' : 'top-full mt-2'} max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white p-4 text-gray-700 shadow-xl`}
     >
       <p className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-gray-400">
         {t('background')}
@@ -119,12 +119,14 @@ export default function BlockStylePopover({
       {upload.error && <p className="mt-1.5 text-xs text-red-600">{t('unsupportedImage')}</p>}
 
       <div className="mt-4 space-y-3 border-t border-gray-100 pt-3">
-        <Segmented<'normal' | 'full'>
+        <Segmented<BlockWidth>
           label={t('blockWidth')}
           value={width}
           onChange={(v) => updateSettings(lessonId, block.id, { width: v })}
           options={[
+            ['narrow', t('width_narrowBlock')],
             ['normal', t('width_column')],
+            ['wide', t('width_wideBlock')],
             ['full', t('width_fullBleed')],
           ]}
         />
