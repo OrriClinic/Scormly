@@ -449,6 +449,11 @@ captions and larger text, in the builder preview and in the exported player alik
   - Block width now has four steps: narrow (~60% of the column), column, wide
     (breaks out up to 20rem past the column) and full width. Select/callout/
     attachment corners are capped so pill-shaped themes don't make them round.
+  - Add-block menu regrouped explicitly: a section rail (Ready-made: Text /
+    Quotes / Media / Structure; Basic blocks: Text / Media / Interactive /
+    Navigation, with counts) and the selected group on the right under a
+    "Section / Group" header; search lists every match grouped the same way.
+    The hover preview floats beside the wider menu (over the sidebar if needed).
   - Course cover page (`Course.intro`) as a separate sidebar item, not a lesson.
   - Appearance settings: content width, typography (modern / editorial /
     rounded, system fonts only), block entrance animation, lesson transition.

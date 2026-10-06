@@ -93,10 +93,12 @@ const design: LocaleTable = {
 
     // Ready-made templates (Add block menu)
     catTemplates: 'Ready-made',
+    catBasicBlocks: 'Basic blocks',
+    blockSections: 'Block sections',
     tplGroup_text: 'Text',
     tplGroup_quotes: 'Quotes',
     tplGroup_media: 'Media',
-    tplGroup_structure: 'Structure & dividers',
+    tplGroup_structure: 'Structure',
     tpl_headingText: 'Heading & text',
     tpl_headingTextDesc: 'Section heading with a paragraph',
     tpl_lead: 'Lead paragraph',
@@ -289,10 +291,12 @@ const design: LocaleTable = {
     unsupportedFile: 'Такий файл не можна прикріпити: вебсторінки та скрипти заблоковано з міркувань безпеки.',
 
     catTemplates: 'Готові блоки',
+    catBasicBlocks: 'Базові блоки',
+    blockSections: 'Розділи блоків',
     tplGroup_text: 'Текст',
     tplGroup_quotes: 'Цитати',
     tplGroup_media: 'Медіа',
-    tplGroup_structure: 'Структура й розділювачі',
+    tplGroup_structure: 'Структура',
     tpl_headingText: 'Заголовок і текст',
     tpl_headingTextDesc: 'Заголовок розділу з абзацом',
     tpl_lead: 'Лід-абзац',
