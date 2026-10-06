@@ -2,7 +2,7 @@
 // with a mock fetch, drives the wrapper through a course session, and asserts
 // the resulting xAPI statements and State-API calls conform to cmi5.
 
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 import { loadXapi, defaultLaunch } from './lms-mock'
 
 const CMI5_CAT = 'https://w3id.org/xapi/cmi5/context/categories/cmi5'
@@ -598,5 +598,33 @@ describe('xAPI — learner preferences', () => {
     SCORM.init()
     await wait()
     expect((SCORM.getLearnerPreferences() as { audio: string }).audio).toBe('off')
+  })
+})
+
+describe('xAPI — LMS that drops statements with a 200', () => {
+  test('warns when the LMS answers {"success":false} (TalentLMS with xAPI disabled)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { SCORM, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: { launchMode: 'Normal' },
+      statementResponse: '{"success":false,"message":"tincan logging is not enabled"}',
+    })
+    SCORM.init()
+    await wait()
+    expect(warn.mock.calls.some((c) => String(c[0]).includes('statement not stored by the LMS: tincan logging is not enabled'))).toBe(true)
+    warn.mockRestore()
+  })
+
+  test('stays quiet on a normal xAPI response (array of ids)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { SCORM, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: { launchMode: 'Normal' },
+      statementResponse: '["24fb405c-17a2-4390-b745-285d7201f67b"]',
+    })
+    SCORM.init()
+    await wait()
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
   })
 })

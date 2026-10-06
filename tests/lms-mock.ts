@@ -122,7 +122,7 @@ export interface XapiFetchMock {
   calls: XapiCall[]
 }
 
-export function makeXapiFetch(opts: { launchData?: Record<string, unknown>; resumeBlob?: string; learnerPrefs?: Record<string, unknown> } = {}): XapiFetchMock {
+export function makeXapiFetch(opts: { launchData?: Record<string, unknown>; resumeBlob?: string; learnerPrefs?: Record<string, unknown>; statementResponse?: string } = {}): XapiFetchMock {
   const launchData = opts.launchData || {}
   const resumeBlob = opts.resumeBlob || ''
   const calls: XapiCall[] = []
@@ -141,6 +141,10 @@ export function makeXapiFetch(opts: { launchData?: Record<string, unknown>; resu
     }
     if (url.indexOf('stateId=suspendData') >= 0 && method !== 'PUT') {
       return Promise.resolve({ ok: !!resumeBlob, text: () => Promise.resolve(resumeBlob) })
+    }
+    if (url.indexOf('/statements') >= 0 && method === 'POST' && opts.statementResponse != null) {
+      const text = opts.statementResponse
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(JSON.parse(text)), text: () => Promise.resolve(text) })
     }
     return Promise.resolve({ ok: true, json: () => Promise.resolve({}), text: () => Promise.resolve('') })
   }
@@ -201,8 +205,9 @@ export function loadXapi(opts: {
   learnerPrefs?: Record<string, unknown>
   params?: XapiLaunchParams
   course?: Record<string, unknown>
+  statementResponse?: string
 } = {}): LoadedXapi {
-  const { fetch, calls } = makeXapiFetch({ launchData: opts.launchData, resumeBlob: opts.resumeBlob, learnerPrefs: opts.learnerPrefs })
+  const { fetch, calls } = makeXapiFetch({ launchData: opts.launchData, resumeBlob: opts.resumeBlob, learnerPrefs: opts.learnerPrefs, statementResponse: opts.statementResponse })
   const win: Record<string, unknown> = {
     __SCORMLY_COURSE__: opts.course || { settings: { passingScore: 80 } },
   }

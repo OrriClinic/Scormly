@@ -404,3 +404,10 @@ captions and larger text, in the builder preview and in the exported player alik
   §11.2) — and SCORM audio_level 0 / audio -1 — now start media muted. Note: TalentLMS supports
   only SCORM 1.2, xAPI and cmi5 (not SCORM 2004); its Reports → Timeline shows `[TC] completion` /
   `[TC] failure`, and xAPI must be enabled under Account & Settings → Integrations.
+- 2026-10-06 — **TalentLMS root cause found** (from a HAR of `/cmi5/statements`): TalentLMS answered
+  the `initialized` statement with HTTP 200 but body `{"success":false,"message":"tincan logging is
+  not enabled"}` — the portal's xAPI integration (Account & Settings → Integrations → xAPI) was off,
+  so every statement was silently dropped and the unit stayed "Pending". Our runtime now warns
+  `[xAPI] statement not stored by the LMS: …` on such responses. The HAR also confirmed the session-ID
+  fix in the field (statements carry TalentLMS's session ID). TalentLMS notes: registration is not a
+  UUID (base64 `1-<id>-<ts>`), session ID is a constant `123`; Preview mode doesn't record progress.

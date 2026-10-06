@@ -175,7 +175,15 @@
       body: JSON.stringify(stmt),
       keepalive: true, // let final statements survive page unload
     }).then(function (r) {
-      if (!r.ok) console.warn('[xAPI] statement rejected: ' + r.status);
+      if (!r.ok) { console.warn('[xAPI] statement rejected: ' + r.status); return; }
+      // xAPI answers 200 with the stored statement ids. Some LMSes answer 200
+      // with {"success":false,"message":…} instead — TalentLMS does so while
+      // its xAPI integration is disabled — and silently drop the statement.
+      return r.text().then(function (text) {
+        var body = null;
+        try { body = JSON.parse(text); } catch (e) { /* not JSON */ }
+        if (body && body.success === false) console.warn('[xAPI] statement not stored by the LMS: ' + (body.message || text));
+      });
     }).catch(function (e) { console.warn('[xAPI] statement failed', e); });
   }
 
