@@ -2,7 +2,7 @@
 // in a Node VM with a mock LMS, then asserts the values it writes through the
 // SCORM API conform to the SCORM data model.
 
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 import { loadScorm } from './lms-mock'
 
 describe('SCORM wrapper — discovery + lifecycle', () => {
@@ -583,5 +583,58 @@ describe('SCORM — audio preference', () => {
     const c = loadScorm('2004', { 'cmi.learner_preference.audio_level': '1' })
     c.SCORM.init()
     expect((c.SCORM.getLearnerPreferences() as { audio: string }).audio).toBe('')
+  })
+})
+
+describe('SCORM — field findings (TalentLMS 1.2 log)', () => {
+  // TalentLMS answers cmi.objectives.* with 401 "Not implemented".
+  function withoutObjectives(version: '1.2' | '2004') {
+    const m = loadScorm(version)
+    const code = version === '2004' ? '402' : '401'
+    const get = m.api[version === '2004' ? 'GetValue' : 'LMSGetValue']
+    const set = m.api[version === '2004' ? 'SetValue' : 'LMSSetValue']
+    let err = '0'
+    const writes: string[] = []
+    m.api[version === '2004' ? 'GetValue' : 'LMSGetValue'] = ((k: string) => {
+      if (k.startsWith('cmi.objectives')) { err = code; return '' }
+      err = '0'; return get(k)
+    }) as unknown as () => string
+    m.api[version === '2004' ? 'SetValue' : 'LMSSetValue'] = ((k: string, v: string) => {
+      writes.push(k)
+      if (k.startsWith('cmi.objectives')) { err = code; return 'false' }
+      err = '0'; return set(k, v)
+    }) as unknown as () => string
+    m.api[version === '2004' ? 'GetLastError' : 'LMSGetLastError'] = (() => err) as () => string
+    return { ...m, writes }
+  }
+
+  test.each(['1.2', '2004'] as const)('%s: objectives are skipped when the LMS does not implement them', (v) => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { SCORM, writes } = withoutObjectives(v)
+    SCORM.init()
+    SCORM.setObjective(0, { id: 'QUIZ_q1', raw: 100, status: 'completed', success: 'passed' })
+    SCORM.setObjective(1, { id: 'QUIZ_q2', raw: 100, status: 'completed', success: 'passed' })
+    expect(writes.filter((k) => k.startsWith('cmi.objectives'))).toEqual([])
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  test('learner names in "Last, First" form are shown as "First Last"', () => {
+    const a = loadScorm('1.2', { 'cmi.core.student_name': 'Shevchenko, Taras' })
+    a.SCORM.init()
+    expect(a.SCORM.getLearner()?.name).toBe('Taras Shevchenko')
+    const b = loadScorm('2004', { 'cmi.learner_name': 'Doe, Jane, Q' })
+    b.SCORM.init()
+    expect(b.SCORM.getLearner()?.name).toBe('Jane Q Doe')
+  })
+
+  test('1.2 reads lesson_status only once at launch', () => {
+    const m = loadScorm('1.2', { 'cmi.core.lesson_status': 'not attempted' })
+    const get = m.api.LMSGetValue
+    let reads = 0
+    m.api.LMSGetValue = ((k: string) => { if (k === 'cmi.core.lesson_status') reads++; return get(k) }) as unknown as () => string
+    m.SCORM.init()
+    expect(reads).toBe(1)
+    expect(m.data['cmi.core.lesson_status']).toBe('incomplete')
   })
 })

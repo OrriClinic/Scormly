@@ -124,9 +124,20 @@
   // objectives to the slot that already carries their id — 2004 LMSes preload
   // the manifest's objectives (PRIMARYOBJ, QUIZ_*) in declaration order, and
   // writing a different id to an existing slot is an error.
+  // Optional data model families the LMS doesn't implement (1.2 error 401,
+  // 2004 401/402 — e.g. TalentLMS has no cmi.objectives). Writing to them
+  // only produces an error per call, so they are skipped altogether.
+  var unsupported = { objectives: false, interactions: false };
+  function notImplemented() {
+    var code = lastError();
+    return code === '401' || (v2004 && code === '402');
+  }
+
   function readIndexes() {
     interactionCount = readCount('cmi.interactions._count');
+    unsupported.interactions = notImplemented();
     objectiveCount = readCount('cmi.objectives._count');
+    unsupported.objectives = notImplemented();
     objectiveIndexById = {};
     for (var i = 0; i < objectiveCount; i++) {
       var id = get('cmi.objectives.' + i + '.id');
@@ -182,11 +193,18 @@
     language: '',         // ISO code from learner preference
   };
 
+  // LMSes send names as "Last, First[, Middle]" (the 1.2 data model's
+  // convention, common in 2004 too); the player shows "First Middle Last".
+  function displayName(raw) {
+    var parts = String(raw || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    return parts.length > 1 ? parts.slice(1).concat(parts[0]).join(' ') : parts.join('');
+  }
+
   function readContext() {
     if (v2004) {
       ctx.learner = {
         id: get('cmi.learner_id') || '',
-        name: get('cmi.learner_name') || '',
+        name: displayName(get('cmi.learner_name')),
       };
       ctx.mode = (get('cmi.mode') || 'normal').toLowerCase();
       ctx.entry = (get('cmi.entry') || '').toLowerCase();
@@ -199,7 +217,7 @@
     } else {
       ctx.learner = {
         id: get('cmi.core.student_id') || '',
-        name: get('cmi.core.student_name') || '',
+        name: displayName(get('cmi.core.student_name')),
       };
       ctx.mode = (get('cmi.core.lesson_mode') || 'normal').toLowerCase();
       ctx.entry = (get('cmi.core.entry') || '').toLowerCase();
@@ -244,7 +262,7 @@
         readIndexes();
         readStatus();
         if (!v2004) {
-          var status = API.LMSGetValue('cmi.core.lesson_status');
+          var status = sticky.status12;
           if (trackingAllowed() && (!status || status === 'not attempted')) {
             set('cmi.core.lesson_status', 'incomplete');
           }
@@ -321,9 +339,9 @@
     // can break results down per objective. The first argument (the caller's
     // index) is ignored: the slot is resolved by objective id, see readIndexes.
     setObjective: function (_i, data) {
-      if (!trackingAllowed() || !data || !data.id) return;
+      if (!trackingAllowed() || unsupported.objectives || !data || !data.id) return;
       var p = 'cmi.objectives.' + objectiveIndex(data.id) + '.';
-      set(p + 'id', data.id);
+      if (!set(p + 'id', data.id) && notImplemented()) { unsupported.objectives = true; return; }
       if (typeof data.raw === 'number') {
         set(p + 'score.raw', Math.round(data.raw));
         set(p + 'score.min', data.min == null ? 0 : data.min);
@@ -349,9 +367,9 @@
     // correct response patterns. The first argument (the caller's index) is
     // ignored: interactions are appended after the ones the LMS already holds.
     recordInteraction: function (_i, data) {
-      if (!trackingAllowed() || !data || !data.id) return;
+      if (!trackingAllowed() || unsupported.interactions || !data || !data.id) return;
       var p = 'cmi.interactions.' + (interactionCount++) + '.';
-      set(p + 'id', data.id);
+      if (!set(p + 'id', data.id) && notImplemented()) { unsupported.interactions = true; return; }
       set(p + 'type', data.type);
       // 1.2 student_response is CMIFeedback (max 255 chars).
       var resp = formatResponse(v2004 ? data.response : compact12(data.response, data));

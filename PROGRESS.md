@@ -411,3 +411,10 @@ captions and larger text, in the builder preview and in the exported player alik
   `[xAPI] statement not stored by the LMS: …` on such responses. The HAR also confirmed the session-ID
   fix in the field (statements carry TalentLMS's session ID). TalentLMS notes: registration is not a
   UUID (base64 `1-<id>-<ts>`), session ID is a constant `123`; Preview mode doesn't record progress.
+- 2026-10-06 — **SCORM 1.2 verified on TalentLMS** (console log of the LMS API): unit completed,
+  course 100%, `lesson_status=passed`, score, suspend_data, exit=suspend, session_time on each
+  commit and compact interaction ids all accepted. Fixes from the log: TalentLMS doesn't implement
+  `cmi.objectives` (401) — the runtime now skips objective/interaction families the LMS reports as
+  not implemented (401 / 2004 402) instead of 5 failing writes per scored block; learner names in
+  "Last, First" form (TalentLMS sends `Dmytro,Dmytro`) display as "First Last"; lesson_status is
+  read once at launch.
