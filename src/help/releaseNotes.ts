@@ -11,6 +11,24 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-06',
+    date: '2026-10-06',
+    items: {
+      en: [
+        'Better LMS compatibility: SCORM manifests now percent-encode media file names (Cyrillic and spaces no longer break strict LMS imports) and tell the LMS not to auto-complete the course on exit (SCORM 2004).',
+        'The course title, description and content language are embedded as metadata in SCORM packages, so LMS catalogs can show them after import.',
+        'A completed course now reopens where the learner finished instead of restarting, and retaking a quiz from the “Review the course” screen is still tracked.',
+        'New “Exit course” button on the completion screen: returns the learner to the LMS (cmi5) or closes the course window.',
+      ],
+      uk: [
+        'Краща сумісність із LMS: у SCORM-маніфестах імена медіафайлів тепер кодуються у відсотковому форматі (кирилиця й пробіли більше не ламають імпорт у суворих LMS), а LMS більше не позначає курс завершеним автоматично при виході (SCORM 2004).',
+        'Назва, опис і мова контенту курсу тепер вбудовуються як метадані в SCORM-пакети, тож каталоги LMS показують їх після імпорту.',
+        'Завершений курс тепер відкривається там, де слухач закінчив, а не спочатку; перепроходження тесту з екрана «Переглянути курс» також відстежується.',
+        'Нова кнопка «Вийти з курсу» на фінальному екрані: повертає слухача до LMS (cmi5) або закриває вікно курсу.',
+      ],
+    },
+  },
+  {
     id: '2026-09-30',
     date: '2026-09-30',
     items: {

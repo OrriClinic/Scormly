@@ -77,6 +77,7 @@ export interface ScormWrapper {
   getMode(): string
   isResuming(): boolean
   getLaunchData(): string
+  getReturnUrl(): string
   getLmsMastery(): number | null
   getPreferredLanguage(): string
   commit(): void

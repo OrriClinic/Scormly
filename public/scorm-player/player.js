@@ -25,7 +25,7 @@
       empty: 'This lesson has no content yet.', submit: 'Submit answer', retry: 'Try again',
       correct: 'Correct', incorrect: 'Incorrect', yourScore: 'Your score: {s}%',
       passed: 'Passed', failed: 'Not passed', restart: 'Restart', end: 'The end',
-      finish: 'Finish', courseComplete: 'Course complete',
+      finish: 'Finish', exitCourse: 'Exit course', courseComplete: 'Course complete',
       courseCompleteText: 'You have reached the end of the course. You can close this window.',
       review: 'Review the course', watchToContinue: 'Watch the video to continue.',
       close: 'Close', hotspotMarker: 'Marker {n}: {title}', hotspotProgress: 'Explored {n} of {total}',
@@ -45,7 +45,7 @@
       empty: 'У цьому уроці ще немає контенту.', submit: 'Відповісти', retry: 'Спробувати ще раз',
       correct: 'Правильно', incorrect: 'Неправильно', yourScore: 'Ваш результат: {s}%',
       passed: 'Складено', failed: 'Не складено', restart: 'Спочатку', end: 'Кінець',
-      finish: 'Завершити', courseComplete: 'Курс завершено',
+      finish: 'Завершити', exitCourse: 'Вийти з курсу', courseComplete: 'Курс завершено',
       courseCompleteText: 'Ви пройшли курс до кінця. Це вікно можна закрити.',
       review: 'Переглянути курс', watchToContinue: 'Перегляньте відео, щоб продовжити.',
       close: 'Закрити', hotspotMarker: 'Мітка {n}: {title}', hotspotProgress: 'Переглянуто {n} з {total}',
@@ -242,6 +242,9 @@
   var SCORED = { quiz: true, ordering: true, fillBlanks: true };
 
   var state = { course: null, lessonIndex: 0, visited: {}, continued: {}, watched: {}, quizResults: {}, quizzes: [], quizIndexById: {}, interactionIndex: 0, sessionStart: 0, complete: false, finished: false, summary: null, learner: null, lmsMode: 'normal' };
+  // Set at boot to the unload handler, so the completion screen's "Exit course"
+  // button can end the LMS session the same way closing the window does.
+  var endSession = null;
 
   function start(course) {
     state.course = course;
@@ -280,11 +283,16 @@
       if (exited) return;
       exited = true;
       SCORM.setSessionTime((Date.now() - state.sessionStart) / 1000);
-      SCORM.setExit(state.complete ? '' : 'suspend');
+      // Always 'suspend', even when complete: exit='' lets the LMS end the
+      // attempt, and on the next launch the course restarts from scratch (some
+      // LMS even show the fresh attempt as incomplete). Suspending keeps the
+      // finished state resumable; completion/success are already reported.
+      SCORM.setExit('suspend');
       // Only ever terminate from the AU; cmi5 `abandoned` is LMS-issued.
       // `true` = unloading, so xapi.js posts `terminated` immediately.
       SCORM.finish(true);
     }
+    endSession = onExit;
     window.addEventListener('beforeunload', onExit);
     window.addEventListener('pagehide', onExit);
     // cmi5 loads its launch context and resume data over the network; SCORM
@@ -404,17 +412,30 @@
     return true;
   }
 
-  // Learner explicitly ends the course: report final state and terminate the
-  // LMS session, then show the completion screen.
+  // Learner explicitly ends the course: report + commit the final state and
+  // show the completion screen. The session is NOT terminated here — "Review
+  // the course" (and a quiz retake during review) must stay tracked;
+  // Terminate happens on unload (onExit) or via the "Exit course" button.
   function finishCourse() {
     state.visited[state.lessonIndex] = true;
     state.finished = true;
     reportProgress();
     SCORM.setSessionTime((Date.now() - state.sessionStart) / 1000);
-    SCORM.setExit(state.complete ? '' : 'suspend');
-    SCORM.finish();
+    SCORM.setExit('suspend');
+    SCORM.commit();
     render();
     focusLessonHeading(true);
+  }
+
+  // "Exit course" on the completion screen: terminate the LMS session, then
+  // return to the LMS (cmi5 returnURL) or close the window (SCORM popups).
+  // When neither works (SCO in an iframe) the completion screen stays, which
+  // already tells the learner the window can be closed.
+  function exitCourse() {
+    if (endSession) endSession();
+    var url = SCORM.getReturnUrl && SCORM.getReturnUrl();
+    if (url) { location.assign(url); return; }
+    try { window.close(); } catch (e) { /* not a script-opened window */ }
   }
 
   // Mark a required video as watched and update gating without re-rendering
@@ -691,6 +712,10 @@
         h('nav', { class: 'player-nav', 'aria-label': t('lessonNav') }, [
           h('button', { class: 'btn btn-outline', text: t('review'),
             onclick: function () { state.finished = false; render(); focusLessonHeading(true); } }),
+          // Exit back to the LMS — only shown when actually running in one.
+          SCORM.available()
+            ? h('button', { class: 'btn', text: t('exitCourse'), onclick: exitCourse })
+            : null,
         ]),
       ]),
     ]);

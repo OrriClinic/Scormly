@@ -98,6 +98,20 @@ describe('xAPI — launch handshake', () => {
     expect(called).toBe(true)
   })
 
+  test('surfaces the LaunchData returnURL for the Exit course button', async () => {
+    const { SCORM, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: { launchMode: 'Normal', returnURL: 'https://lms.example/return' },
+    })
+    SCORM.init()
+    await wait()
+    expect(SCORM.getReturnUrl()).toBe('https://lms.example/return')
+    // No cmi5 launch → no returnURL.
+    const bare = loadXapi()
+    bare.SCORM.init()
+    expect(bare.SCORM.getReturnUrl()).toBe('')
+  })
+
   test('initialized statement is sent first, carries cmi5 category + session id', async () => {
     const { SCORM, statements, wait } = loadXapi({
       params: defaultLaunch(),

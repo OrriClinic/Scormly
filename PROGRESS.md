@@ -333,3 +333,21 @@ captions and larger text, in the builder preview and in the exported player alik
   and the course content language; accessibility warnings in the pre-export check; agent guide
   and docs updated. Learner-side a11y (menu, skip link, focus management, live regions,
   keyboard patterns, LMS preferences) in the player and preview.
+- 2026-10-06 — **LMS-compatibility pass over the exports** (standards audit):
+  - Manifest `href`s are now %-encoded URIs (`encodeURI` before XML-escaping) — asset
+    names with spaces/Cyrillic previously produced invalid URIs that strict LMS
+    importers reject.
+  - SCORM 2004 manifest always declares `<imsss:deliveryControls
+    completionSetByContent="true" objectiveSetByContent="true"/>` so the LMS can't
+    auto-complete/satisfy the SCO on exit, overriding the player's reported status.
+  - LOM metadata embedded in both manifests (IEEE LOM for 2004, IMS MD 1.2 for 1.2):
+    course title, description and content language now show up in LMS catalogs.
+    cmi5.xml `langstring lang` uses the course content language too.
+  - Player: `cmi.exit` is now always `suspend` (exit="" after completion caused some
+    LMS to start a fresh attempt on relaunch, losing the resume state); Finish no
+    longer Terminates the session, so "Review the course" (and quiz retakes there)
+    stay tracked — Terminate happens on unload or via the new **Exit course** button
+    on the completion screen (cmi5 `returnURL` redirect, else `window.close()`).
+  - New runtime method `getReturnUrl()` (scorm.js: always ''; xapi.js: LaunchData
+    returnURL). Tests: `tests/scormManifest.test.ts` (new), returnURL case in
+    `tests/xapi.test.ts`. Manifests validated well-formed with xmllint.

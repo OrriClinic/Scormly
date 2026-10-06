@@ -341,6 +341,8 @@
     getMode: function () { return ctx.mode || 'normal'; },
     isResuming: function () { return ctx.entry === 'resume'; },
     getLaunchData: function () { return ctx.launchData; },
+    // SCORM has no LMS return URL (the LMS owns the window); cmi5 does.
+    getReturnUrl: function () { return ''; },
     getLmsMastery: function () { return ctx.lmsMastery; },
     getPreferredLanguage: function () { return ctx.language; },
     // Learner preferences, read live. captions: 1 = on, 0 = no change,

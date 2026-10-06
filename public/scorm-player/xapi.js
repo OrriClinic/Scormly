@@ -499,6 +499,11 @@
       // cmi5 exposes raw launchParameters (string) for AU consumption.
       return launchData.launchParameters || JSON.stringify(launchData);
     },
+    // cmi5 LaunchData returnURL: where to send the learner after the session
+    // ends (back to the LMS). Empty when the LMS didn't provide one.
+    getReturnUrl: function () {
+      return (launchData && launchData.returnURL) || '';
+    },
     getLmsMastery: function () {
       var m = launchData && launchData.masteryScore;
       return typeof m === 'number' ? m * 100 : null;
