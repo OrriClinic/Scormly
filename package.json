@@ -10,7 +10,9 @@
     "node": ">=22.12"
   },
   "scripts": {
+    "predev": "node scripts/syncPlayerCss.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/syncPlayerCss.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",

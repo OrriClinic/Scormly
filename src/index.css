@@ -506,6 +506,10 @@ body {
 .blk-on-dark :is(.bg-white, [class*="bg-white/"], [class*="bg-gray-"]) .placeholder-gray-300::placeholder { color: revert-layer; }
 
 /* Background swatches in the block style popover. */
+.swatch[data-bg="image"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' fill='%23bae6fd'/%3E%3Ccircle cx='25' cy='11' r='4' fill='%23fbbf24'/%3E%3Cpath d='M0 28 12 15l8 8 5-4 11 11v6H0Z' fill='%230369a1'/%3E%3C/svg%3E");
+  background-size: cover;
+}
 .swatch[data-bg="none"] {
   background-image: linear-gradient(to top right, transparent calc(50% - 1px), #f43f5e calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px));
 }

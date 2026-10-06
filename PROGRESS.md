@@ -439,6 +439,13 @@ captions and larger text, in the builder preview and in the exported player alik
     columns or carousel; new blocks **Image & text** (left/right/overlay) and
     **Attachment** (files in `assets/files/`, downloaded under the original name;
     HTML/JS/SVG/XML blocked).
+  - Photo backgrounds for any block (`settings.background: 'image'` +
+    `backgroundImage`, dimmed for readable white text); "Photo band" and "Band
+    with picture" templates. Full-width layouts without a background: image &
+    text runs the picture to the page edge, text and cards stay readable. The
+    editor joins same-background neighbours into one panel too. The style
+    popover opens above/below the block instead of covering it. The player CSS
+    sync runs automatically before `npm run dev` / `npm run build`.
   - Course cover page (`Course.intro`) as a separate sidebar item, not a lesson.
   - Appearance settings: content width, typography (modern / editorial /
     rounded, system fonts only), block entrance animation, lesson transition.

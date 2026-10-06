@@ -495,8 +495,9 @@ html[data-a11y-contrast] .sc-intro-split .sc-intro-text, html[data-a11y-contrast
  * SOURCE OF TRUTH. public/scorm-player/player.css carries a copy between the
  * "shared block design" markers, with the builder's token names mapped to the
  * player's (--color-brand → --brand, --color-brand-dark → --brand-dark,
- * --radius-interactive → --radius-surface). Regenerate it with
- * `node scripts/syncPlayerCss.mjs`; tests/playerCss.test.ts fails when stale.
+ * --radius-interactive → --radius-surface). scripts/syncPlayerCss.mjs copies
+ * it automatically before `npm run dev` / `npm run build`; run it by hand only
+ * while the dev server is already running (tests/playerCss.test.ts checks it).
  * Plain CSS only (no Tailwind) so it works inside the player.
  * ========================================================================== */
 
@@ -518,6 +519,12 @@ html[data-a11y-contrast] .sc-intro-split .sc-intro-text, html[data-a11y-contrast
 [data-bg="gradient"] {
   background-color: var(--brand-dark);
   background-image: linear-gradient(90deg, var(--brand) 0%, var(--brand-dark) 60%, color-mix(in srgb, var(--brand-dark) 62%, #000) 100%);
+  color: #fff;
+}
+/* Photo background: the image (+ a dimming gradient) comes from an inline
+ * style; without one it falls back to a dark panel. */
+[data-bg="image"] {
+  background-color: #111827; background-size: cover; background-position: center;
   color: #fff;
 }
 [data-bg="dark"] {
@@ -566,11 +573,40 @@ html[data-a11y-contrast] .sc-intro-split .sc-intro-text, html[data-a11y-contrast
 .blk-full:not(.blk-has-bg) :is(.sc-quote-image, .sc-imgtext-overlay, .sc-carousel-viewport, .sc-img img, .sc-intro) { border-radius: 0; }
 .blk-full:not(.blk-has-bg) :is(.sc-quote-image, .sc-imgtext-overlay) { min-height: min(34rem, 72vh); }
 .blk-full:not(.blk-has-bg) :is(.sc-quote-image .sc-quote-body, .sc-imgtext-overlay > .sc-imgtext-body) {
+  width: 100%; max-width: none;
   padding-inline: max(1.5rem, calc((var(--page-w, 100%) - var(--col-w, 768px)) / 2));
 }
+.blk-full:not(.blk-has-bg) .sc-imgtext-overlay > .sc-imgtext-body > * { max-width: 42rem; }
 .blk-full:not(.blk-has-bg) :is(.sc-carousel-foot, .sc-img figcaption) { padding-inline: 1.5rem; }
-.blk-full:not(.blk-has-bg) :is(.sc-imgtext-left, .sc-imgtext-right, .sc-gallery, .sc-quote-photo, .sc-columns) { padding-inline: 1.5rem; }
+/* Wide text layouts stay readable: centered at up to 75rem. */
+.blk-full:not(.blk-has-bg) :is(.sc-gallery, .sc-columns, .sc-quote-photo, .sc-quote-card, .sc-attach) {
+  max-width: 75rem; margin-inline: auto; padding-inline: 1.5rem;
+}
+/* Image & text: the picture runs to the page edge, the text sits beside it. */
+@media (min-width: 640px) {
+  .blk-full:not(.blk-has-bg) :is(.sc-imgtext-left, .sc-imgtext-right):has(> .sc-imgtext-media) { gap: 0; align-items: stretch; }
+  .blk-full:not(.blk-has-bg) :is(.sc-imgtext-left, .sc-imgtext-right) > .sc-imgtext-media img {
+    height: 100%; min-height: 24rem; aspect-ratio: auto; border-radius: 0;
+  }
+  .blk-full:not(.blk-has-bg) :is(.sc-imgtext-left, .sc-imgtext-right):has(> .sc-imgtext-media) > .sc-imgtext-body {
+    align-self: center; max-width: 36rem; padding: 2.5rem clamp(1.5rem, 5vw, 4.5rem);
+  }
+}
+@media (max-width: 639px) {
+  .blk-full:not(.blk-has-bg) :is(.sc-imgtext-left, .sc-imgtext-right) > .sc-imgtext-media img { border-radius: 0; }
+  .blk-full:not(.blk-has-bg) :is(.sc-imgtext-left, .sc-imgtext-right) > .sc-imgtext-body { padding-inline: 1.5rem; }
+}
+.blk-full:not(.blk-has-bg) :is(.sc-quote-classic, .sc-quote-statement) { max-width: var(--col-w, 768px); margin-inline: auto; }
+/* Any other block (text, callouts, quizzes…) keeps its content in the column. */
+.blk-full:not(.blk-has-bg):not(:has(.sc-imgtext:not(.no-image), .sc-imgtext-overlay, .sc-carousel, .sc-quote-image, .sc-quote-photo, .sc-quote-card, .sc-img, .sc-gallery, .sc-columns, .sc-attach)) {
+  padding-inline: max(1.5rem, calc((var(--page-w, 100%) - var(--col-w, 768px)) / 2));
+}
 .blk-full:not(.blk-has-bg) .sc-carousel-slide { aspect-ratio: 21 / 9; }
+
+/* The editor joins same-background neighbours with these classes (its block
+ * shells sit between the panels, so the sibling selectors above can't). */
+.blk-has-bg.blk-join-top { border-top-left-radius: 0 !important; border-top-right-radius: 0 !important; padding-top: 0.25rem; }
+.blk-has-bg.blk-join-bottom { border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; padding-bottom: 1rem; }
 
 /* ── Images ─────────────────────────────────────────────────────────────── */
 .sc-img { margin: 0; }

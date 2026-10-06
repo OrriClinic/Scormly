@@ -16,6 +16,15 @@ import {
 import { useCourseStore, selectActiveLesson, INTRO_ID } from '../../store/courseStore'
 import { CONTENT_WIDTH_PX } from '../../types/course'
 import IntroEditor from '../editor/IntroEditor'
+import type { Block } from '../../types/course'
+
+// Blocks with the same background (and width) join into one panel, like in
+// the learner view.
+function panelKey(b: Block | undefined): string | null {
+  const bg = b?.settings.background ?? 'none'
+  // Photo panels never join: each paints its own picture.
+  return b && bg !== 'none' && bg !== 'image' ? `${bg}|${b.settings.width ?? 'normal'}` : null
+}
 import { usePageWidthVar } from '../../hooks/usePageWidthVar'
 import BlockShell from '../editor/BlockShell'
 import AddBlockMenu from '../editor/AddBlockMenu'
@@ -105,21 +114,29 @@ export default function Workspace() {
                     strategy={verticalListSortingStrategy}
                   >
                     <div>
-                      {activeLesson.blocks.map((block, index) => (
-                        <Fragment key={block.id}>
-                          <AddBlockMenu
-                            variant="inline"
-                            lessonId={activeLesson.id}
-                            atIndex={index}
-                          />
-                          <BlockShell
-                            block={block}
-                            lessonId={activeLesson.id}
-                            index={index}
-                            total={activeLesson.blocks.length}
-                          />
-                        </Fragment>
-                      ))}
+                      {activeLesson.blocks.map((block, index, blocks) => {
+                        const key = panelKey(block)
+                        const joinPrev = key !== null && key === panelKey(blocks[index - 1])
+                        const joinNext = key !== null && key === panelKey(blocks[index + 1])
+                        return (
+                          <Fragment key={block.id}>
+                            <AddBlockMenu
+                              variant="inline"
+                              tight={joinPrev}
+                              lessonId={activeLesson.id}
+                              atIndex={index}
+                            />
+                            <BlockShell
+                              block={block}
+                              lessonId={activeLesson.id}
+                              index={index}
+                              total={blocks.length}
+                              joinPrev={joinPrev}
+                              joinNext={joinNext}
+                            />
+                          </Fragment>
+                        )
+                      })}
                     </div>
                   </SortableContext>
                 </DndContext>

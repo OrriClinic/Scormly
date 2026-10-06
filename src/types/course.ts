@@ -42,6 +42,7 @@ export type BlockBackground =
   | 'accent'
   | 'gradient'
   | 'dark'
+  | 'image'
 
 // Shared visual settings for a block (spacing, background, etc.).
 export interface BlockSettings {
@@ -49,6 +50,8 @@ export interface BlockSettings {
   spacing?: 'compact' | 'normal' | 'spacious'
   /** Background color of the block; 'none' (default) = transparent. */
   background?: BlockBackground
+  /** Photo for background 'image' (assets/ path); dimmed so text stays readable. */
+  backgroundImage?: string
   /** 'full' stretches the block edge to edge of the page: a full-width band
    *  (with a background the content stays in the column; without one, media
    *  such as text on image or a carousel spans the whole width). */

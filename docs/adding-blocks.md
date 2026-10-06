@@ -137,8 +137,9 @@ The editor component is only one of three renderers. Also add:
 
 Prefer shared class names: put the learner styles in
 [`src/styles/blocks.css`](../src/styles/blocks.css) using `sc-<block>` classes,
-use the same markup in the preview, the editor and the player, and run
-`node scripts/syncPlayerCss.mjs` to copy the CSS into the player. Block-level
+use the same markup in the preview, the editor and the player. The CSS is
+copied into the player by `scripts/syncPlayerCss.mjs`, which runs automatically
+before `npm run dev` and `npm run build`. Block-level
 format (background, padding, width) is applied by the wrapper
 (`blockWrapperProps` / the player's `wrapBlock`), not by the block itself.
 

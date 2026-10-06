@@ -177,4 +177,5 @@ In the LMS, the player implements the SCORM API: for 1.2 — `LMSInitialize`,
   in that case.
 - **Shared CSS** — [`src/styles/blocks.css`](../src/styles/blocks.css) is the
   source of truth for learner block styles; `scripts/syncPlayerCss.mjs` copies it
-  into `public/scorm-player/player.css` with the player's token names.
+  into `public/scorm-player/player.css` with the player's token names (automatic
+  `predev` / `prebuild` step, so CI and the Pages deploy always ship it in sync).

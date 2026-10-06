@@ -227,6 +227,20 @@ export const BLOCK_TEMPLATES: BlockTemplate[] = [
     ],
   },
   {
+    id: 'photoBand',
+    group: 'structure',
+    icon: 'image',
+    create: () => [
+      make('paragraph', { variant: 'lead', html: html(`<strong>${c('tplBandTitle')}</strong>`, c('tplBandText')) }, 'image', 'spacious', 'full'),
+    ],
+  },
+  {
+    id: 'pictureBand',
+    group: 'structure',
+    icon: 'imageText',
+    create: () => [make('imageText', { layout: 'right' }, 'soft', 'normal', 'full')],
+  },
+  {
     id: 'chapter',
     group: 'structure',
     icon: 'divider',

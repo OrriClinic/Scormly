@@ -22,6 +22,7 @@ export const RELEASES: Release[] = [
         'Appearance settings: content width, typography, block entrance animations and lesson transitions.',
         'A Columns block (2–4 columns of text), full-width bands for photos and text, callouts (tip, success), paragraph styles and decorative dividers.',
         'Hover a block in the Add menu to see a live preview of how it will look.',
+        'Photo backgrounds for any block, plus “Photo band” and “Band with picture” ready-made blocks.',
       ],
       uk: [
         'Оновлений дизайн: фон блоків із вашої теми (відтінок, колір, градієнт, темний) і відступи — у новій кнопці «Стиль блоку».',
@@ -31,6 +32,7 @@ export const RELEASES: Release[] = [
         'Налаштування вигляду: ширина контенту, типографіка, анімація появи блоків і переходи між уроками.',
         'Блок «Колонки» (2–4 колонки тексту), смуги на всю ширину для фото й тексту, виноски (порада, успіх), стилі абзаців і декоративні розділювачі.',
         'Наведіть на блок у меню додавання, щоб побачити живе превʼю того, як він виглядатиме.',
+        'Фото на фоні для будь-якого блоку, а також готові «Смуга з фото» і «Смуга з картинкою».',
       ],
     },
   },

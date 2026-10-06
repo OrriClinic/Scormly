@@ -8,7 +8,7 @@ import BlockRenderer from '../../blocks/BlockRenderer'
 import { useT } from '../../i18n/I18nProvider'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu'
 import { KEYS, isEditableTarget } from '../../lib/keyboard'
-import { blockWrapperProps } from '../../blocks/styleClasses'
+import { useBlockWrapper } from '../../blocks/useBlockWrapper'
 import BlockStylePopover from './BlockStylePopover'
 
 interface BlockShellProps {
@@ -16,6 +16,9 @@ interface BlockShellProps {
   lessonId: string
   index: number
   total: number
+  /** Same background as the previous / next block: render as one panel. */
+  joinPrev?: boolean
+  joinNext?: boolean
 }
 
 // Wrapper for a content block in the editor: selection, toolbar (up/down/
@@ -25,6 +28,8 @@ export default function BlockShell({
   lessonId,
   index,
   total,
+  joinPrev,
+  joinNext,
 }: BlockShellProps) {
   const selectedBlockId = useCourseStore((s) => s.selectedBlockId)
   const selectBlock = useCourseStore((s) => s.selectBlock)
@@ -35,7 +40,16 @@ export default function BlockShell({
   const selected = block.id === selectedBlockId
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
   const [styleOpen, setStyleOpen] = useState(false)
+  // The style popover opens above the block (or below it when there's no room
+  // above), never over the block being styled.
+  const [stylePlace, setStylePlace] = useState<'up' | 'down'>('up')
+  function toggleStyle() {
+    const rect = elRef.current?.getBoundingClientRect()
+    if (rect) setStylePlace(rect.top > 120 + 340 ? 'up' : 'down')
+    setStyleOpen((v) => !v)
+  }
   const hasBackground = (block.settings.background ?? 'none') !== 'none'
+  const wrapper = useBlockWrapper(block.settings)
   const { t: td } = useT('design')
 
   const menuItems: ContextMenuItem[] = [
@@ -78,7 +92,7 @@ export default function BlockShell({
         selectBlock(block.id)
         setMenu({ x: e.clientX, y: e.clientY })
       }}
-      className={`group relative rounded-xl p-4 transition-[box-shadow,background-color] duration-200 ${
+      className={`group relative rounded-xl px-4 ${joinPrev ? 'pt-0' : 'pt-4'} ${joinNext ? 'pb-0' : 'pb-4'} transition-[box-shadow,background-color] duration-200 ${
         selected
           ? `${hasBackground ? '' : 'bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.18)]'} ring-2 ring-brand`
           : 'ring-1 ring-transparent hover:bg-white/60 hover:ring-gray-200'
@@ -99,7 +113,7 @@ export default function BlockShell({
           <ToolbarButton
             label={td('blockStyle')}
             active={styleOpen}
-            onClick={() => setStyleOpen((v) => !v)}
+            onClick={toggleStyle}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-4 w-4" aria-hidden>
               <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.9 0-.5-.2-.9-.5-1.3-.3-.3-.5-.8-.5-1.3 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.3-4-7.7-9-7.7Z" />
@@ -143,9 +157,17 @@ export default function BlockShell({
         </div>
       )}
       {selected && styleOpen && (
-        <BlockStylePopover block={block} lessonId={lessonId} onClose={() => setStyleOpen(false)} />
+        <BlockStylePopover
+          block={block}
+          lessonId={lessonId}
+          placement={stylePlace}
+          onClose={() => setStyleOpen(false)}
+        />
       )}
-      <div {...blockWrapperProps(block.settings)}>
+      <div
+        {...wrapper}
+        className={`${wrapper.className}${joinPrev ? ' blk-join-top' : ''}${joinNext ? ' blk-join-bottom' : ''}`}
+      >
         <BlockRenderer block={block} lessonId={lessonId} selected={selected} />
       </div>
 

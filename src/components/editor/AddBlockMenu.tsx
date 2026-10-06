@@ -20,6 +20,8 @@ interface AddBlockMenuProps {
   atIndex?: number
   /** 'inline' = a hover-revealed "+" on a divider line between blocks. */
   variant?: 'button' | 'inline'
+  /** Inline only: take no height (between blocks joined into one panel). */
+  tight?: boolean
 }
 
 const CATEGORY_KEY: Record<BlockCategory, string> = {
@@ -33,6 +35,7 @@ export default function AddBlockMenu({
   lessonId,
   atIndex,
   variant = 'button',
+  tight = false,
 }: AddBlockMenuProps) {
   const addBlock = useCourseStore((s) => s.addBlock)
   const insertBlocks = useCourseStore((s) => s.insertBlocks)
@@ -150,7 +153,7 @@ export default function AddBlockMenu({
       data-tour={inline ? undefined : 'add-block'}
       className={
         inline
-          ? 'group/gap relative flex h-5 items-center justify-center'
+          ? `group/gap relative flex items-center justify-center ${tight ? 'z-10 h-0' : 'h-5'}`
           : 'relative flex justify-center'
       }
     >

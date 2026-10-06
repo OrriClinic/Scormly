@@ -204,6 +204,18 @@ export function makeSampleCourse(lang: Language): Course {
           },
         ],
       }),
+      {
+        id: id('block'),
+        type: 'paragraph',
+        settings: { spacing: 'spacious', background: 'image', backgroundImage: coverArt(), width: 'full' },
+        data: {
+          variant: 'lead',
+          html: p(L(
+            '<strong>Attackers count on habit.</strong> The few seconds you spend checking a sender or a link are the best security tool you have.',
+            '<strong>Зловмисники розраховують на звичку.</strong> Кілька секунд, щоб перевірити відправника чи посилання, — найкращий інструмент безпеки, який у вас є.',
+          )),
+        },
+      },
       block('heading', { level: 2, text: tr(L('Phishing is not only email', 'Фішинг — це не лише пошта')) }),
       block('tabs', {
         tabs: [

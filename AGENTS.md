@@ -27,7 +27,7 @@ API, and SCORM export happens in the browser via JSZip. The app UI is bilingual
 - Learner-facing blocks render in three places — editor, in-app preview and the
   exported player (`public/scorm-player/`). Keep them in sync; shared block CSS
   is `src/styles/blocks.css`, copied into `player.css` by
-  `node scripts/syncPlayerCss.mjs`.
+  `scripts/syncPlayerCss.mjs` (runs automatically before `npm run dev` / `build`).
 - Don't add dependencies or abstractions beyond what the current task needs.
 - Follow strict TypeScript and the existing component style.
 - **All code comments and documentation are in English.** User-facing UI strings

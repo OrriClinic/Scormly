@@ -6,7 +6,7 @@ import BlockPreview from '../../preview/BlockPreview'
 import IntroView from '../../preview/IntroView'
 import A11yMenu from '../../preview/A11yMenu'
 import { A11yContext, a11yClasses, useA11yPrefs } from '../../preview/a11y'
-import { blockWrapperProps } from '../../blocks/styleClasses'
+import { useBlockWrapper } from '../../blocks/useBlockWrapper'
 import { usePageWidthVar } from '../../hooks/usePageWidthVar'
 import { CONTENT_WIDTH_PX, type BlockAnimation, type Block } from '../../types/course'
 
@@ -382,7 +382,7 @@ function Reveal({ block, animation, children }: { block: Block; animation: Block
     return () => io.disconnect()
   }, [shown])
 
-  const wrapper = blockWrapperProps(block.settings)
+  const wrapper = useBlockWrapper(block.settings)
   const anim = animation === 'none' ? '' : ` anim-${animation}${shown ? ' is-in' : ''}`
   return (
     <div ref={ref} {...wrapper} className={wrapper.className + anim}>

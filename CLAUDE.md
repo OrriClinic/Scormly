@@ -89,8 +89,9 @@ Blocks render in the editor (`src/blocks/components/*`, WYSIWYG), the in-app
 preview (`src/preview/*`) and the exported **vanilla-JS SCORM player**
 (`public/scorm-player/player.js` + `player.css`). A visual change to learner
 content must be made in all three. Shared look lives in `src/styles/blocks.css`
-(`sc-*`, `blk*` classes); after editing it run `node scripts/syncPlayerCss.mjs`
-to copy it into `player.css` (`tests/playerCss.test.ts` fails when stale).
+(`sc-*`, `blk*` classes); `scripts/syncPlayerCss.mjs` copies it into
+`player.css` automatically before `npm run dev` / `npm run build` (so CI and
+deploy always ship it in sync); `tests/playerCss.test.ts` guards the committed copy.
 
 ## State management
 

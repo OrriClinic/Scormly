@@ -1,12 +1,13 @@
 import type { Block } from '../../types/course'
 import BlockPreview from '../../preview/BlockPreview'
-import { blockWrapperProps } from '../../blocks/styleClasses'
+import { useBlockWrapper } from '../../blocks/useBlockWrapper'
 import { avatarArt, landscapeArt } from '../../lib/sampleArt'
 
 // Fill empty media in freshly created blocks with placeholder art, so the
 // Add-menu preview shows what the block will look like once filled in.
 function withSampleMedia(block: Block): Block {
   const b = structuredClone(block)
+  if (b.settings.background === 'image' && !b.settings.backgroundImage) b.settings.backgroundImage = landscapeArt(250)
   switch (b.type) {
     case 'image':
     case 'imageText':
@@ -37,6 +38,14 @@ function withSampleMedia(block: Block): Block {
   return b
 }
 
+function PreviewBlock({ block }: { block: Block }) {
+  return (
+    <div {...useBlockWrapper(block.settings)}>
+      <BlockPreview block={block} />
+    </div>
+  )
+}
+
 /** Scaled-down learner render of one or more blocks (Add-menu hover card). */
 export default function BlockHoverPreview({
   title,
@@ -61,9 +70,7 @@ export default function BlockHoverPreview({
           style={{ width: '36rem', '--page-w': '100%', '--col-w': '36rem' } as React.CSSProperties}
         >
           {blocks.map((b) => (
-            <div key={b.id} {...blockWrapperProps(b.settings)}>
-              <BlockPreview block={withSampleMedia(b)} />
-            </div>
+            <PreviewBlock key={b.id} block={withSampleMedia(b)} />
           ))}
         </div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#fafafb] to-transparent" />

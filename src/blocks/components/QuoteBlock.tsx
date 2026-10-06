@@ -108,7 +108,7 @@ export default function QuoteBlock({
                 className="sc-quote-author w-full bg-transparent outline-none placeholder:text-current placeholder:opacity-40"
                 style={{ textAlign: 'inherit' }}
               />
-              {(selected || role) && (
+              {((selected && author) || role) && (
                 <input
                   type="text"
                   value={role ?? ''}

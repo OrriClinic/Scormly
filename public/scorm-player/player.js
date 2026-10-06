@@ -977,8 +977,8 @@
   }
 
   // ── Block wrappers, entrance animations, lesson transitions ──────────────
-  var BACKGROUNDS = { muted: 1, soft: 1, accent: 1, gradient: 1, dark: 1 };
-  var DARK_BG = { accent: 1, gradient: 1, dark: 1 };
+  var BACKGROUNDS = { muted: 1, soft: 1, accent: 1, gradient: 1, dark: 1, image: 1 };
+  var DARK_BG = { accent: 1, gradient: 1, dark: 1, image: 1 };
   var PADDINGS = { compact: 1, normal: 1, spacious: 1 };
 
   function blockAnimation() {
@@ -1002,6 +1002,11 @@
     if (bg) cls += ' blk-has-bg' + (DARK_BG[bg] ? ' blk-on-dark' : '');
     if (anim !== 'none' && !state.revealed[b.id]) cls += ' anim-' + anim;
     var w = h('div', { class: cls, 'data-bg': bg, 'data-block': b.id }, el);
+    // Photo panel: the image under a dimming gradient (same as the builder).
+    if (bg === 'image' && s.backgroundImage) {
+      w.style.backgroundImage = 'linear-gradient(rgb(10 12 20 / 0.55), rgb(10 12 20 / 0.62)), url("' +
+        String(s.backgroundImage).replace(/"/g, '%22') + '")';
+    }
     return w;
   }
 
