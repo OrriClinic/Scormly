@@ -16,7 +16,8 @@
                    weighting / latency / description (2004) /
                    correct_responses.n.pattern / timestamp
    - LMS context (read-only): learner id/name, mode, entry (resume), launch_data,
-                              student_data.mastery_score, preference.language
+                              student_data.mastery_score (1.2) / scaled_passing_score
+                              (2004), preference.language
    - learner comments: cmi.comments_from_learner (2004) / cmi.comments (1.2)
 */
 (function () {
@@ -61,13 +62,25 @@
   var objectiveCount = 0;   // next free cmi.objectives.n
   var objectiveIndexById = {}; // objective id -> existing cmi.objectives.n index
   var pendingComment = ''; // 1.2: cmi.comments is append-only on some LMS
+  // 2004 4th Ed guarantees 64000 chars of suspend_data, but some LMSes still
+  // enforce the 3rd Edition's 4000; lowered on the first rejected write.
+  var suspendCap = 64000;
+
+  // What the LMS already records, so later writes never downgrade it: passed
+  // stays passed (and its score never drops), completed never returns to
+  // incomplete. Learners may retake quizzes — also from "Review the course"
+  // after finishing — and LMSes keep the last value written, not the best.
+  var sticky = { completed: false, passed: false, status12: '', raw: null };
+
+  // Some LMS APIs return booleans instead of the spec's 'true' / 'false' strings.
+  function isTrue(result) { return String(result) === 'true'; }
 
   function lastError() { return API ? API[v2004 ? 'GetLastError' : 'LMSGetLastError']() : '0'; }
   function errorString(code) { return API ? API[v2004 ? 'GetErrorString' : 'LMSGetErrorString'](code) : ''; }
 
   function set(key, value) {
     if (!(ready && API)) return false;
-    var ok = API[v2004 ? 'SetValue' : 'LMSSetValue'](key, String(value)) === 'true';
+    var ok = isTrue(API[v2004 ? 'SetValue' : 'LMSSetValue'](key, String(value)));
     var code = lastError();
     if (code && code !== '0') console.warn('[SCORM] SetValue(' + key + ') failed: ' + code + ' ' + errorString(code));
     return ok;
@@ -137,6 +150,28 @@
     return value.map(function (p) { return Array.isArray(p) ? p.join(pair) : String(p); }).join(list);
   }
 
+  // SCORM 1.2 CMIFeedback holds at most 255 chars and expects single-character
+  // choice ids ([0-9a-z]); option/item UUIDs overflow it after a few entries
+  // and the LMS rejects the write. So 1.2 reports ids by position in the
+  // choices / source / target lists the player passes (a, b, c, …). Ids not
+  // in a list (fill-in text) are kept as-is.
+  var SHORT_IDS = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  function shortIdMap(list) {
+    var m = {};
+    (Array.isArray(list) ? list : []).forEach(function (c, i) {
+      if (c && c.id != null && i < SHORT_IDS.length) m[c.id] = SHORT_IDS.charAt(i);
+    });
+    return m;
+  }
+  function compact12(value, data) {
+    var src = shortIdMap(data.choices || data.source), tgt = shortIdMap(data.target);
+    function pick(map, id) { return Object.prototype.hasOwnProperty.call(map, id) ? map[id] : id; }
+    if (Array.isArray(value)) {
+      return value.map(function (p) { return Array.isArray(p) ? [pick(src, p[0]), pick(tgt, p[1])] : pick(src, p); });
+    }
+    return typeof value === 'string' ? pick(src, value) : value;
+  }
+
   // Cached LMS-context snapshot (read once after Initialize).
   var ctx = {
     learner: null,        // { id, name } | null
@@ -157,9 +192,10 @@
       ctx.entry = (get('cmi.entry') || '').toLowerCase();
       ctx.launchData = get('cmi.launch_data') || '';
       ctx.language = get('cmi.learner_preference.language') || '';
-      // 2004 has no direct runtime read of the objective's minNormalizedMeasure
-      // declared in the manifest; the LMS owns that.
-      ctx.lmsMastery = null;
+      // Initialized by the LMS from the manifest's minNormalizedMeasure (or an
+      // admin override); the LMS judges success_status against it.
+      var sp = parseFloat(get('cmi.scaled_passing_score'));
+      ctx.lmsMastery = isFinite(sp) ? sp * 100 : null;
     } else {
       ctx.learner = {
         id: get('cmi.core.student_id') || '',
@@ -177,6 +213,20 @@
     if (ctx.learner && !ctx.learner.id && !ctx.learner.name) ctx.learner = null;
   }
 
+  function readStatus() {
+    var raw = parseFloat(get(v2004 ? 'cmi.score.raw' : 'cmi.core.score.raw'));
+    sticky.raw = isFinite(raw) ? raw : null;
+    if (v2004) {
+      sticky.completed = get('cmi.completion_status') === 'completed';
+      sticky.passed = get('cmi.success_status') === 'passed';
+    } else {
+      var s = get('cmi.core.lesson_status');
+      sticky.status12 = s;
+      sticky.completed = s === 'completed' || s === 'passed' || s === 'failed';
+      sticky.passed = s === 'passed';
+    }
+  }
+
   // In review/browse mode the LMS prohibits writing tracking data; we no-op
   // those calls (still let the player render the course).
   function trackingAllowed() {
@@ -188,10 +238,11 @@
       var found = discover();
       if (!found) return false;
       API = found.api; v2004 = found.v2004;
-      ready = API[v2004 ? 'Initialize' : 'LMSInitialize']('') === 'true';
+      ready = isTrue(API[v2004 ? 'Initialize' : 'LMSInitialize'](''));
       if (ready) {
         readContext();
         readIndexes();
+        readStatus();
         if (!v2004) {
           var status = API.LMSGetValue('cmi.core.lesson_status');
           if (trackingAllowed() && (!status || status === 'not attempted')) {
@@ -207,16 +258,26 @@
     // completed: boolean; success: 'passed' | 'failed' | null
     report: function (completed, success) {
       if (!trackingAllowed()) return;
+      if (sticky.passed) success = 'passed';
+      completed = completed || sticky.completed;
       if (v2004) {
         set('cmi.completion_status', completed ? 'completed' : 'incomplete');
         if (success) set('cmi.success_status', success);
       } else {
-        set('cmi.core.lesson_status', success ? success : (completed ? 'completed' : 'incomplete'));
+        var status = success || (completed ? 'completed' : 'incomplete');
+        // No verdict in this call: keep a "failed" the LMS already holds.
+        if (!success && sticky.status12 === 'failed') status = 'failed';
+        set('cmi.core.lesson_status', status);
+        sticky.status12 = status;
       }
+      if (completed) sticky.completed = true;
+      if (success === 'passed') sticky.passed = true;
     },
 
     setScore: function (raw, min, max) {
       if (!trackingAllowed()) return;
+      if (sticky.passed && sticky.raw != null && Math.round(raw) < sticky.raw) return;
+      sticky.raw = Math.round(raw);
       var lo = min == null ? 0 : min, hi = max == null ? 100 : max;
       if (v2004) {
         set('cmi.score.raw', Math.round(raw));
@@ -233,7 +294,13 @@
 
     // Resume support: a small JSON blob of progress.
     getSuspend: function () { return get('cmi.suspend_data'); },
-    setSuspend: function (str) { if (trackingAllowed()) set('cmi.suspend_data', str); },
+    // Returns false only when the write was rejected for size and the limit
+    // was lowered: the caller should rebuild (compact) the blob and retry.
+    setSuspend: function (str) {
+      if (!trackingAllowed() || set('cmi.suspend_data', str)) return true;
+      if (v2004 && suspendCap > 4000 && String(str).length > 4000) { suspendCap = 4000; return false; }
+      return true;
+    },
     setLocation: function (str) {
       if (trackingAllowed()) set(v2004 ? 'cmi.location' : 'cmi.core.lesson_location', str);
     },
@@ -287,7 +354,7 @@
       set(p + 'id', data.id);
       set(p + 'type', data.type);
       // 1.2 student_response is CMIFeedback (max 255 chars).
-      var resp = formatResponse(data.response);
+      var resp = formatResponse(v2004 ? data.response : compact12(data.response, data));
       set(p + (v2004 ? 'learner_response' : 'student_response'), v2004 ? resp : resp.slice(0, 255));
       set(p + 'result', v2004 ? (data.correct ? 'correct' : 'incorrect') : (data.correct ? 'correct' : 'wrong'));
       // Optional fields.
@@ -309,7 +376,11 @@
         var limit = v2004 ? cr.length : 1;
         // 2004 fill-in patterns are case-insensitive unless flagged.
         var prefix = v2004 && data.type === 'fill-in' && data.caseMatters ? '{case_matters=true}' : '';
-        for (var j = 0; j < limit; j++) set(p + 'correct_responses.' + j + '.pattern', prefix + formatResponse(cr[j]));
+        for (var j = 0; j < limit; j++) {
+          set(p + 'correct_responses.' + j + '.pattern', v2004
+            ? prefix + formatResponse(cr[j])
+            : formatResponse(compact12(cr[j], data)).slice(0, 255));
+        }
       }
       // Link interaction to its objective so per-quiz analytics line up.
       if (data.objectiveId) set(p + 'objectives.0.id', data.objectiveId);
@@ -343,6 +414,10 @@
     getLaunchData: function () { return ctx.launchData; },
     // SCORM has no LMS return URL (the LMS owns the window); cmi5 does.
     getReturnUrl: function () { return ''; },
+    // "Exit course": ask a 2004 LMS to suspend and close the course once the
+    // SCO terminates (without a request many leave an empty frame behind).
+    // 1.2 has no navigation requests.
+    requestExit: function () { if (v2004) set('adl.nav.request', 'suspendAll'); },
     getLmsMastery: function () { return ctx.lmsMastery; },
     getPreferredLanguage: function () { return ctx.language; },
     // Learner preferences, read live. captions: 1 = on, 0 = no change,
@@ -359,7 +434,7 @@
     },
     // Max suspend_data length the data model guarantees (1.2 CMIString4096,
     // 2004 characterstring SPM 64000). 0 = no known limit.
-    suspendLimit: function () { return API ? (v2004 ? 64000 : 4096) : 0; },
+    suspendLimit: function () { return API ? (v2004 ? suspendCap : 4096) : 0; },
 
     commit: function () { if (ready && API) API[v2004 ? 'Commit' : 'LMSCommit'](''); },
     finish: function () {

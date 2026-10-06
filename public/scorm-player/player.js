@@ -27,6 +27,9 @@
       passed: 'Passed', failed: 'Not passed', restart: 'Restart', end: 'The end',
       finish: 'Finish', exitCourse: 'Exit course', courseComplete: 'Course complete',
       courseCompleteText: 'You have reached the end of the course. You can close this window.',
+      courseIncomplete: 'The course is not complete yet',
+      courseIncompleteText: 'Some activities still need your answer. Finish them to complete the course — your progress is saved.',
+      unfinishedLessons: 'Unfinished lessons',
       review: 'Review the course', watchToContinue: 'Watch the video to continue.',
       close: 'Close', hotspotMarker: 'Marker {n}: {title}', hotspotProgress: 'Explored {n} of {total}',
       stepOf: 'Step {n} of {total}', goToStep: 'Go to step {n}',
@@ -47,6 +50,9 @@
       passed: 'Складено', failed: 'Не складено', restart: 'Спочатку', end: 'Кінець',
       finish: 'Завершити', exitCourse: 'Вийти з курсу', courseComplete: 'Курс завершено',
       courseCompleteText: 'Ви пройшли курс до кінця. Це вікно можна закрити.',
+      courseIncomplete: 'Курс ще не завершено',
+      courseIncompleteText: 'Деякі завдання ще чекають на вашу відповідь. Виконайте їх, щоб завершити курс — ваш прогрес збережено.',
+      unfinishedLessons: 'Незавершені уроки',
       review: 'Переглянути курс', watchToContinue: 'Перегляньте відео, щоб продовжити.',
       close: 'Закрити', hotspotMarker: 'Мітка {n}: {title}', hotspotProgress: 'Переглянуто {n} з {total}',
       stepOf: 'Крок {n} з {total}', goToStep: 'Перейти до кроку {n}',
@@ -274,25 +280,29 @@
 
     SCORM.init();
     state.sessionStart = Date.now();
+    // Always 'suspend', even when complete: exit='' lets the LMS end the
+    // attempt, and on the next launch the course restarts from scratch (some
+    // LMS even show the fresh attempt as incomplete). Suspending keeps the
+    // finished state resumable; completion/success are already reported.
+    // Set now, not only on unload: browsers block the synchronous XHR many
+    // LMS APIs use to commit during page dismissal, and an exit that never
+    // reaches the LMS counts as a normal exit — the resume data is dropped.
+    SCORM.setExit('suspend');
     // Registered right after init (not after the async cmi5 handshake) so a
     // learner who closes the window early still gets a proper terminate.
     // pagehide covers browsers/iframes where beforeunload doesn't fire
     // (mobile Safari, some LMS frame teardowns); the flag stops a double exit.
     var exited = false;
-    function onExit() {
-      if (exited) return;
+    // unloading: see SCORM.finish. Returns its result (a promise for cmi5).
+    endSession = function (unloading) {
+      if (exited) return null;
       exited = true;
-      SCORM.setSessionTime((Date.now() - state.sessionStart) / 1000);
-      // Always 'suspend', even when complete: exit='' lets the LMS end the
-      // attempt, and on the next launch the course restarts from scratch (some
-      // LMS even show the fresh attempt as incomplete). Suspending keeps the
-      // finished state resumable; completion/success are already reported.
+      SCORM.setSessionTime(sessionSeconds());
       SCORM.setExit('suspend');
       // Only ever terminate from the AU; cmi5 `abandoned` is LMS-issued.
-      // `true` = unloading, so xapi.js posts `terminated` immediately.
-      SCORM.finish(true);
-    }
-    endSession = onExit;
+      return SCORM.finish(unloading);
+    };
+    function onExit() { endSession(true); }
     window.addEventListener('beforeunload', onExit);
     window.addEventListener('pagehide', onExit);
     // cmi5 loads its launch context and resume data over the network; SCORM
@@ -301,14 +311,18 @@
   }
 
   function resume() {
-    // LMS may push a preferred language (SCORM learner_preference.language /
-    // cmi5 languagePreference). Switch the player UI if it matches a supported
-    // locale; otherwise keep the browser-based default.
-    // An explicit course setting wins over both.
+    // Player UI language. An explicit course setting wins. In 'auto': the
+    // course content language when the player speaks it (an English course
+    // with Ukrainian buttons, from a Ukrainian browser or LMS profile, reads
+    // as broken and mixes languages for screen readers), then the LMS
+    // preference (SCORM learner_preference.language / cmi5
+    // languagePreference), then the browser-based default.
     var fixedLang = settings().playerLanguage;
+    var courseLang = (contentLang() || '').toLowerCase().slice(0, 2);
     var lmsLang = (SCORM.getPreferredLanguage && SCORM.getPreferredLanguage()) || '';
     var twoLetter = lmsLang.toLowerCase().slice(0, 2);
     if (fixedLang !== 'auto') lang = fixedLang;
+    else if (T[courseLang]) lang = courseLang;
     else if (T[twoLetter]) lang = twoLetter;
     document.documentElement.lang = lang;
 
@@ -355,6 +369,16 @@
     if (!lesson) return true;
     return lessonGates(lesson).every(function (b) { return state.continued[b.id]; })
       && requiredVideos(lesson).every(function (b) { return state.watched[b.id]; });
+  }
+  // Lessons still blocking course completion: not visited, gates or required
+  // videos open, or (under the 'quiz' rule) scored blocks unanswered.
+  function unfinishedLessons() {
+    var quizRule = settings().completion === 'quiz';
+    var out = [];
+    (state.course.lessons || []).forEach(function (lesson, i) {
+      if (!lessonComplete(i) || (quizRule && !lessonQuizzesAnswered(lesson))) out.push(i);
+    });
+    return out;
   }
   function lessonComplete(index) {
     var lesson = (state.course.lessons || [])[index];
@@ -420,22 +444,36 @@
     state.visited[state.lessonIndex] = true;
     state.finished = true;
     reportProgress();
-    SCORM.setSessionTime((Date.now() - state.sessionStart) / 1000);
-    SCORM.setExit('suspend');
-    SCORM.commit();
     render();
     focusLessonHeading(true);
   }
 
+  function sessionSeconds() { return (Date.now() - state.sessionStart) / 1000; }
+
   // "Exit course" on the completion screen: terminate the LMS session, then
-  // return to the LMS (cmi5 returnURL) or close the window (SCORM popups).
-  // When neither works (SCO in an iframe) the completion screen stays, which
-  // already tells the learner the window can be closed.
+  // leave — a SCORM 2004 LMS closes the course itself on the suspendAll
+  // navigation request; cmi5 returns to the LaunchData returnURL once
+  // `terminated` is sent; otherwise try closing the window (SCORM popups).
+  // When nothing works (1.2 SCO in an iframe) the completion screen stays,
+  // which already tells the learner the window can be closed.
   function exitCourse() {
-    if (endSession) endSession();
+    if (SCORM.requestExit) SCORM.requestExit();
+    var pending = endSession ? endSession(false) : null;
     var url = SCORM.getReturnUrl && SCORM.getReturnUrl();
-    if (url) { location.assign(url); return; }
-    try { window.close(); } catch (e) { /* not a script-opened window */ }
+    var left = false;
+    function leave() {
+      if (left) return;
+      left = true;
+      if (url) { location.assign(url); return; }
+      try { window.close(); } catch (e) { /* not a script-opened window */ }
+    }
+    if (pending && typeof pending.then === 'function') {
+      // Don't strand the learner if the LRS never answers.
+      setTimeout(leave, 3000);
+      pending.then(leave, leave);
+    } else {
+      leave();
+    }
   }
 
   // Mark a required video as watched and update gating without re-rendering
@@ -476,10 +514,15 @@
   var DEFAULT_SETTINGS = { completion: 'quiz', scored: true, passingScore: 80, navigation: 'free' };
   function settings() {
     var s = state.course.settings || {};
+    // The LMS's mastery score (1.2 mastery_score, 2004 scaled_passing_score,
+    // cmi5 masteryScore) wins over the course's own: the LMS judges pass/fail
+    // by it, so the completion screen must agree with what the LMS records.
+    var lmsPass = SCORM.getLmsMastery ? SCORM.getLmsMastery() : null;
     return {
       completion: s.completion || DEFAULT_SETTINGS.completion,
       scored: s.scored !== false,
-      passingScore: typeof s.passingScore === 'number' ? s.passingScore : DEFAULT_SETTINGS.passingScore,
+      passingScore: typeof lmsPass === 'number' && isFinite(lmsPass) && lmsPass > 0 ? lmsPass
+        : typeof s.passingScore === 'number' ? s.passingScore : DEFAULT_SETTINGS.passingScore,
       navigation: s.navigation === 'linear' ? 'linear' : 'free',
       playerLanguage: s.playerLanguage === 'en' || s.playerLanguage === 'uk' ? s.playerLanguage : 'auto',
       showProgress: s.showProgress !== false,
@@ -527,8 +570,13 @@
       success: scoreValue == null ? null : (scoreValue >= cfg.passingScore ? 'passed' : 'failed'),
     };
     SCORM.report(completed, success);
-    SCORM.setSuspend(buildSuspend());
+    // false = rejected for size; the runtime lowered its limit, so rebuild.
+    if (SCORM.setSuspend(buildSuspend()) === false) SCORM.setSuspend(buildSuspend());
     SCORM.setLocation(String(state.lessonIndex));
+    // Session time rides along with every commit: if the final commit on
+    // unload is lost (see the setExit note in boot), the LMS still records
+    // the time spent instead of zero.
+    SCORM.setSessionTime(sessionSeconds());
     SCORM.commit();
   }
 
@@ -719,12 +767,25 @@
         ]),
       ]),
     ]);
-    var card = h('div', { class: 'finish-card' }, [
+    // Free navigation lets the learner reach Finish with activities left
+    // undone. Then the LMS rightly shows the course as not completed, so the
+    // screen must not claim otherwise: list the unfinished lessons instead.
+    var card = s.completed ? h('div', { class: 'finish-card' }, [
       h('div', { class: 'finish-check', 'aria-hidden': 'true', text: '✓' }),
       h('h1', { class: 'finish-title', tabindex: '-1', text: t('courseComplete') }),
       s.score != null ? h('p', { class: 'finish-score', text: t('yourScore', { s: Math.round(s.score) }) }) : null,
       s.success ? h('p', { class: 'finish-status ' + s.success, text: s.success === 'passed' ? t('passed') : t('failed') }) : null,
       h('p', { class: 'finish-text', text: settings().finishMessage || t('courseCompleteText') }),
+    ]) : h('div', { class: 'finish-card' }, [
+      h('div', { class: 'finish-check incomplete', 'aria-hidden': 'true', text: '!' }),
+      h('h1', { class: 'finish-title', tabindex: '-1', text: t('courseIncomplete') }),
+      h('p', { class: 'finish-text', text: t('courseIncompleteText') }),
+      h('ul', { class: 'finish-todo', 'aria-label': t('unfinishedLessons') }, unfinishedLessons().map(function (i) {
+        var lesson = state.course.lessons[i];
+        return h('li', {}, h('button', { class: 'btn btn-outline', lang: contentLang(), text: lesson.title || t('progress', { n: i + 1, total: state.course.lessons.length }),
+          disabled: canReachLesson(i) ? null : 'true',
+          onclick: function () { state.finished = false; visit(i); } }));
+      })),
     ]);
     var body = h('main', { class: 'player-body', id: 'main-content' }, [h('div', { class: 'lesson' }, card)]);
     app.appendChild(skipLink());

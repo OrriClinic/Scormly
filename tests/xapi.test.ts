@@ -509,3 +509,56 @@ describe('xAPI — LMS context readers', () => {
     expect(SCORM.getPreferredLanguage()).toBe('uk-UA')
   })
 })
+
+describe('xAPI — cmi5 conformance guards', () => {
+  test('never sends passed below the LaunchData masteryScore, even if the player says passed', async () => {
+    const { SCORM, statements, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: { launchMode: 'Normal', masteryScore: 0.9 },
+      course: { settings: { passingScore: 80 } },
+    })
+    SCORM.init()
+    await wait()
+    SCORM.setScore(85, 0, 100)
+    // The player judged 85 ≥ its own 80 as passed; the LMS mastery is 90.
+    SCORM.report(true, 'passed')
+    await wait()
+    const verbs = statements().map((s) => s.verb.id)
+    expect(verbs).not.toContain(V.passed)
+    expect(verbs).toContain(V.failed)
+  })
+
+  test('sends no statements after terminated', async () => {
+    const { SCORM, statements, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: { launchMode: 'Normal' },
+    })
+    SCORM.init()
+    await wait()
+    SCORM.finish()
+    await wait()
+    SCORM.recordInteraction(0, { id: 'q1', type: 'choice', response: 'a', correct: true })
+    SCORM.setScore(100, 0, 100)
+    SCORM.report(true, 'passed')
+    await wait()
+    const stmts = statements()
+    expect(stmts[stmts.length - 1].verb.id).toBe(V.terminated)
+  })
+
+  test('finish() queues terminated after pending statements and resolves once sent', async () => {
+    const { SCORM, statements, wait } = loadXapi({
+      params: defaultLaunch(),
+      launchData: { launchMode: 'Normal' },
+    })
+    SCORM.init()
+    await wait()
+    SCORM.report(true, null)
+    const done = SCORM.finish()
+    expect(done && typeof (done as Promise<void>).then).toBe('function')
+    await done
+    const verbs = statements().map((s) => s.verb.id)
+    expect(verbs.indexOf(V.completed)).toBeGreaterThan(-1)
+    expect(verbs.indexOf(V.terminated)).toBeGreaterThan(verbs.indexOf(V.completed))
+    await wait()
+  })
+})

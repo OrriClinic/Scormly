@@ -351,3 +351,34 @@ captions and larger text, in the builder preview and in the exported player alik
   - New runtime method `getReturnUrl()` (scorm.js: always ''; xapi.js: LaunchData
     returnURL). Tests: `tests/scormManifest.test.ts` (new), returnURL case in
     `tests/xapi.test.ts`. Manifests validated well-formed with xmllint.
+- 2026-10-06 — **Second LMS audit (schema-validated) + fixes**, prompted by a TalentLMS cmi5 run
+  where the player showed "Course complete" in Ukrainian while the LMS said "Pending unit completion":
+  - **Official schemas bundled**: unmodified ADL/IMS XSD/DTD control documents (from the ADL
+    sample packages via SCORM.com Golf Examples) live in `public/scorm-player/schemas/{scorm12,scorm2004}`
+    and are zipped at the package root (`addSchemas`, list in `SCHEMA_FILES`).
+  - **Manifests validated against them** (`tests/scormManifest.test.ts`, xmllint; skipped if absent):
+    2004 incl. LOM + deliveryControls passes. **Correction to the previous entry**: inline IMS MD
+    metadata in the 1.2 manifest was removed again — 1.2 `<metadata>` has a strict wildcard, and
+    `imsmd_rootv1p2p1.xsd` is non-deterministic, so libxml2-based validators (PHP schemaValidate)
+    can't compile it and reject the manifest. `cmi5.xml` validates against the official
+    CourseStructure.xsd. The href %-encoding only matters for hand-placed assets (uploads get UUID names).
+  - **Completion screen honesty**: Finish with unanswered scored blocks (free navigation) showed
+    "Course complete" while the LMS correctly kept it incomplete; it now says the course isn't
+    complete and lists the unfinished lessons as links.
+  - **Player language 'auto'**: content language (if en/uk) → LMS preference → browser. Previously a
+    Ukrainian browser/LMS profile gave Ukrainian buttons on an English course.
+  - **Sticky statuses** (scorm.js): passed stays passed (score never lowered), completed never
+    returns to incomplete, 1.2 failed isn't replaced by completed/incomplete — LMSes keep the last
+    write, and retakes (now also tracked from "Review the course") could downgrade a passed course.
+  - **LMS mastery**: 2004 `cmi.scaled_passing_score` is now read (the old comment claiming no runtime
+    read was wrong); the player judges pass/fail by the LMS mastery when present. xapi.js re-judges
+    against LaunchData masteryScore so `passed` is never sent below it (cmi5 rule).
+  - **Unload robustness**: `cmi.exit=suspend` set right after Initialize and `session_time` on every
+    commit — browsers block the sync XHR many LMS APIs use during page dismissal, which used to lose
+    resume (exit counted as normal) and time.
+  - Initialize/SetValue accept boolean `true` (non-conformant LMS APIs); 1.2 interactions report
+    choice/matching/sequencing ids by position (`a,b` / `a.b`) to fit CMIFeedback's 255 chars;
+    2004 suspend_data falls back to 4000 chars if the LMS rejects more (3rd-Ed limits).
+  - Exit course: 2004 sends `adl.nav.request=suspendAll` before Terminate; cmi5 waits for
+    `terminated` before redirecting to returnURL; no cmi5 statements after `terminated`.
+  - Verified end-to-end in jsdom with the sample course and a mock 2004 LMS (20 checks).

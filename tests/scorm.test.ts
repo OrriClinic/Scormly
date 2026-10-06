@@ -434,3 +434,140 @@ describe('SCORM — array responses (sequencing / matching / fill-in)', () => {
     expect(data['cmi.interactions.2.correct_responses.0.pattern']).toBe('Oslo')
   })
 })
+
+describe('SCORM — LMS compatibility', () => {
+  test('accepts an Initialize that returns a boolean instead of "true"', () => {
+    const m = loadScorm('2004')
+    m.api.Initialize = (() => true) as unknown as () => string
+    m.api.SetValue = ((k: string, v: string) => { m.data[k] = v; return true }) as unknown as () => string
+    expect(m.SCORM.init()).toBe(true)
+    m.SCORM.report(true, null)
+    expect(m.data['cmi.completion_status']).toBe('completed')
+  })
+
+  test('1.2 reports choice / matching ids by position (single characters)', () => {
+    const { SCORM, data } = loadScorm('1.2')
+    SCORM.init()
+    const opts = ['opt-6f1c2e8a-0000-4000-8000-000000000001', 'opt-6f1c2e8a-0000-4000-8000-000000000002', 'opt-6f1c2e8a-0000-4000-8000-000000000003']
+    SCORM.recordInteraction(0, {
+      id: 'q1', type: 'choice', response: [opts[0], opts[2]], correct: false,
+      correctResponses: [[opts[1]]], choices: opts.map((id) => ({ id, text: id })),
+    })
+    SCORM.recordInteraction(1, {
+      id: 'q2', type: 'matching', response: [['p1', 'p2'], ['p2', 'p1']], correct: false,
+      correctResponses: [[['p1', 'p1'], ['p2', 'p2']]],
+      source: [{ id: 'p1', text: 'A' }, { id: 'p2', text: 'B' }],
+      target: [{ id: 'p1', text: '1' }, { id: 'p2', text: '2' }],
+    })
+    expect(data['cmi.interactions.0.student_response']).toBe('a,c')
+    expect(data['cmi.interactions.0.correct_responses.0.pattern']).toBe('b')
+    expect(data['cmi.interactions.1.student_response']).toBe('a.b,b.a')
+    expect(data['cmi.interactions.1.correct_responses.0.pattern']).toBe('a.a,b.b')
+  })
+
+  test('2004 keeps the full ids', () => {
+    const { SCORM, data } = loadScorm('2004')
+    SCORM.init()
+    SCORM.recordInteraction(0, {
+      id: 'q1', type: 'choice', response: ['o1'], correct: true, correctResponses: [['o1']],
+      choices: [{ id: 'o1', text: 'x' }],
+    })
+    expect(data['cmi.interactions.0.learner_response']).toBe('o1')
+  })
+
+  test('2004 reads cmi.scaled_passing_score as the LMS mastery (0..100)', () => {
+    const { SCORM } = loadScorm('2004', { 'cmi.scaled_passing_score': '0.8' })
+    SCORM.init()
+    expect(SCORM.getLmsMastery()).toBe(80)
+    const none = loadScorm('2004')
+    none.SCORM.init()
+    expect(none.SCORM.getLmsMastery()).toBe(null)
+  })
+
+  test('requestExit asks a 2004 LMS to suspend all; no-op on 1.2', () => {
+    const a = loadScorm('2004')
+    a.SCORM.init()
+    a.SCORM.requestExit()
+    expect(a.data['adl.nav.request']).toBe('suspendAll')
+    const b = loadScorm('1.2')
+    b.SCORM.init()
+    b.SCORM.requestExit()
+    expect(b.data['adl.nav.request']).toBeUndefined()
+  })
+
+  test('2004 falls back to the 4000-char suspend_data limit when the LMS rejects more', () => {
+    const m = loadScorm('2004')
+    const setValue = m.api.SetValue
+    let rejected = false
+    m.api.SetValue = ((k: string, v: string) => {
+      if (k === 'cmi.suspend_data' && v.length > 4000) { rejected = true; return 'false' }
+      return setValue(k, v)
+    }) as unknown as () => string
+    m.SCORM.init()
+    expect(m.SCORM.suspendLimit()).toBe(64000)
+    expect(m.SCORM.setSuspend('x'.repeat(5000))).toBe(false)
+    expect(rejected).toBe(true)
+    expect(m.SCORM.suspendLimit()).toBe(4000)
+    expect(m.SCORM.setSuspend('x'.repeat(100))).toBe(true)
+  })
+})
+
+describe('SCORM — statuses never downgrade', () => {
+  test('2004: passed + completed survive a failed retake', () => {
+    const { SCORM, data } = loadScorm('2004')
+    SCORM.init()
+    SCORM.setScore(90)
+    SCORM.report(true, 'passed')
+    SCORM.setScore(40)
+    SCORM.report(true, 'failed')
+    expect(data['cmi.success_status']).toBe('passed')
+    expect(data['cmi.score.raw']).toBe('90')
+    SCORM.report(false, null)
+    expect(data['cmi.completion_status']).toBe('completed')
+  })
+
+  test('2004: a status recorded in an earlier session is kept', () => {
+    const { SCORM, data } = loadScorm('2004', {
+      'cmi.completion_status': 'completed', 'cmi.success_status': 'passed', 'cmi.score.raw': '85',
+    })
+    SCORM.init()
+    SCORM.setScore(50)
+    SCORM.report(false, null)
+    expect(data['cmi.completion_status']).toBe('completed')
+    expect(data['cmi.success_status']).toBe('passed')
+    expect(data['cmi.score.raw']).toBe('85')
+  })
+
+  test('2004: before passing, the latest score is written (retakes can improve it)', () => {
+    const { SCORM, data } = loadScorm('2004')
+    SCORM.init()
+    SCORM.setScore(60)
+    SCORM.report(true, 'failed')
+    SCORM.setScore(50)
+    expect(data['cmi.score.raw']).toBe('50')
+    SCORM.setScore(95)
+    SCORM.report(true, 'passed')
+    expect(data['cmi.success_status']).toBe('passed')
+  })
+
+  test('1.2: passed stays passed; failed is not replaced by completed or incomplete', () => {
+    const a = loadScorm('1.2', { 'cmi.core.lesson_status': 'passed' })
+    a.SCORM.init()
+    a.SCORM.report(false, null)
+    expect(a.data['cmi.core.lesson_status']).toBe('passed')
+    a.SCORM.report(true, 'failed')
+    expect(a.data['cmi.core.lesson_status']).toBe('passed')
+
+    const b = loadScorm('1.2', { 'cmi.core.lesson_status': 'failed' })
+    b.SCORM.init()
+    b.SCORM.report(true, null)
+    expect(b.data['cmi.core.lesson_status']).toBe('failed')
+    b.SCORM.report(true, 'passed')
+    expect(b.data['cmi.core.lesson_status']).toBe('passed')
+
+    const c = loadScorm('1.2', { 'cmi.core.lesson_status': 'completed' })
+    c.SCORM.init()
+    c.SCORM.report(false, null)
+    expect(c.data['cmi.core.lesson_status']).toBe('completed')
+  })
+})

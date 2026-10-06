@@ -11,18 +11,40 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-06-2',
+    date: '2026-10-06',
+    items: {
+      en: [
+        'SCORM packages now include the official ADL/IMS schema files, for older LMSes and validating importers; every manifest is checked against them.',
+        'The player speaks the course’s language: with “Automatic” player language, an English course gets English buttons even in a Ukrainian browser or LMS profile.',
+        'Finishing with activities still unanswered no longer shows “Course complete”: the player says the course isn’t complete yet and links to the unfinished lessons.',
+        'A passed or completed course stays that way in the LMS, even if the learner retakes a quiz with a lower score.',
+        'The player now uses the LMS’s passing score when the LMS sets one, so the result on screen matches what the LMS records.',
+        'More reliable tracking: resume and time spent are saved even when the browser blocks the final save on closing, and “Exit course” returns to the LMS in SCORM 2004 too.',
+      ],
+      uk: [
+        'SCORM-пакети тепер містять офіційні файли схем ADL/IMS для старіших LMS і валідаторів під час імпорту; кожен маніфест перевіряється за ними.',
+        'Плеєр говорить мовою курсу: з «Автоматичною» мовою плеєра англійський курс має англійські кнопки навіть в українському браузері чи профілі LMS.',
+        'Завершення з завданнями без відповіді більше не показує «Курс завершено»: плеєр повідомляє, що курс ще не завершено, і дає посилання на незавершені уроки.',
+        'Складений чи завершений курс лишається таким у LMS, навіть якщо слухач перескладе тест із нижчим балом.',
+        'Плеєр тепер використовує прохідний бал з LMS, якщо LMS його задає, тож результат на екрані збігається з тим, що записує LMS.',
+        'Надійніше відстеження: місце зупинки й витрачений час зберігаються, навіть коли браузер блокує останнє збереження при закритті, а «Вийти з курсу» повертає до LMS і в SCORM 2004.',
+      ],
+    },
+  },
+  {
     id: '2026-10-06',
     date: '2026-10-06',
     items: {
       en: [
-        'Better LMS compatibility: SCORM manifests now percent-encode media file names (Cyrillic and spaces no longer break strict LMS imports) and tell the LMS not to auto-complete the course on exit (SCORM 2004).',
-        'The course title, description and content language are embedded as metadata in SCORM packages, so LMS catalogs can show them after import.',
+        'Better LMS compatibility: SCORM 2004 manifests tell the LMS not to auto-complete the course on exit, and media file names are percent-encoded in manifests.',
+        'The course title, description and content language are embedded as metadata in SCORM 2004 packages, so LMS catalogs can show them after import.',
         'A completed course now reopens where the learner finished instead of restarting, and retaking a quiz from the “Review the course” screen is still tracked.',
         'New “Exit course” button on the completion screen: returns the learner to the LMS (cmi5) or closes the course window.',
       ],
       uk: [
-        'Краща сумісність із LMS: у SCORM-маніфестах імена медіафайлів тепер кодуються у відсотковому форматі (кирилиця й пробіли більше не ламають імпорт у суворих LMS), а LMS більше не позначає курс завершеним автоматично при виході (SCORM 2004).',
-        'Назва, опис і мова контенту курсу тепер вбудовуються як метадані в SCORM-пакети, тож каталоги LMS показують їх після імпорту.',
+        'Краща сумісність із LMS: маніфести SCORM 2004 забороняють LMS автоматично позначати курс завершеним при виході, а імена медіафайлів у маніфестах кодуються у відсотковому форматі.',
+        'Назва, опис і мова контенту курсу тепер вбудовуються як метадані в пакети SCORM 2004, тож каталоги LMS показують їх після імпорту.',
         'Завершений курс тепер відкривається там, де слухач закінчив, а не спочатку; перепроходження тесту з екрана «Переглянути курс» також відстежується.',
         'Нова кнопка «Вийти з курсу» на фінальному екрані: повертає слухача до LMS (cmi5) або закриває вікно курсу.',
       ],

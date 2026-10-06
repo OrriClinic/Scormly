@@ -66,7 +66,9 @@ export interface ScormWrapper {
   setObjective(i: number, data: { id: string; raw?: number; min?: number; max?: number; status?: string; success?: 'passed' | 'failed' | null; name?: string }): void
   recordInteraction(i: number, data: Record<string, unknown>): void
   setComment(text: string): void
-  setSuspend(str: string): void
+  setSuspend(str: string): boolean | void
+  suspendLimit(): number
+  requestExit(): void
   getSuspend(): string
   setLocation(str: string): void
   setExit(mode: string): void
@@ -81,7 +83,7 @@ export interface ScormWrapper {
   getLmsMastery(): number | null
   getPreferredLanguage(): string
   commit(): void
-  finish(): void
+  finish(unloading?: boolean): Promise<void> | null | void
   available(): boolean
 }
 

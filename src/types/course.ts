@@ -449,7 +449,8 @@ export interface CourseSettings {
   passingScore: number
   /** Lesson navigation behaviour in the player. */
   navigation: NavigationMode
-  /** Player UI language; 'auto' = LMS preference, else the browser. */
+  /** Player UI language; 'auto' = the content language if the player supports
+   *  it, else the LMS preference, else the browser. */
   playerLanguage?: PlayerLanguage
   /** Show "Lesson n of N" in the player header (default true). */
   showProgress?: boolean

@@ -131,7 +131,9 @@
     var m = launchData && launchData.launchMode;
     return (m === 'Browse' || m === 'Review') ? m : 'Normal';
   }
-  function trackingAllowed() { return auMode() === 'Normal'; }
+  // cmi5 §9.3.8: no statements after `terminated` (e.g. a quiz retake while
+  // the page is unloading after "Exit course").
+  function trackingAllowed() { return auMode() === 'Normal' && !sent.terminated; }
 
   // Passed: once per registration. Failed: once per session and never after a
   // pass — a later successful retry in the same session may still send passed.
@@ -373,8 +375,10 @@
       }
       // The player only passes `success` once the whole course is complete;
       // sendResult() (driven by setScore) usually fires earlier. Its guards
-      // make repeated calls no-ops.
-      if (success) sendResult(success === 'passed');
+      // make repeated calls no-ops. The verdict is re-judged against the
+      // LaunchData masteryScore: cmi5 forbids `passed` below it, and the
+      // player's own threshold is the course setting.
+      if (success && score) sendResult(score.scaled >= masteryScore());
     },
 
     setScore: function (raw, min, max) {
@@ -504,6 +508,7 @@
     getReturnUrl: function () {
       return (launchData && launchData.returnURL) || '';
     },
+    requestExit: function () {}, // SCORM 2004 navigation only
     getLmsMastery: function () {
       var m = launchData && launchData.masteryScore;
       return typeof m === 'number' ? m * 100 : null;
@@ -525,17 +530,18 @@
     commit: function () {}, // statements are sent immediately
     // unloading: the page is going away, so anything still waiting in the
     // queue may never be sent — post `terminated` right now (keepalive) so the
-    // LMS doesn't mark the session abandoned.
+    // LMS doesn't mark the session abandoned. Otherwise `terminated` is queued
+    // after the pending statements, and the returned promise resolves once it
+    // is sent (the "Exit course" button waits for it before leaving).
     finish: function (unloading) {
-      if (!active || sent.terminated) return;
-      sent.terminated = true;
+      if (!active || sent.terminated) return null;
       var stmt = statement(V.terminated, { duration: elapsed() }, { cmi5: true });
+      sent.terminated = true;
       if (unloading) {
         flushSuspend();
-        post(stmt);
-      } else {
-        enqueue(function () { return post(stmt); });
+        return post(stmt);
       }
+      return enqueue(function () { return post(stmt); });
     },
     available: function () { return active; },
   };
