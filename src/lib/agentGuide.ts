@@ -23,23 +23,23 @@ const BLOCK_DOCS: Record<BlockType, BlockDoc> = {
   },
   paragraph: {
     summary: 'Rich text paragraph.',
-    data: `{ html: string }  // sanitized rich-text HTML (<p>, <strong>, <em>, <a>, <ul>/<ol>, <img>)`,
+    data: `{ html: string, variant?: 'normal' | 'lead' | 'dropcap' | 'columns' }  // sanitized rich-text HTML (<p>, <strong>, <em>, <a>, <ul>/<ol>, <img>); variant: lead = larger intro text, dropcap = big first letter, columns = two columns on wide screens`,
   },
   list: {
     summary: 'Bulleted or numbered list.',
     data: `{ ordered: boolean, items: string[] }`,
   },
   note: {
-    summary: 'Callout box (note or warning).',
-    data: `{ variant: 'note' | 'warning', text: string }`,
+    summary: 'Callout box with an icon.',
+    data: `{ variant: 'note' | 'tip' | 'success' | 'warning', text: string }  // note = blue info, tip = theme color, success = green, warning = amber`,
   },
   image: {
-    summary: 'Single image with optional caption.',
-    data: `{ src: string, alt: string, caption?: string, decorative?: boolean }  // src: relative path under assets/images/ (or a data: URL); decorative: true = purely visual, rendered with empty alt (alt is then ignored)`,
+    summary: 'Single image with optional caption, in one of four sizes.',
+    data: `{ src: string, alt: string, caption?: string, decorative?: boolean, size?: 'small' | 'medium' | 'large' | 'full', align?: 'left' | 'center' | 'right' }  // src: relative path under assets/images/ (or a data: URL); decorative: true = purely visual, rendered with empty alt (alt is then ignored); size: 'large' (default) = content column, 'full' = edge to edge of the page; align applies to small/medium`,
   },
   gallery: {
-    summary: 'Grid of images.',
-    data: `{ images: { src: string, alt: string, caption?: string, decorative?: boolean }[] }`,
+    summary: 'Several images as a grid or a swipeable carousel.',
+    data: `{ images: { src: string, alt: string, caption?: string, decorative?: boolean }[], layout?: 'grid' | 'carousel', columns?: 2 | 3 | 4 }  // layout default 'grid' (columns default 3); carousel shows one image + its caption at a time`,
   },
   video: {
     summary: 'HTML5 video from a local file.',
@@ -62,8 +62,8 @@ const BLOCK_DOCS: Record<BlockType, BlockDoc> = {
     data: `{ header: boolean, rows: string[][] }  // header=true → first row is <th>`,
   },
   quote: {
-    summary: 'Highlighted quotation.',
-    data: `{ text: string, author?: string }`,
+    summary: 'Highlighted quotation in one of five styles.',
+    data: `{ text: string, author?: string, role?: string, variant?: 'classic' | 'statement' | 'card' | 'photo' | 'image', image?: string, photoSide?: 'left' | 'right' }  // variant default 'classic' (accent bar); statement = big centered text; card = testimonial with round author photo; photo = large author photo beside the quote (photoSide, default 'left'); image = white text over a background image. image: assets/images/ path (author photo or background); role: author's job title/company`,
   },
   continue: {
     summary: 'Continue button / page gate.',
@@ -71,7 +71,7 @@ const BLOCK_DOCS: Record<BlockType, BlockDoc> = {
   },
   divider: {
     summary: 'Horizontal separator.',
-    data: `{ style: 'solid' | 'dashed' | 'dotted' }`,
+    data: `{ style: 'solid' | 'dashed' | 'dotted' | 'gradient' | 'dots' | 'ornament' | 'wave' | 'label' | 'spacer', label?: string }  // gradient = fading accent line; dots/ornament/wave = decorative separators; label = line with centered text (label, e.g. "Part 2"); spacer = empty vertical space`,
   },
   courseOutline: {
     summary: 'Auto-generated links to the other lessons (excludes the lesson it is in).',
@@ -154,6 +154,18 @@ const BLOCK_DOCS: Record<BlockType, BlockDoc> = {
     caseSensitive?: boolean  // default false
   }`,
   },
+  imageText: {
+    summary: 'Image beside rich text, or text over the image.',
+    data: `{ src: string, alt: string, decorative?: boolean, layout: 'left' | 'right' | 'overlay', html: string }  // layout: image on the left/right of the text, or 'overlay' = white text on top of the image; html: rich text like paragraph`,
+  },
+  columns: {
+    summary: '2–4 side-by-side columns of rich text (stacked on phones).',
+    data: `{ style: 'plain' | 'cards' | 'lines', columns: { id: string, title: string, html: string }[] }  // 2 to 4 columns; title optional (empty = none); cards = each column on a white card, lines = rules between columns`,
+  },
+  attachment: {
+    summary: 'Downloadable files (PDF, documents, spreadsheets, slides, archives…).',
+    data: `{ title?: string, files: { id: string, src: string, name: string, size?: number }[] }  // src: relative path under assets/files/; name: file name offered for download (keep the extension); size in bytes (display only). HTML/JS/SVG/XML files are not allowed`,
+  },
 }
 
 function blockReference(): string {
@@ -204,8 +216,19 @@ Course
     playerLanguage?: 'auto' | 'en' | 'uk', // player UI language; 'auto' (default) = contentLanguage if en/uk, else LMS/browser language
     showProgress?: boolean,        // show "Lesson n of N" in the player header (default true)
     finishMessage?: string,        // completion-screen text; empty/omitted = built-in message
-    contentLanguage?: string       // BCP 47 language of the course content (e.g. 'en', 'uk', 'pt-BR'); sets lang for screen readers
+    contentLanguage?: string,      // BCP 47 language of the course content (e.g. 'en', 'uk', 'pt-BR'); sets lang for screen readers
+    contentWidth?: 'narrow' | 'normal' | 'wide' | 'full',  // lesson column width (default 'normal')
+    typography?: 'modern' | 'editorial' | 'rounded',       // font style (default 'modern'; editorial = serif headings)
+    blockAnimation?: 'none' | 'fade' | 'slide' | 'zoom',   // block entrance as the learner scrolls (default 'fade')
+    lessonTransition?: 'none' | 'fade' | 'slide'           // animation between lessons (default 'fade')
   },
+  intro?: {                        // optional cover page before the first lesson (not a lesson)
+    enabled: boolean,
+    layout: 'cover' | 'split' | 'minimal',  // cover = text over coverImage; split = image beside text; minimal = no image
+    eyebrow?: string,              // small label above the title, e.g. "Onboarding · 15 min"
+    buttonLabel?: string,          // start button text; empty = built-in "Start course"
+    showOutline?: boolean          // list the lessons under the button (default true)
+  },                               // the cover page shows the course title, description and coverImage
   lessons: Lesson[]
 }
 \`\`\`
@@ -218,8 +241,16 @@ Course
 
 ### Block
 
-Every block is \`{ id: string, type: BlockType, settings: { spacing?: 'compact' | 'normal' | 'spacious' }, data: <type-specific> }\`.
+Every block is \`{ id: string, type: BlockType, settings: { spacing?: 'compact' | 'normal' | 'spacious', background?: 'none' | 'muted' | 'soft' | 'accent' | 'gradient' | 'dark', width?: 'normal' | 'full' }, data: <type-specific> }\`.
 The \`type\` field selects the shape of \`data\` (a discriminated union).
+
+\`settings.background\` paints the block as a panel in a color derived from the
+theme (muted = light gray, soft = accent tint, accent / gradient = accent color
+with white text, dark = near-black with white text); consecutive blocks with
+the same background join into one panel. \`settings.spacing\` is its inner padding.
+\`settings.width: 'full'\` stretches the block edge to edge of the page: with a
+background it becomes a full-width band (content stays in the column); without
+one, media blocks (text on image, carousel, quote on image) span the page.
 
 ## Block types
 
@@ -235,7 +266,8 @@ ${blockReference()}
 - **Rich text** (\`paragraph\`, \`tabs\`, \`accordion\`): \`html\` is a small subset
   of HTML. Inline images use relative \`assets/\` paths.
 - **Media**: reference files by relative path under \`assets/images/\`,
-  \`assets/videos/\`, \`assets/audio/\`, or \`assets/captions/\` (WebVTT). Put the files there too. A \`data:\` URL
+  \`assets/videos/\`, \`assets/audio/\`, \`assets/captions/\` (WebVTT) or \`assets/files/\`
+  (attachments). Put the files there too. A \`data:\` URL
   also works but bloats the file.
 - **Media formats**: images PNG/JPEG/WebP/GIF/SVG, video MP4/WebM, audio
   MP3/OGG/WAV/M4A, captions WebVTT (.vtt). Other formats are rejected by the app.

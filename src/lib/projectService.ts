@@ -3,7 +3,7 @@
 // alongside the project so redo survives reopening.
 
 import type { Course } from '../types/course'
-import { DEFAULT_COURSE_SETTINGS } from '../types/course'
+import { DEFAULT_COURSE_SETTINGS, DEFAULT_INTRO } from '../types/course'
 import { DEFAULT_THEME } from '../theme/themes'
 import { uid } from './id'
 import { translate } from '../i18n/I18nProvider'
@@ -43,6 +43,7 @@ function makeEmptyCourse(title: string): Course {
     description: '',
     theme: DEFAULT_THEME,
     settings: { ...DEFAULT_COURSE_SETTINGS },
+    intro: { ...DEFAULT_INTRO },
     lessons: [
       {
         id: uid('lesson'),

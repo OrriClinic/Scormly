@@ -1,5 +1,6 @@
-import type { Block, Course, Lesson } from '../types/course'
+import type { Block, BlockBackground, Course, Lesson } from '../types/course'
 import { DEFAULT_COURSE_SETTINGS } from '../types/course'
+import { avatarArt, coverArt, flagSlide, inboxArt, textFile } from './sampleArt'
 import type { Language } from '../i18n/types'
 
 // Built-in sample course ("Spot the phish"), opened from the landing page and the
@@ -17,8 +18,12 @@ const id = (prefix: string) => `${prefix}-sample-${++seq}`
 function block<T extends Block['type']>(
   type: T,
   data: Extract<Block, { type: T }>['data'],
+  background?: BlockBackground,
+  spacing: Block['settings']['spacing'] = 'normal',
+  width?: 'full',
 ): Block {
-  return { id: id('block'), type, settings: { spacing: 'normal' }, data } as Block
+  const settings = { spacing, ...(background ? { background } : {}), ...(width ? { width } : {}) }
+  return { id: id('block'), type, settings, data } as Block
 }
 
 // Mock email for the hotspot block, drawn as an inline SVG so the sample needs
@@ -60,12 +65,26 @@ export function makeSampleCourse(lang: Language): Course {
     title: tr(L('Welcome', 'Вітаємо')),
     status: 'published',
     blocks: [
-      block('heading', { level: 1, text: tr(L('Spot the phish', 'Розпізнай фішинг')) }),
-      block('paragraph', {
+      block('quote', {
+        variant: 'statement',
+        text: tr(L('Nine out of ten cyberattacks start with an email.', 'Дев’ять із десяти кібератак починаються з листа.')),
+        author: '',
+      }, 'soft', 'spacious'),
+      block('imageText', {
+        layout: 'left',
+        src: inboxArt({
+          inbox: tr(L('Inbox', 'Вхідні')),
+          mails: [
+            tr(L('Team lunch on Friday', 'Обід команди в п’ятницю')),
+            tr(L('URGENT: verify your account!', 'ТЕРМІНОВО: підтвердьте акаунт!')),
+            tr(L('Q3 report — final draft', 'Звіт за III квартал — фінал')),
+          ],
+        }),
+        alt: tr(L('An inbox where one urgent email is highlighted as suspicious', 'Поштова скринька, де один терміновий лист позначено як підозрілий')),
         html: p(
           L(
-            'Nine out of ten cyberattacks start with an email. In the next <strong>15 minutes</strong> you will learn to recognise phishing, react calmly when something looks wrong, and protect yourself and your team.',
-            'Дев’ять із десяти кібератак починаються з листа. За наступні <strong>15 хвилин</strong> ви навчитеся розпізнавати фішинг, спокійно реагувати на підозрілі повідомлення та захищати себе й команду.',
+            'In the next <strong>15 minutes</strong> you will learn to recognise phishing, react calmly when something looks wrong, and protect yourself and your team.',
+            'За наступні <strong>15 хвилин</strong> ви навчитеся розпізнавати фішинг, спокійно реагувати на підозрілі повідомлення та захищати себе й команду.',
           ),
         ),
       }),
@@ -78,15 +97,25 @@ export function makeSampleCourse(lang: Language): Course {
           ),
         ),
       }),
-      block('heading', { level: 2, text: tr(L('What you will learn', 'Чого ви навчитеся')) }),
+      block('heading', { level: 2, text: tr(L('What you will learn', 'Чого ви навчитеся')) }, 'dark'),
       block('list', {
-        ordered: false,
+        ordered: true,
         items: [
           tr(L('The five red flags of a phishing message', 'П’ять тривожних ознак фішингового повідомлення')),
           tr(L('How phishing looks in email, SMS and phone calls', 'Як виглядає фішинг у пошті, SMS і дзвінках')),
           tr(L('What to do in the first minutes after a suspicious click', 'Що робити в перші хвилини після підозрілого кліку')),
         ],
-      }),
+      }, 'dark'),
+      block('quote', {
+        variant: 'card',
+        text: tr(L(
+          'After this course our team reported three real phishing attempts in the first week — before anyone clicked.',
+          'Після цього курсу наша команда вже за перший тиждень повідомила про три справжні фішингові спроби — ще до того, як хтось клікнув.',
+        )),
+        author: tr(L('Maria Lopez', 'Марія Левченко')),
+        role: tr(L('Head of IT Security', 'Керівниця з ІТ-безпеки')),
+        image: avatarArt(tr(L('ML', 'МЛ'))),
+      }, 'muted'),
       block('courseOutline', { title: tr(L('Course outline', 'Зміст курсу')), numbered: true }),
       block('continue', { mode: 'unrestricted', label: tr(L('Let’s start', 'Почнімо')) }),
     ],
@@ -100,6 +129,7 @@ export function makeSampleCourse(lang: Language): Course {
     blocks: [
       block('heading', { level: 2, text: tr(L('Find the red flags', 'Знайдіть тривожні ознаки')) }),
       block('paragraph', {
+        variant: 'lead',
         html: p(
           L(
             'This email landed in your inbox this morning. Click each marker to see what gives it away.',
@@ -145,6 +175,32 @@ export function makeSampleCourse(lang: Language): Course {
             y: 83,
             title: tr(L('Unexpected attachment', 'Неочікуване вкладення')),
             text: tr(L('An archive you never asked for may contain malware. Never open it.', 'Архів, якого ви не чекали, може містити шкідливу програму. Ніколи не відкривайте його.')),
+          },
+        ],
+      }),
+      block('heading', { level: 2, text: tr(L('Four red flags to remember', 'Чотири ознаки, які варто запам’ятати')) }),
+      block('gallery', {
+        layout: 'carousel',
+        images: [
+          {
+            src: flagSlide(1, tr(L('Urgency', 'Терміновість')), tr(L('“Act now or lose access” — pressure is the attacker’s favourite tool.', '«Дійте негайно, або втратите доступ» — тиск є улюбленим інструментом зловмисника.')), 'clock'),
+            alt: tr(L('Red flag 1: urgency', 'Ознака 1: терміновість')),
+            caption: tr(L('Real services give you time. Slow down when a message rushes you.', 'Справжні сервіси дають вам час. Сповільніться, коли лист вас квапить.')),
+          },
+          {
+            src: flagSlide(2, tr(L('Look-alike senders', 'Схожі адреси')), tr(L('micros0ft-help.co is not microsoft.com. Read the domain letter by letter.', 'micros0ft-help.co — це не microsoft.com. Читайте домен по літері.')), 'at'),
+            alt: tr(L('Red flag 2: look-alike sender addresses', 'Ознака 2: підроблені адреси відправників')),
+            caption: tr(L('Check the address, not just the display name.', 'Перевіряйте адресу, а не лише ім’я відправника.')),
+          },
+          {
+            src: flagSlide(3, tr(L('Surprise attachments', 'Несподівані вкладення')), tr(L('Invoices, “scans” and archives you never asked for can carry malware.', 'Рахунки, «скани» й архіви, яких ви не чекали, можуть містити шкідливе ПЗ.')), 'clip'),
+            alt: tr(L('Red flag 3: unexpected attachments', 'Ознака 3: неочікувані вкладення')),
+            caption: tr(L('Not expecting a file? Confirm with the sender another way.', 'Не чекали файл? Уточніть у відправника іншим способом.')),
+          },
+          {
+            src: flagSlide(4, tr(L('Password requests', 'Запит пароля')), tr(L('No real IT team, bank or colleague will ever ask for your password or code.', 'Жодна справжня ІТ-служба, банк чи колега не питатиме ваш пароль чи код.')), 'key'),
+            alt: tr(L('Red flag 4: requests for passwords or codes', 'Ознака 4: прохання назвати пароль чи код')),
+            caption: tr(L('A password request is a phishing attempt — always.', 'Прохання назвати пароль — це завжди фішинг.')),
           },
         ],
       }),
@@ -249,6 +305,10 @@ export function makeSampleCourse(lang: Language): Course {
           { id: id('tl'), label: tr(L('Step 4', 'Крок 4')), title: tr(L('Watch for activity', 'Стежте за активністю')), text: tr(L('Check your account and bank statements for anything unusual over the next weeks.', 'Кілька тижнів перевіряйте акаунт і банківські виписки на незвичні операції.')) },
         ],
       }),
+      block('note', {
+        variant: 'success',
+        text: tr(L('Key point: reporting fast matters more than feeling embarrassed — security teams would rather get ten false alarms than miss one real attack.', 'Головне: швидко повідомити важливіше за незручність — служба безпеки радше отримає десять хибних тривог, ніж пропустить одну справжню атаку.')),
+      }),
       block('table', {
         header: true,
         rows: [
@@ -259,9 +319,24 @@ export function makeSampleCourse(lang: Language): Course {
         ],
       }),
       block('quote', {
+        variant: 'statement',
         text: tr(L('Amateurs hack systems; professionals hack people.', 'Аматори зламують системи, професіонали — людей.')),
         author: 'Bruce Schneier',
-      }),
+      }, 'gradient', 'spacious', 'full'),
+      block('attachment', {
+        title: tr(L('Take it with you', 'Візьміть із собою')),
+        files: [
+          {
+            id: id('file'),
+            name: tr(L('phishing-checklist.txt', 'чекліст-фішинг.txt')),
+            src: textFile(tr(L(
+              'PHISHING CHECKLIST\n\n[ ] Is the sender address exactly right?\n[ ] Does the message rush or threaten me?\n[ ] Was I expecting this link or file?\n[ ] Does it ask for a password or a code?\n[ ] When in doubt: verify through a known channel and report it.\n',
+              'ЧЕКЛІСТ: ФІШИНГ\n\n[ ] Адреса відправника точно правильна?\n[ ] Лист мене квапить чи погрожує?\n[ ] Я чекав(-ла) це посилання чи файл?\n[ ] Мене просять пароль чи код?\n[ ] Якщо сумніваєтеся: перевірте через відомий канал і повідомте.\n',
+            ))),
+            size: 260,
+          },
+        ],
+      }, 'muted'),
       block('continue', { mode: 'unrestricted', label: tr(L('To the final test', 'До фінального тесту')) }),
     ],
   }
@@ -280,7 +355,8 @@ export function makeSampleCourse(lang: Language): Course {
     title: tr(L('Final test', 'Фінальний тест')),
     status: 'published',
     blocks: [
-      block('heading', { level: 2, text: tr(L('Check yourself', 'Перевірте себе')) }),
+      block('divider', { style: 'label', label: tr(L('Final test', 'Фінальний тест')) }),
+      block('heading', { level: 2, text: tr(L('Check yourself', 'Перевірте себе')), align: 'center' }),
       block('paragraph', {
         html: p(L('Pass with 80% or more to complete the course. Your score is reported to the LMS.', 'Наберіть 80% або більше, щоб завершити курс. Ваш результат передається в LMS.')),
       }),
@@ -362,9 +438,18 @@ export function makeSampleCourse(lang: Language): Course {
       ),
     ),
     theme: 'ocean',
+    coverImage: coverArt(),
+    intro: {
+      enabled: true,
+      layout: 'cover',
+      eyebrow: tr(L('Security basics · 15 min', 'Основи безпеки · 15 хв')),
+      showOutline: true,
+    },
     settings: {
       ...DEFAULT_COURSE_SETTINGS,
       contentLanguage: lang,
+      blockAnimation: 'slide',
+      lessonTransition: 'slide',
       finishMessage: tr(
         L(
           'Great job! You now know how to spot and handle phishing. Stay alert — and share what you learned with your team.',

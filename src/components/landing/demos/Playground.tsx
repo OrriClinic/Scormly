@@ -11,7 +11,7 @@ import type { BlockType } from '../../../types/course'
 // preview) with content taken from the built-in demo course.
 const SAMPLE_TABS = ['hotspot', 'ordering', 'fillBlanks', 'timeline'] as const satisfies readonly BlockType[]
 type SampleTab = (typeof SAMPLE_TABS)[number]
-type TabId = 'quiz' | 'flashcards' | 'outline' | SampleTab
+type TabId = 'quiz' | 'flashcards' | 'outline' | 'carousel' | 'testimonial' | SampleTab
 
 // Tabbed playground hosting the clickable block demos (the chat lives in the
 // hero). Each tab swaps in a real, interactive component.
@@ -23,9 +23,14 @@ export default function Playground() {
     () => makeSampleCourse(lang).lessons.flatMap((l) => l.blocks),
     [lang],
   )
-  const sampleBlock = (SAMPLE_TABS as readonly string[]).includes(tab)
-    ? sampleBlocks.find((b) => b.type === tab)
-    : undefined
+  const sampleBlock =
+    tab === 'carousel'
+      ? sampleBlocks.find((b) => b.type === 'gallery' && b.data.layout === 'carousel')
+      : tab === 'testimonial'
+        ? sampleBlocks.find((b) => b.type === 'quote' && b.data.variant === 'card')
+        : (SAMPLE_TABS as readonly string[]).includes(tab)
+          ? sampleBlocks.find((b) => b.type === tab)
+          : undefined
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'quiz', label: t('tabQuiz') },
@@ -33,6 +38,8 @@ export default function Playground() {
     { id: 'ordering', label: t('tabOrdering') },
     { id: 'fillBlanks', label: t('tabFillBlanks') },
     { id: 'timeline', label: t('tabTimeline') },
+    { id: 'carousel', label: t('tabCarousel') },
+    { id: 'testimonial', label: t('tabTestimonial') },
     { id: 'flashcards', label: t('tabFlashcards') },
     { id: 'outline', label: t('tabOutline') },
   ]
@@ -57,7 +64,7 @@ export default function Playground() {
       </div>
 
       <div className="relative rounded-3xl border border-gray-200 bg-white/80 p-6 shadow-sm backdrop-blur-sm sm:p-8">
-        <div key={tab} className="demo-swap">
+        <div key={tab} className="demo-swap" data-theme={tab === 'carousel' || tab === 'testimonial' ? 'ocean' : undefined}>
           {tab === 'quiz' && <QuizDemo />}
           {tab === 'flashcards' && <FlashcardsDemo />}
           {tab === 'outline' && <OutlineDemo />}

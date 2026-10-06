@@ -122,6 +122,22 @@ const PATHS: Record<BlockType, ReactNode> = {
       <rect x="9" y="5" width="6" height="6" rx="1" strokeDasharray="2 2" />
     </>
   ),
+  imageText: (
+    <>
+      <rect x="3" y="5" width="9" height="14" rx="1.5" />
+      <path d="m3 15 3-3 6 6" />
+      <path d="M15 8h6M15 12h6M15 16h4" />
+    </>
+  ),
+  columns: (
+    <>
+      <rect x="3" y="4" width="7.5" height="16" rx="1.5" />
+      <rect x="13.5" y="4" width="7.5" height="16" rx="1.5" />
+    </>
+  ),
+  attachment: (
+    <path d="m20.5 11.5-8.2 8.2a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8" />
+  ),
 }
 
 export default function BlockIcon({

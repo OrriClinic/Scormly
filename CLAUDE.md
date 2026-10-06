@@ -36,6 +36,7 @@ src/
 ├── main.tsx                  # React entry point (wraps App in I18nProvider)
 ├── App.tsx                   # hash router: landing vs. builder
 ├── index.css                 # Tailwind + theme tokens + landing animations
+├── styles/blocks.css         # learner block design shared with the SCORM player
 ├── types/course.ts           # data model (discriminated union of blocks)
 ├── store/courseStore.ts      # Zustand store: CRUD + undo/redo
 ├── lib/id.ts                 # ID generation
@@ -76,7 +77,20 @@ new block type = extend the union + add a registry entry + add a renderer
 component (see [docs/adding-blocks.md](./docs/adding-blocks.md)). Keep the model
 declarative and JSON-serializable — it is the basis for `project.json` and export.
 
-`Course.theme` (a `ThemeId`) stores the global project theme.
+`Course.theme` (a `ThemeId`) stores the global project theme. `Course.intro` is
+the optional cover page shown before the first lesson (it is not a lesson; the
+editor selects it with `activeLessonId === INTRO_ID`). `Block.settings` carries
+the block format: `background` (theme-derived panel colors), `spacing` and
+`width` (`'full'` = edge-to-edge band).
+
+## Learner rendering in three places
+
+Blocks render in the editor (`src/blocks/components/*`, WYSIWYG), the in-app
+preview (`src/preview/*`) and the exported **vanilla-JS SCORM player**
+(`public/scorm-player/player.js` + `player.css`). A visual change to learner
+content must be made in all three. Shared look lives in `src/styles/blocks.css`
+(`sc-*`, `blk*` classes); after editing it run `node scripts/syncPlayerCss.mjs`
+to copy it into `player.css` (`tests/playerCss.test.ts` fails when stale).
 
 ## State management
 

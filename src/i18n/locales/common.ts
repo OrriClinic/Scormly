@@ -38,6 +38,8 @@ const common: LocaleTable = {
     chkNoLessons: 'The course has no lessons.',
     chkEmptyLesson: 'Empty lesson',
     chkMissingImage: 'Image block without an image',
+    chkAttachmentEmpty: 'Attachment block without files',
+    chkQuoteNoImage: '“Quote on image” without a background image',
     chkEmptyGallery: 'Gallery without images',
     chkMissingVideo: 'Video block without a video',
     chkMissingAudio: 'Audio block without an audio file',
@@ -80,6 +82,7 @@ const common: LocaleTable = {
 
     course: 'Course',
     lesson: 'Lesson',
+    lessons: 'Lessons',
     addLesson: 'Add lesson',
     chooseLesson: 'Select a lesson on the left',
     noLessons: 'No lessons yet.',
@@ -151,6 +154,8 @@ const common: LocaleTable = {
     chkNoLessons: 'У курсі немає уроків.',
     chkEmptyLesson: 'Порожній урок',
     chkMissingImage: 'Блок зображення без зображення',
+    chkAttachmentEmpty: 'Блок вкладень без файлів',
+    chkQuoteNoImage: '«Цитата на зображенні» без фонового зображення',
     chkEmptyGallery: 'Галерея без зображень',
     chkMissingVideo: 'Блок відео без відео',
     chkMissingAudio: 'Блок аудіо без аудіофайлу',
@@ -193,6 +198,7 @@ const common: LocaleTable = {
 
     course: 'Курс',
     lesson: 'Урок',
+    lessons: 'Уроки',
     addLesson: 'Додати урок',
     chooseLesson: 'Оберіть урок зліва',
     noLessons: 'Уроків ще немає.',

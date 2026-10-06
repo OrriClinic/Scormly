@@ -1,12 +1,18 @@
-import { useState, type ChangeEvent } from 'react'
 import type { BlockComponentProps } from '../types'
-import type { BlockOfType } from '../../types/course'
+import type { BlockOfType, ImageSize, TextAlign } from '../../types/course'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
-import { saveAsset, UnsupportedFormatError, toastUploadError } from '../../lib/assets'
 import { useAssetUrl } from '../../hooks/useAssetUrl'
+import {
+  IMAGE_ACCEPT,
+  Segmented,
+  SettingsBar,
+  UploadButton,
+  useAssetUpload,
+} from '../../components/editor/controls'
+import { imageFigureClass } from '../styleClasses'
 
-const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml'
+const IMAGE_SIZES: ImageSize[] = ['small', 'medium', 'large', 'full']
 
 export default function ImageBlock({
   block,
@@ -15,53 +21,66 @@ export default function ImageBlock({
 }: BlockComponentProps<BlockOfType<'image'>>) {
   const update = useCourseStore((s) => s.updateBlockData)
   const { t } = useT('media')
-  const { src, alt, caption, decorative } = block.data
+  const { t: td } = useT('design')
+  const { src, alt, caption, decorative, size = 'large', align = 'center' } = block.data
   const displayUrl = useAssetUrl(src)
-  const [error, setError] = useState<string | null>(null)
-
-  async function handlePick(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    setError(null)
-    try {
-      const path = await saveAsset(file, 'image')
-      update(lessonId, block.id, { src: path })
-    } catch (err) {
-      if (err instanceof UnsupportedFormatError) setError(t('unsupportedImage'))
-      else toastUploadError(err)
-    }
-  }
+  const upload = useAssetUpload('image', (path) => update(lessonId, block.id, { src: path }))
 
   if (!src) {
     return (
       <div>
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-gray-300 bg-white px-6 py-10 text-gray-400 transition hover:border-brand hover:text-brand">
-          <span className="text-3xl">🖼️</span>
+        <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 bg-white/60 px-6 py-12 text-gray-400 transition hover:border-brand hover:text-brand">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-9 w-9" aria-hidden>
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <circle cx="9" cy="10" r="1.5" />
+            <path d="m21 16-5-5-9 9" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
           <span className="text-sm font-medium">{t('uploadImage')}</span>
-          <input type="file" accept={IMAGE_ACCEPT} onChange={handlePick} className="hidden" />
+          <input type="file" accept={IMAGE_ACCEPT} onChange={upload.onPick} className="sr-only" />
         </label>
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {upload.error && <p className="mt-2 text-sm text-red-600">{t('unsupportedImage')}</p>}
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg bg-white">
-      <img src={displayUrl} alt={decorative ? '' : alt} className="max-w-full rounded-lg" />
+    <div className="space-y-3">
+      {selected && (
+        <SettingsBar>
+          <Segmented<ImageSize>
+            label={td('imageSize')}
+            value={size}
+            onChange={(v) => update(lessonId, block.id, { size: v })}
+            options={IMAGE_SIZES.map((s) => [s, td(`size_${s}`)] as const)}
+          />
+          {(size === 'small' || size === 'medium') && (
+            <Segmented<TextAlign>
+              label={td('imageAlign')}
+              value={align}
+              onChange={(v) => update(lessonId, block.id, { align: v })}
+              options={(['left', 'center', 'right'] as const).map((a) => [a, td(`align_${a}`)] as const)}
+            />
+          )}
+        </SettingsBar>
+      )}
 
-      <input
-        type="text"
-        value={caption ?? ''}
-        placeholder={t('captionPlaceholder')}
-        onChange={(e) =>
-          update(lessonId, block.id, { caption: e.target.value }, `img-caption-${block.id}`)
-        }
-        className="mt-3 w-full bg-transparent text-center text-sm italic text-gray-500 placeholder-gray-300 outline-none"
-      />
+      <figure className={imageFigureClass(size, align)}>
+        <img src={displayUrl || undefined} alt={decorative ? '' : alt} />
+        <figcaption>
+          <input
+            type="text"
+            value={caption ?? ''}
+            placeholder={t('captionPlaceholder')}
+            onChange={(e) =>
+              update(lessonId, block.id, { caption: e.target.value }, `img-caption-${block.id}`)
+            }
+            className="w-full bg-transparent text-center placeholder-gray-300 outline-none"
+          />
+        </figcaption>
+      </figure>
 
       {selected && (
-        <div className="mt-4 space-y-3 border-t border-gray-200 pt-4">
+        <div className="space-y-3 border-t border-gray-200 pt-4">
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-gray-500">
               {t('altLabel')}
@@ -74,7 +93,7 @@ export default function ImageBlock({
               onChange={(e) =>
                 update(lessonId, block.id, { alt: e.target.value }, `img-alt-${block.id}`)
               }
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-brand disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
             />
           </label>
           <label className="flex cursor-pointer items-start gap-2.5">
@@ -90,11 +109,8 @@ export default function ImageBlock({
             </span>
           </label>
 
-          <label className="btn-secondary inline-flex cursor-pointer items-center gap-1 text-sm">
-            {t('replaceImage')}
-            <input type="file" accept={IMAGE_ACCEPT} onChange={handlePick} className="hidden" />
-          </label>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          <UploadButton label={t('replaceImage')} accept={IMAGE_ACCEPT} onPick={upload.onPick} />
+          {upload.error && <p className="text-sm text-red-600">{t('unsupportedImage')}</p>}
         </div>
       )}
     </div>

@@ -151,3 +151,30 @@ Export will run entirely on the client:
 
 In the LMS, the player implements the SCORM API: for 1.2 — `LMSInitialize`,
 `LMSSetValue`, `cmi.core.lesson_status`, `cmi.core.score.*`.
+
+## Block design, cover page and motion
+
+- **Block format** — `Block.settings.background` (`muted` / `soft` / `accent` /
+  `gradient` / `dark`, all derived from the theme accent), `spacing` (inner
+  padding) and `width` (`full` = edge-to-edge band). The wrapper is built by
+  [`blockWrapperProps`](../src/blocks/styleClasses.ts) (editor and preview) and
+  `wrapBlock()` in the player; consecutive blocks with the same background are
+  joined into one panel by CSS (`:has(+ …)`).
+- **Full-bleed layout** — full-width images and bands use the CSS variables
+  `--page-w` (scroll container width, set by `usePageWidthVar` / the player's
+  `applyLayout`) and `--col-w` (content column width from
+  `CourseSettings.contentWidth`).
+- **Cover page** — `Course.intro` (layout, eyebrow, button label, lesson list)
+  renders `course.title` / `description` / `coverImage`. The editor shows
+  `IntroEditor` when `activeLessonId === INTRO_ID`; the preview uses `IntroView`;
+  the player's `renderIntro()` opens it on a fresh attempt (resumed attempts go
+  straight to the saved lesson). It is not a lesson: no progress, no tracking.
+- **Ready-made blocks** — [`templates.ts`](../src/blocks/templates.ts): preconfigured
+  block sets inserted as one undo step (`insertBlocks`).
+- **Motion** — `CourseSettings.blockAnimation` (entrance as blocks scroll into
+  view, IntersectionObserver) and `lessonTransition`; both are skipped when the
+  learner or the OS asks for reduced motion, and CSS never leaves content hidden
+  in that case.
+- **Shared CSS** — [`src/styles/blocks.css`](../src/styles/blocks.css) is the
+  source of truth for learner block styles; `scripts/syncPlayerCss.mjs` copies it
+  into `public/scorm-player/player.css` with the player's token names.

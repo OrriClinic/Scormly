@@ -8,6 +8,7 @@ import { GITHUB_URL, GITHUB_ISSUES_URL } from '../../lib/links'
 import { RELEASES } from '../../help/releaseNotes'
 import ChatDemo from './demos/ChatDemo'
 import Playground from './demos/Playground'
+import DesignShowcase from './demos/DesignShowcase'
 
 function Reveal({
   children,
@@ -219,6 +220,7 @@ export default function Landing() {
         <Hero />
         <Pillars />
         <Demo />
+        <Design />
         <Features />
         <Accessibility />
         <AiReady />
@@ -242,6 +244,9 @@ export default function Landing() {
           <nav className="hidden items-center gap-6 text-sm font-medium text-gray-600 lg:flex">
             <a href="#demo" className="hover:text-brand">
               {t('navDemo')}
+            </a>
+            <a href="#design" className="hover:text-brand">
+              {t('navDesign')}
             </a>
             <a href="#features" className="hover:text-brand">
               {t('navFeatures')}
@@ -409,6 +414,56 @@ export default function Landing() {
               </a>
             </div>
           </Reveal>
+        </div>
+      </section>
+    )
+  }
+
+  // Visual design: cover pages, themed block panels, image/quote layouts,
+  // carousels, downloads and motion — shown with the real learner components.
+  function Design() {
+    const points = [
+      { icon: 'theme', title: t('designPoint1Title'), text: t('designPoint1Text') },
+      { icon: 'blocks', title: t('designPoint2Title'), text: t('designPoint2Text') },
+      { icon: 'download', title: t('designPoint3Title'), text: t('designPoint3Text') },
+      { icon: 'route', title: t('designPoint4Title'), text: t('designPoint4Text') },
+    ]
+    return (
+      <section id="design" className="relative scroll-mt-20 overflow-hidden py-24">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute right-[-10%] top-10 h-96 w-96 rounded-full bg-brand/10 blur-3xl" />
+          <div className="absolute bottom-0 left-[-6%] h-72 w-72 rounded-full bg-brand/5 blur-3xl" />
+        </div>
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <Reveal>
+            <div className="mx-auto max-w-2xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-sm font-medium text-brand-dark">
+                <span aria-hidden>✦</span> {t('designBadge')}
+              </span>
+              <h2 className="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">{t('designTitle')}</h2>
+              <p className="mt-4 text-lg leading-relaxed text-gray-600">{t('designSubtitle')}</p>
+            </div>
+          </Reveal>
+          <div className="mt-14 grid items-center gap-12 lg:grid-cols-[7fr_5fr]">
+            <Reveal>
+              <DesignShowcase />
+            </Reveal>
+            <div className="grid gap-6">
+              {points.map((pt, i) => (
+                <Reveal key={pt.title} delay={i * 90}>
+                  <div className="flex gap-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand to-brand-dark text-white shadow-md shadow-brand/25">
+                      <Icon name={pt.icon} className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">{pt.title}</h3>
+                      <p className="mt-1 leading-relaxed text-gray-600">{pt.text}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
     )

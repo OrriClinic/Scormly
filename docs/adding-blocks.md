@@ -125,7 +125,24 @@ const BLOCK_COMPONENTS: Record<BlockType, ComponentType<BlockComponentProps>> = 
 }
 ```
 
-## 5. Verify
+## 5. Learner view: preview and SCORM player
+
+The editor component is only one of three renderers. Also add:
+
+- a case to [`BlockPreview`](../src/preview/BlockPreview.tsx) (in-app preview);
+- a case to `renderBlock()` in [`public/scorm-player/player.js`](../public/scorm-player/player.js)
+  (the exported course — vanilla JS, no React);
+- an entry to `BLOCK_DOCS` in [`src/lib/agentGuide.ts`](../src/lib/agentGuide.ts)
+  (the `AGENTS.md` written into project folders; the build fails without it).
+
+Prefer shared class names: put the learner styles in
+[`src/styles/blocks.css`](../src/styles/blocks.css) using `sc-<block>` classes,
+use the same markup in the preview, the editor and the player, and run
+`node scripts/syncPlayerCss.mjs` to copy the CSS into the player. Block-level
+format (background, padding, width) is applied by the wrapper
+(`blockWrapperProps` / the player's `wrapBlock`), not by the block itself.
+
+## 6. Verify
 
 ```bash
 npm run build   # strict TypeScript will catch an incomplete union or mismatched types

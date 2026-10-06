@@ -25,6 +25,9 @@ import HotspotBlock from './components/HotspotBlock'
 import TimelineBlock from './components/TimelineBlock'
 import OrderingBlock from './components/OrderingBlock'
 import FillBlanksBlock from './components/FillBlanksBlock'
+import ImageTextBlock from './components/ImageTextBlock'
+import AttachmentBlock from './components/AttachmentBlock'
+import ColumnsBlock from './components/ColumnsBlock'
 
 // Dispatcher: block type → editor component. Each component lives in its own
 // file under ./components/ and implements the BlockComponentProps contract.
@@ -56,6 +59,9 @@ const BLOCK_COMPONENTS: Record<
   timeline: TimelineBlock as ComponentType<BlockComponentProps>,
   ordering: OrderingBlock as ComponentType<BlockComponentProps>,
   fillBlanks: FillBlanksBlock as ComponentType<BlockComponentProps>,
+  imageText: ImageTextBlock as ComponentType<BlockComponentProps>,
+  attachment: AttachmentBlock as ComponentType<BlockComponentProps>,
+  columns: ColumnsBlock as ComponentType<BlockComponentProps>,
 }
 
 export default function BlockRenderer(props: BlockComponentProps) {

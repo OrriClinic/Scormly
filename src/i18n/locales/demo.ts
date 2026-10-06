@@ -17,6 +17,8 @@ const demo: LocaleTable = {
     tabOrdering: 'Sorting',
     tabFillBlanks: 'Fill in the blanks',
     tabTimeline: 'Timeline',
+    tabCarousel: 'Carousel',
+    tabTestimonial: 'Testimonial',
 
     // Chat (auto-playing scenario). The scenarios themselves live in
     // src/components/landing/demos/chatScenarios.ts as inline { en, uk }
@@ -65,6 +67,8 @@ const demo: LocaleTable = {
     tabOrdering: 'Сортування',
     tabFillBlanks: 'Пропуски',
     tabTimeline: 'Таймлайн',
+    tabCarousel: 'Карусель',
+    tabTestimonial: 'Відгук',
 
     // Chat (auto-playing scenario) — see chatScenarios.ts for the content.
     chatReplay: 'Спочатку',

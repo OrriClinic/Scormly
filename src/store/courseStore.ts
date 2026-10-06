@@ -3,12 +3,13 @@ import type {
   Block,
   BlockType,
   Course,
+  CourseIntro,
   CourseSettings,
   Lesson,
   LessonStatus,
   ThemeId,
 } from '../types/course'
-import { DEFAULT_COURSE_SETTINGS } from '../types/course'
+import { DEFAULT_COURSE_SETTINGS, DEFAULT_INTRO } from '../types/course'
 import { createBlock } from '../blocks/registry'
 import { DEFAULT_THEME, THEMES } from '../theme/themes'
 import { uid } from '../lib/id'
@@ -17,6 +18,10 @@ import type { Language } from '../i18n/types'
 import { makeSampleCourse } from '../lib/sampleCourse'
 
 const HISTORY_LIMIT = 50
+
+/** `activeLessonId` value while the course cover page (intro) is being edited.
+ *  It matches no lesson, so block actions are no-ops there. */
+export const INTRO_ID = '__intro__'
 
 // Build the in-memory demo course used by the "try without saving" flow.
 // Localized to the current UI language at call time (not module load), so it
@@ -28,6 +33,7 @@ function makeInitialCourse(): Course {
     description: translate('content', 'demoCourseDescription'),
     theme: DEFAULT_THEME,
     settings: { ...DEFAULT_COURSE_SETTINGS },
+    intro: { ...DEFAULT_INTRO },
     lessons: [
       { id: 'lesson-1', title: translate('content', 'demoLesson1'), status: 'draft', blocks: [] },
       { id: 'lesson-2', title: translate('content', 'demoLesson2'), status: 'draft', blocks: [] },
@@ -86,6 +92,8 @@ export interface CourseState {
   setTheme: (theme: ThemeId) => void
   /** `coalesceKey` merges consecutive edits (typing, slider drags) into one undo step. */
   updateSettings: (patch: Partial<CourseSettings>, coalesceKey?: string) => void
+  /** Patch the cover page (created with defaults on first edit). */
+  updateIntro: (patch: Partial<CourseIntro>, coalesceKey?: string) => void
   loadCourse: (course: Course) => void
   /** Reset to a fresh in-memory demo course, localized to the current UI language. */
   newDemoCourse: () => void
@@ -113,6 +121,8 @@ export interface CourseState {
 
   // ── Blocks ──
   addBlock: (lessonId: string, type: BlockType, atIndex?: number) => void
+  /** Insert ready-made blocks (a template) as one undo step; selects the first. */
+  insertBlocks: (lessonId: string, blocks: Block[], atIndex?: number) => void
   updateBlockData: <T extends Block>(
     lessonId: string,
     blockId: string,
@@ -211,6 +221,11 @@ export const useCourseStore = create<CourseState>((set, get) => {
     updateSettings: (patch, coalesceKey) =>
       mutate((c) => {
         c.settings = { ...DEFAULT_COURSE_SETTINGS, ...c.settings, ...patch }
+      }, coalesceKey),
+
+    updateIntro: (patch, coalesceKey) =>
+      mutate((c) => {
+        c.intro = { ...DEFAULT_INTRO, ...c.intro, ...patch }
       }, coalesceKey),
 
     loadCourse: (input) => {
@@ -328,6 +343,17 @@ export const useCourseStore = create<CourseState>((set, get) => {
         }
       })
       set({ selectedBlockId: block.id })
+    },
+
+    insertBlocks: (lessonId, blocks, atIndex) => {
+      if (blocks.length === 0) return
+      mutate((c) => {
+        const lesson = findLesson(c, lessonId)
+        if (!lesson) return
+        const at = atIndex == null ? lesson.blocks.length : Math.max(0, Math.min(atIndex, lesson.blocks.length))
+        lesson.blocks.splice(at, 0, ...blocks)
+      })
+      set({ selectedBlockId: blocks[0].id })
     },
 
     updateBlockData: (lessonId, blockId, data, coalesceKey) =>

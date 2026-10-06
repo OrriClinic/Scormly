@@ -34,6 +34,7 @@ function checkBlockA11y(block: Block): BlockIssue[] {
     { key, vars, a11y: true },
   ]
   switch (block.type) {
+    case 'imageText':
     case 'image': {
       const d = block.data
       return d.src && !d.decorative && !d.alt.trim() ? a11y('chkA11yImageAlt') : []
@@ -76,7 +77,12 @@ function checkBlockA11y(block: Block): BlockIssue[] {
 function checkBlock(block: Block): BlockIssue[] {
   switch (block.type) {
     case 'image':
+    case 'imageText':
       return block.data.src ? [] : [{ key: 'chkMissingImage' }]
+    case 'attachment':
+      return block.data.files.length ? [] : [{ key: 'chkAttachmentEmpty' }]
+    case 'quote':
+      return block.data.variant === 'image' && !block.data.image ? [{ key: 'chkQuoteNoImage' }] : []
     case 'gallery':
       return block.data.images.some((i) => i.src) ? [] : [{ key: 'chkEmptyGallery' }]
     case 'video':

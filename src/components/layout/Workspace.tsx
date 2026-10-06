@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, useRef } from 'react'
 import {
   DndContext,
   KeyboardSensor,
@@ -13,7 +13,10 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { useCourseStore, selectActiveLesson } from '../../store/courseStore'
+import { useCourseStore, selectActiveLesson, INTRO_ID } from '../../store/courseStore'
+import { CONTENT_WIDTH_PX } from '../../types/course'
+import IntroEditor from '../editor/IntroEditor'
+import { usePageWidthVar } from '../../hooks/usePageWidthVar'
 import BlockShell from '../editor/BlockShell'
 import AddBlockMenu from '../editor/AddBlockMenu'
 import { useT } from '../../i18n/I18nProvider'
@@ -25,7 +28,13 @@ export default function Workspace() {
   const renameLesson = useCourseStore((s) => s.renameLesson)
   const addLesson = useCourseStore((s) => s.addLesson)
   const lessonCount = useCourseStore((s) => s.course.lessons.length)
+  const lessonIndex = useCourseStore((s) => s.course.lessons.findIndex((l) => l.id === s.activeLessonId))
+  const introActive = useCourseStore((s) => s.activeLessonId === INTRO_ID)
+  const contentWidth = useCourseStore((s) => s.course.settings?.contentWidth ?? 'normal')
+  const typography = useCourseStore((s) => s.course.settings?.typography ?? 'modern')
   const { t } = useT('common')
+  const mainRef = useRef<HTMLElement>(null)
+  usePageWidthVar(mainRef)
   // Small distance so a click still selects/edits; drag starts only past 5px.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -42,23 +51,33 @@ export default function Workspace() {
 
   return (
     <main
+      ref={mainRef}
       data-tour="canvas"
-      className="flex-1 overflow-y-auto bg-gray-100"
+      className={`canvas typo-${typography} flex-1 overflow-y-auto overflow-x-hidden`}
+      style={{ '--col-w': `${CONTENT_WIDTH_PX[contentWidth]}px` } as React.CSSProperties}
       onClick={() => selectBlock(null)}
     >
-      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10">
-        {activeLesson ? (
+      <div
+        className="mx-auto px-4 py-6 sm:px-6 sm:py-12"
+        // Column width follows the course's content width (+ the padding).
+        style={{ maxWidth: (introActive ? CONTENT_WIDTH_PX.wide : CONTENT_WIDTH_PX[contentWidth]) + 48 }}
+      >
+        {introActive ? (
+          <div onClick={(e) => e.stopPropagation()}>
+            <IntroEditor />
+          </div>
+        ) : activeLesson ? (
           <>
-            <header className="mb-8" onClick={(e) => e.stopPropagation()}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                {t('lesson')}
+            <header className="canvas-lesson-head mb-10 px-4" onClick={(e) => e.stopPropagation()}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand-dark">
+                {t('lesson')} {lessonIndex + 1}
               </p>
               <input
                 value={activeLesson.title}
                 aria-label={t('lessonTitle')}
                 placeholder={t('lessonTitle')}
                 onChange={(e) => renameLesson(activeLesson.id, e.target.value)}
-                className="w-full rounded-md bg-transparent text-3xl font-bold text-gray-900 outline-none focus:bg-white focus:ring-1 focus:ring-brand"
+                className="lesson-title-input -mx-2 w-[calc(100%+1rem)] rounded-lg bg-transparent px-2 py-1 text-4xl font-bold tracking-tight text-gray-900 outline-none transition hover:bg-white/60 focus:bg-white focus:ring-2 focus:ring-brand/30"
               />
             </header>
 

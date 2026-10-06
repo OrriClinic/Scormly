@@ -49,7 +49,7 @@ export default function Header() {
           : tw('save')
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-gray-200 bg-white px-3 sm:px-4">
+    <header className="relative z-20 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-gray-200/80 bg-white/90 px-3 shadow-[0_1px_0_rgba(15,23,42,0.02),0_4px_16px_-12px_rgba(15,23,42,0.15)] backdrop-blur-xl sm:px-4">
       <div className="flex min-w-0 items-center gap-2">
         <button
           type="button"

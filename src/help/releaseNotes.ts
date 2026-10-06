@@ -11,6 +11,30 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    id: '2026-10-06-3',
+    date: '2026-10-06',
+    items: {
+      en: [
+        'Design upgrade: block backgrounds from your theme (tint, color, gradient, dark) and padding, in the new “Block style” button.',
+        'Ready-made blocks: statement, testimonial with photo, quote on image, image & text, text on image, full-width image, banners, key takeaways and more.',
+        'Five quote styles, image sizes (small to full width), a photo carousel, an Image & text block, a spacer and an Attachment block for downloads.',
+        'A course cover page (Introduction) before the first lesson, plus a lesson menu with progress and a “Next lesson” card for learners.',
+        'Appearance settings: content width, typography, block entrance animations and lesson transitions.',
+        'A Columns block (2–4 columns of text), full-width bands for photos and text, callouts (tip, success), paragraph styles and decorative dividers.',
+        'Hover a block in the Add menu to see a live preview of how it will look.',
+      ],
+      uk: [
+        'Оновлений дизайн: фон блоків із вашої теми (відтінок, колір, градієнт, темний) і відступи — у новій кнопці «Стиль блоку».',
+        'Готові блоки: акцентна фраза, відгук із фото, цитата на зображенні, фото й текст, текст на фото, фото на всю ширину, банери, «Головне» та інші.',
+        'П’ять стилів цитат, розміри зображень (від малого до всієї ширини), фотокарусель, блок «Фото й текст», відступ і блок «Вкладення» для файлів.',
+        'Титульна сторінка курсу (Вступ) перед першим уроком, а для студентів — меню уроків із прогресом і картка «Наступний урок».',
+        'Налаштування вигляду: ширина контенту, типографіка, анімація появи блоків і переходи між уроками.',
+        'Блок «Колонки» (2–4 колонки тексту), смуги на всю ширину для фото й тексту, виноски (порада, успіх), стилі абзаців і декоративні розділювачі.',
+        'Наведіть на блок у меню додавання, щоб побачити живе превʼю того, як він виглядатиме.',
+      ],
+    },
+  },
+  {
     id: '2026-10-06-2',
     date: '2026-10-06',
     items: {

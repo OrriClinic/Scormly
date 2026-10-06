@@ -9,6 +9,10 @@ import { useCourseStore } from '../../store/courseStore'
 import { useMenu } from '../../hooks/useMenu'
 import { useT } from '../../i18n/I18nProvider'
 import BlockIcon from '../../blocks/BlockIcon'
+import { BLOCK_TEMPLATES, TEMPLATE_GROUPS, type BlockTemplate } from '../../blocks/templates'
+import { createBlock } from '../../blocks/registry'
+import BlockHoverPreview from './BlockHoverPreview'
+import type { Block } from '../../types/course'
 
 interface AddBlockMenuProps {
   lessonId: string
@@ -31,12 +35,18 @@ export default function AddBlockMenu({
   variant = 'button',
 }: AddBlockMenuProps) {
   const addBlock = useCourseStore((s) => s.addBlock)
+  const insertBlocks = useCourseStore((s) => s.insertBlocks)
   const { t } = useT('common')
   const { t: tb } = useT('blocks')
+  const { t: td } = useT('design')
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [placement, setPlacement] = useState<'down' | 'up'>('down')
   const [maxHeight, setMaxHeight] = useState(448)
+  // Hover preview: shown after a short pause on an item, beside the menu.
+  const [hover, setHover] = useState<{ key: string; title: string; description: string; blocks: Block[] } | null>(null)
+  const [previewSide, setPreviewSide] = useState<'right' | 'left' | null>(null)
+  const hoverTimer = useRef<number | undefined>(undefined)
   const rootRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -47,6 +57,12 @@ export default function AddBlockMenu({
     !q ||
     tb(type).toLowerCase().includes(q) ||
     tb(`${type}Desc`).toLowerCase().includes(q)
+  const templates = BLOCK_TEMPLATES.filter(
+    (tpl) =>
+      !q ||
+      td(`tpl_${tpl.id}`).toLowerCase().includes(q) ||
+      td(`tpl_${tpl.id}Desc`).toLowerCase().includes(q),
+  )
   // First match in display order (category by category), picked by Enter.
   const firstMatch = BLOCK_CATEGORIES.flatMap(({ category }) =>
     Object.values(BLOCK_REGISTRY).filter(
@@ -70,6 +86,12 @@ export default function AddBlockMenu({
         const above = rect.top - headerBottom - margin
         const up = above > below
         setPlacement(up ? 'up' : 'down')
+        // Room for the 22rem preview card next to the 24rem menu? Else none.
+        const center = rect.left + rect.width / 2
+        const need = 192 + 16 + 352
+        setPreviewSide(
+          window.innerWidth < 1024 ? null : center + need < window.innerWidth ? 'right' : center - need > 0 ? 'left' : null,
+        )
         setMaxHeight(Math.max(220, Math.min(448, up ? above : below)))
       }
     }
@@ -79,13 +101,38 @@ export default function AddBlockMenu({
   // Focus the search field when the menu opens (desktop convenience).
   useEffect(() => {
     if (open) searchRef.current?.focus()
+    else {
+      window.clearTimeout(hoverTimer.current)
+      setHover(null)
+    }
   }, [open])
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), [])
+
+  // Props for an item that previews `make()` after a short hover / focus.
+  function previewProps(key: string, title: string, description: string, make: () => Block[]) {
+    const start = () => {
+      if (!previewSide) return
+      window.clearTimeout(hoverTimer.current)
+      hoverTimer.current = window.setTimeout(() => setHover({ key, title, description, blocks: make() }), 450)
+    }
+    const stop = () => {
+      window.clearTimeout(hoverTimer.current)
+      setHover((h) => (h?.key === key ? null : h))
+    }
+    return { onMouseEnter: start, onMouseLeave: stop, onFocus: start, onBlur: stop }
+  }
 
   // Search keeps focus on open; ↓ moves into the block list.
   useMenu({ open, onClose: () => setOpen(false), rootRef, triggerRef, focusFirst: false })
 
   function handleAdd(type: BlockType) {
     addBlock(lessonId, type, atIndex)
+    setOpen(false)
+    setQuery('')
+  }
+
+  function handleTemplate(tpl: BlockTemplate) {
+    insertBlocks(lessonId, tpl.create(), atIndex)
     setOpen(false)
     setQuery('')
   }
@@ -137,10 +184,18 @@ export default function AddBlockMenu({
         </button>
       )}
 
+      {open && hover && previewSide && (
+        <div
+          className={`absolute z-30 ${placement === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'}`}
+          style={previewSide === 'right' ? { left: 'calc(50% + 12rem + 1rem)' } : { right: 'calc(50% + 12rem + 1rem)' }}
+        >
+          <BlockHoverPreview key={hover.key} title={hover.title} description={hover.description} blocks={hover.blocks} />
+        </div>
+      )}
       {open && (
         <div
           style={{ maxHeight }}
-          className={`absolute left-1/2 z-20 flex w-[22rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg ${
+          className={`pop-in absolute left-1/2 z-30 flex w-[24rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl ${
             placement === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'
           }`}
         >
@@ -150,9 +205,13 @@ export default function AddBlockMenu({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && firstMatch) {
+                if (e.key !== 'Enter') return
+                if (firstMatch) {
                   e.preventDefault()
                   handleAdd(firstMatch.type)
+                } else if (templates[0]) {
+                  e.preventDefault()
+                  handleTemplate(templates[0])
                 }
               }}
               placeholder={t('searchBlocks')}
@@ -161,6 +220,43 @@ export default function AddBlockMenu({
           </div>
 
           <div role="menu" className="overflow-y-auto p-3">
+          {templates.length > 0 && (
+            <div className="mb-4">
+              <p className="flex items-center gap-1.5 px-1 pb-1 text-xs font-semibold uppercase tracking-wide text-brand-dark">
+                <span aria-hidden>✦</span> {td('catTemplates')}
+              </p>
+              {TEMPLATE_GROUPS.map((group) => {
+                const list = templates.filter((tpl) => tpl.group === group)
+                if (list.length === 0) return null
+                return (
+                  <div key={group} className="mb-2.5">
+                    <p className="px-1 pb-1.5 pt-1 text-[11px] font-medium text-gray-400">{td(`tplGroup_${group}`)}</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {list.map((tpl) => (
+                        <button
+                          key={tpl.id}
+                          type="button"
+                          role="menuitem"
+                          onClick={() => handleTemplate(tpl)}
+                          {...previewProps(`tpl-${tpl.id}`, td(`tpl_${tpl.id}`), td(`tpl_${tpl.id}Desc`), tpl.create)}
+                          className="flex flex-col gap-1 rounded-xl border border-gray-100 bg-gradient-to-br from-white to-brand/[0.04] p-2.5 text-left transition hover:-translate-y-px hover:border-brand/40 hover:shadow-sm focus:border-brand/40 focus:bg-brand/5 focus:outline-none"
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-dark text-white shadow-sm">
+                              <BlockIcon type={tpl.icon} />
+                            </span>
+                            <span className="text-sm font-medium leading-tight text-gray-800">{td(`tpl_${tpl.id}`)}</span>
+                          </span>
+                          <span className="text-xs leading-tight text-gray-500">{td(`tpl_${tpl.id}Desc`)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+              <div className="mt-3 border-t border-gray-100" />
+            </div>
+          )}
           {BLOCK_CATEGORIES.map(({ category }) => {
             const items = Object.values(BLOCK_REGISTRY).filter(
               (m) => m.category === category && matches(m.type),
@@ -178,6 +274,7 @@ export default function AddBlockMenu({
                       type="button"
                       role="menuitem"
                       onClick={() => handleAdd(meta.type)}
+                      {...previewProps(meta.type, tb(meta.type), tb(`${meta.type}Desc`), () => [createBlock(meta.type)])}
                       className="flex flex-col gap-1 rounded-lg border border-gray-100 p-2.5 text-left transition-colors hover:border-brand/40 hover:bg-brand/5 focus:border-brand/40 focus:bg-brand/5 focus:outline-none"
                     >
                       <span className="flex items-center gap-2">
@@ -197,7 +294,7 @@ export default function AddBlockMenu({
               </div>
             )
           })}
-          {Object.values(BLOCK_REGISTRY).every((m) => !matches(m.type)) && (
+          {templates.length === 0 && Object.values(BLOCK_REGISTRY).every((m) => !matches(m.type)) && (
             <p className="px-1 py-6 text-center text-sm text-gray-400">
               {t('noBlocks')}
             </p>

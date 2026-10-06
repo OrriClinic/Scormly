@@ -46,7 +46,11 @@
       highContrast: 'High contrast', readableSpacing: 'Readable spacing', reduceMotion: 'Reduce motion',
       captionsDefault: 'Captions on by default', captions: 'Captions', transcript: 'Transcript',
       embedTitle: 'Embedded content', lessonAnnounce: 'Lesson {n} of {total}: {title}',
-      cardFront: 'Front', cardBack: 'Back', flipHint: 'Press Enter or Space to flip the card.' },
+      cardFront: 'Front', cardBack: 'Back', flipHint: 'Press Enter or Space to flip the card.',
+      startCourse: 'Start course', continueCourse: 'Continue course', lessonsCount: '{n} lessons',
+      nextLesson: 'Next lesson', lessonsMenu: 'Lessons', courseHome: 'Course home', closeMenu: 'Close',
+      progressPct: '{n}% complete', download: 'Download', carousel: 'Image carousel',
+      slideOf: 'Image {n} of {total}', prevSlide: 'Previous image', nextSlide: 'Next image', goToSlide: 'Show image {n}' },
     uk: { prev: 'Назад', next: 'Далі', progress: 'Урок {n} з {total}',
       empty: 'У цьому уроці ще немає контенту.', submit: 'Відповісти', retry: 'Спробувати ще раз',
       correct: 'Правильно', incorrect: 'Неправильно', yourScore: 'Ваш результат: {s}%',
@@ -72,7 +76,11 @@
       highContrast: 'Висока контрастність', readableSpacing: 'Зручні інтервали', reduceMotion: 'Зменшити анімацію',
       captionsDefault: 'Субтитри увімкнено за замовчуванням', captions: 'Субтитри', transcript: 'Транскрипт',
       embedTitle: 'Вбудований вміст', lessonAnnounce: 'Урок {n} з {total}: {title}',
-      cardFront: 'Лицьовий бік', cardBack: 'Зворотний бік', flipHint: 'Натисніть Enter або пробіл, щоб перевернути картку.' },
+      cardFront: 'Лицьовий бік', cardBack: 'Зворотний бік', flipHint: 'Натисніть Enter або пробіл, щоб перевернути картку.',
+      startCourse: 'Почати курс', continueCourse: 'Продовжити курс', lessonsCount: 'Уроків: {n}',
+      nextLesson: 'Наступний урок', lessonsMenu: 'Уроки', courseHome: 'Головна курсу', closeMenu: 'Закрити',
+      progressPct: 'Пройдено {n}%', download: 'Завантажити', carousel: 'Карусель зображень',
+      slideOf: 'Зображення {n} з {total}', prevSlide: 'Попереднє зображення', nextSlide: 'Наступне зображення', goToSlide: 'Показати зображення {n}' },
   };
   var lang = (navigator.language || 'en').toLowerCase().indexOf('uk') === 0 ? 'uk' : 'en';
   function t(key, vars) {
@@ -228,12 +236,13 @@
 
   // After a lesson change: focus the lesson heading and announce it.
   function focusLessonHeading(announceIt) {
-    var h1 = document.querySelector('.lesson-title, .finish-title');
+    var h1 = document.querySelector('.lesson-title, .finish-title, .sc-intro-title');
     if (h1) { try { h1.focus({ preventScroll: true }); } catch (e) { h1.focus(); } }
     var body = document.querySelector('.player-body');
     if (body) body.scrollTop = 0;
     if (!announceIt) return;
     if (state.finished) { announce(t('courseComplete')); return; }
+    if (state.onIntro) { announce(state.course.title || ''); return; }
     var lessons = state.course.lessons || [];
     var lesson = lessons[state.lessonIndex];
     announce(t('lessonAnnounce', { n: state.lessonIndex + 1, total: lessons.length, title: lesson ? lesson.title || '' : '' }));
@@ -254,7 +263,8 @@
   // score, per-block objectives, the 'quiz' completion rule, linear gating).
   var SCORED = { quiz: true, ordering: true, fillBlanks: true };
 
-  var state = { course: null, lessonIndex: 0, visited: {}, continued: {}, watched: {}, quizResults: {}, quizzes: [], quizIndexById: {}, interactionIndex: 0, sessionStart: 0, complete: false, finished: false, summary: null, learner: null, lmsMode: 'normal' };
+  var state = { course: null, lessonIndex: 0, visited: {}, continued: {}, watched: {}, quizResults: {}, quizzes: [], quizIndexById: {}, interactionIndex: 0, sessionStart: 0, complete: false, finished: false, summary: null, learner: null, lmsMode: 'normal',
+    onIntro: false, navDirection: null, revealed: {}, menuOpen: false };
   // Set at boot to the unload handler, so the completion screen's "Exit course"
   // button can end the LMS session the same way closing the window does.
   var endSession = null;
@@ -273,6 +283,7 @@
     document.documentElement.style.setProperty('--brand-hc', darken(accent[1], 0.6));
     document.documentElement.style.setProperty('--brand-hc-dark', darken(accent[1], 0.45));
     applyA11y();
+    applyLayout();
     document.title = course.title || 'Course';
 
     // Index all scored blocks for scoring and per-block objectives.
@@ -351,7 +362,43 @@
     try { saved = JSON.parse(SCORM.getSuspend() || 'null'); } catch (e) { saved = null; }
     applySuspend(saved);
 
+    // A fresh attempt opens on the cover page (when the course has one); a
+    // resumed one goes straight back to the saved lesson.
+    if (introOn() && !(saved && typeof saved.l === 'number')) { showIntro(false); return; }
     visit(saved && typeof saved.l === 'number' ? saved.l : 0);
+  }
+
+  // ── Layout: content width, typography, full-bleed width ──────────────────
+  var CONTENT_WIDTH = { narrow: 680, normal: 768, wide: 1024, full: 1400 };
+  function applyLayout() {
+    var cfg = settings();
+    var root = document.documentElement;
+    root.style.setProperty('--content-w', CONTENT_WIDTH[cfg.contentWidth] + 'px');
+    root.style.setProperty('--col-w', CONTENT_WIDTH[cfg.contentWidth] + 'px');
+    root.classList.add('typo-' + cfg.typography);
+    // Full-bleed images/cover pages span the viewport (minus the scrollbar).
+    function pageWidth() { root.style.setProperty('--page-w', root.clientWidth + 'px'); }
+    pageWidth();
+    window.addEventListener('resize', pageWidth);
+  }
+
+  function introOn() { return !!(state.course.intro && state.course.intro.enabled); }
+
+  function showIntro(moveFocus) {
+    state.onIntro = true;
+    state.finished = false;
+    state.navDirection = 'prev';
+    state.menuOpen = false;
+    render();
+    if (moveFocus) focusLessonHeading(true);
+    window.scrollTo(0, 0);
+  }
+
+  // First lesson not yet complete (where "Start/Continue course" leads).
+  function firstOpenLesson() {
+    var lessons = state.course.lessons || [];
+    for (var i = 0; i < lessons.length; i++) if (!lessonComplete(i)) return canReachLesson(i) ? i : 0;
+    return 0;
   }
 
   // Restricted "Continue" gates in a lesson (block subsequent content + advance).
@@ -499,6 +546,10 @@
   function refreshGating() {
     var btn = document.getElementById('advance-btn');
     if (btn) btn.disabled = !canLeaveLesson(state.lessonIndex);
+    var card = document.getElementById('next-card');
+    if (card) card.disabled = !canLeaveLesson(state.lessonIndex);
+    var bar = document.querySelector('.progress-fill');
+    if (bar) bar.style.width = progressPct() + '%';
     document.querySelectorAll('.outline-item[data-lesson]').forEach(function (el) {
       el.disabled = !canReachLesson(Number(el.getAttribute('data-lesson')));
     });
@@ -509,6 +560,11 @@
   }
 
   function visit(index) {
+    var prevIndex = state.onIntro ? -1 : state.lessonIndex;
+    state.navDirection = !lessonShown ? null : index < prevIndex ? 'prev' : 'next';
+    if (index !== state.lessonIndex || state.onIntro) state.revealed = {};
+    state.onIntro = false;
+    state.menuOpen = false;
     state.lessonIndex = index;
     state.visited[index] = true;
     render();
@@ -537,6 +593,10 @@
       playerLanguage: s.playerLanguage === 'en' || s.playerLanguage === 'uk' ? s.playerLanguage : 'auto',
       showProgress: s.showProgress !== false,
       finishMessage: typeof s.finishMessage === 'string' ? s.finishMessage.trim() : '',
+      contentWidth: CONTENT_WIDTH[s.contentWidth] ? s.contentWidth : 'normal',
+      typography: s.typography === 'editorial' || s.typography === 'rounded' ? s.typography : 'modern',
+      blockAnimation: s.blockAnimation === 'none' || s.blockAnimation === 'slide' || s.blockAnimation === 'zoom' ? s.blockAnimation : 'fade',
+      lessonTransition: s.lessonTransition === 'none' || s.lessonTransition === 'slide' ? s.lessonTransition : 'fade',
     };
   }
 
@@ -694,6 +754,7 @@
     var lesson = lessons[i];
 
     if (state.finished) { renderComplete(app); return; }
+    if (state.onIntro) { renderIntro(app); return; }
 
     // Gates (restricted Continue + required videos), plus linear-mode quiz rule,
     // decide whether the learner may move on from this lesson.
@@ -721,41 +782,249 @@
     if (state.lmsMode && state.lmsMode !== 'normal') {
       titleRow.push(h('span', { class: 'player-progress', text: '· ' + state.lmsMode }));
     }
+    var prevDisabled = i === 0 && !introOn();
     var header = h('header', { class: 'player-header' }, [
-      h('div', { style: 'display:flex;align-items:center;gap:12px;min-width:0' }, titleRow),
+      h('div', { class: 'player-head-main' }, [menuButton()].concat(titleRow)),
       h('div', { class: 'player-actions' }, [
         renderA11yMenu(),
         h('nav', { class: 'player-nav', 'aria-label': t('lessonNav') }, [
-          h('button', { class: 'btn btn-outline', text: t('prev'), disabled: i === 0 ? 'true' : null,
-            onclick: function () { if (i > 0) visit(i - 1); } }),
+          h('button', { class: 'btn btn-outline', text: t('prev'), disabled: prevDisabled ? 'true' : null,
+            onclick: function () { if (i > 0) visit(i - 1); else if (introOn()) showIntro(true); } }),
           advanceBtn,
         ]),
       ]),
+      progressBar(),
     ]);
 
+    var anim = blockAnimation();
     var blocksEl = h('div', { class: 'blocks' });
+    var gated = false;
     if (lesson && lesson.blocks && lesson.blocks.length) {
       for (var bi = 0; bi < lesson.blocks.length; bi++) {
         var b = lesson.blocks[bi];
         var el = renderBlock(b);
-        if (el) blocksEl.appendChild(el);
+        if (el) blocksEl.appendChild(wrapBlock(b, el, anim));
         // Hide everything after an unpassed restricted gate.
-        if (b.type === 'continue' && b.data.mode === 'restricted' && !state.continued[b.id]) break;
+        if (b.type === 'continue' && b.data.mode === 'restricted' && !state.continued[b.id]) {
+          gated = bi < lesson.blocks.length - 1;
+          break;
+        }
       }
     } else {
       blocksEl.appendChild(h('p', { class: 'empty', text: t('empty') }));
     }
 
-    var body = h('main', { class: 'player-body', id: 'main-content' }, [
-      h('div', { class: 'lesson', lang: contentLang() }, [
-        h('h1', { class: 'lesson-title', tabindex: '-1', text: lesson ? lesson.title : '' }),
-        blocksEl,
-      ]),
+    var lessonEl = h('div', { class: 'lesson' + transitionClass(), lang: contentLang() }, [
+      settings().showProgress ? h('p', { class: 'lesson-kicker', text: t('progress', { n: i + 1, total: lessons.length }) }) : null,
+      h('h1', { class: 'lesson-title', tabindex: '-1', text: lesson ? lesson.title : '' }),
+      blocksEl,
+      gated ? null : nextCard(isLast, lessons[i + 1], canAdvance),
     ]);
+    var body = h('main', { class: 'player-body', id: 'main-content' }, lessonEl);
 
     app.appendChild(skipLink());
     app.appendChild(header);
     app.appendChild(body);
+    app.appendChild(renderLessonMenu());
+    state.navDirection = null;
+    observeReveals();
+  }
+
+  // "Next lesson: <title>" card at the end of a lesson (Finish on the last).
+  function nextCard(isLast, next, enabled) {
+    return h('button', { id: 'next-card', class: 'next-card', type: 'button', disabled: enabled ? null : 'true',
+      onclick: function () {
+        if (!canLeaveLesson(state.lessonIndex)) return;
+        if (isLast) finishCourse(); else visit(state.lessonIndex + 1);
+      } }, [
+      h('span', { class: 'next-card-text' }, [
+        h('span', { class: 'next-card-label', text: isLast ? t('finish') : t('nextLesson') }),
+        !isLast && next ? h('span', { class: 'next-card-title', lang: contentLang(), text: next.title || '' }) : null,
+      ]),
+      h('span', { class: 'next-card-arrow', 'aria-hidden': 'true', text: isLast ? '✓' : '→' }),
+    ]);
+  }
+
+  // ── Progress, lesson menu ────────────────────────────────────────────────
+  function progressPct() {
+    var lessons = state.course.lessons || [];
+    if (!lessons.length) return 0;
+    var done = 0;
+    lessons.forEach(function (_, k) { if (lessonComplete(k)) done++; });
+    return Math.round((done / lessons.length) * 100);
+  }
+  function progressBar() {
+    if (!settings().showProgress) return null;
+    var pct = progressPct();
+    return h('div', { class: 'progress-track', role: 'progressbar', 'aria-label': t('progressPct', { n: pct }),
+      'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct) },
+      h('div', { class: 'progress-fill', style: 'width:' + pct + '%' }));
+  }
+
+  var MENU_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>';
+  function menuButton() {
+    return h('button', { class: 'menu-btn', id: 'menu-btn', type: 'button', 'aria-label': t('lessonsMenu'),
+      title: t('lessonsMenu'), 'aria-expanded': state.menuOpen ? 'true' : 'false', 'aria-controls': 'lesson-menu',
+      html: MENU_ICON, onclick: function () { setMenu(!state.menuOpen); } });
+  }
+
+  function setMenu(open) {
+    state.menuOpen = open;
+    var menu = document.getElementById('lesson-menu');
+    var btn = document.getElementById('menu-btn');
+    if (!menu) return;
+    menu.hidden = !open;
+    if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) {
+      var current = menu.querySelector('[aria-current]') || menu.querySelector('button');
+      if (current) current.focus();
+    } else if (btn) btn.focus();
+  }
+
+  // Slide-in drawer with the cover page, every lesson, its status and progress.
+  function renderLessonMenu() {
+    var lessons = state.course.lessons || [];
+    var pct = progressPct();
+    var list = h('ol', { class: 'menu-list' });
+    function row(label, num, current, done, locked, onPick) {
+      list.appendChild(h('li', {}, h('button', { type: 'button', class: 'menu-row' + (current ? ' is-current' : ''),
+        'aria-current': current ? 'page' : null, disabled: locked ? 'true' : null, onclick: onPick }, [
+        h('span', { class: 'menu-dot' + (done ? ' is-done' : ''), 'aria-hidden': 'true', text: done ? '✓' : num }),
+        h('span', { class: 'menu-label', lang: contentLang(), text: label }),
+      ])));
+    }
+    if (introOn()) row(t('courseHome'), '•', state.onIntro, false, false, function () { showIntro(true); });
+    lessons.forEach(function (lesson, k) {
+      row(lesson.title || t('progress', { n: k + 1, total: lessons.length }), String(k + 1),
+        !state.onIntro && !state.finished && k === state.lessonIndex, lessonComplete(k), !canReachLesson(k),
+        function () { if (canReachLesson(k)) visit(k); });
+    });
+    var panel = h('nav', { class: 'menu-panel', 'aria-label': t('lessonsMenu') }, [
+      h('div', { class: 'menu-head' }, [
+        h('div', { class: 'menu-title-row' }, [
+          h('span', { class: 'menu-course', lang: contentLang(), text: state.course.title || '' }),
+          h('button', { type: 'button', class: 'menu-close', 'aria-label': t('closeMenu'), text: '✕',
+            onclick: function () { setMenu(false); } }),
+        ]),
+        h('div', { class: 'menu-progress' }, [
+          h('div', { class: 'menu-progress-track' }, h('div', { class: 'menu-progress-fill', style: 'width:' + pct + '%' })),
+          h('span', { text: t('progressPct', { n: pct }) }),
+        ]),
+      ]),
+      list,
+    ]);
+    var wrap = h('div', { class: 'lesson-menu', id: 'lesson-menu' }, [
+      h('div', { class: 'menu-backdrop', 'aria-hidden': 'true', onclick: function () { setMenu(false); } }),
+      panel,
+    ]);
+    wrap.hidden = !state.menuOpen;
+    wrap.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.key === 'Esc') { e.stopPropagation(); setMenu(false); }
+    });
+    return wrap;
+  }
+
+  // ── Course cover page ────────────────────────────────────────────────────
+  function renderIntro(app) {
+    var course = state.course;
+    var intro = course.intro || {};
+    var layout = intro.layout === 'split' || intro.layout === 'minimal' ? intro.layout : 'cover';
+    var image = layout === 'minimal' ? '' : (course.coverImage || '');
+    var lessons = course.lessons || [];
+    var started = Object.keys(state.visited).length > 0;
+    var startLabel = (intro.buttonLabel || '').trim() || (started ? t('continueCourse') : t('startCourse'));
+
+    var header = h('header', { class: 'player-header' }, [
+      h('div', { class: 'player-head-main' }, [menuButton(),
+        h('span', { class: 'player-title', lang: contentLang(), text: course.title || '' })]),
+      h('div', { class: 'player-actions' }, [renderA11yMenu()]),
+      progressBar(),
+    ]);
+    var section = h('section', { class: 'sc-intro sc-intro-' + layout + (image ? '' : ' no-image') }, [
+      image ? h('div', { class: 'sc-intro-media' }, h('img', { src: image, alt: '' })) : null,
+      h('div', { class: 'sc-intro-content' }, [
+        intro.eyebrow ? h('p', { class: 'sc-intro-eyebrow', text: intro.eyebrow }) : null,
+        h('h1', { class: 'sc-intro-title', tabindex: '-1', text: course.title || '' }),
+        course.description ? h('p', { class: 'sc-intro-text', text: course.description }) : null,
+        h('div', { class: 'sc-intro-actions' }, [
+          lessons.length ? h('button', { class: 'btn sc-intro-start', type: 'button', text: startLabel + ' →',
+            onclick: function () { visit(firstOpenLesson()); } }) : null,
+          h('span', { class: 'sc-intro-meta', text: t('lessonsCount', { n: lessons.length }) }),
+        ]),
+      ]),
+    ]);
+    var outline = null;
+    if (intro.showOutline !== false && lessons.length) {
+      var ol = h('ol');
+      lessons.forEach(function (lesson, k) {
+        var done = lessonComplete(k);
+        ol.appendChild(h('li', {}, h('button', { type: 'button', disabled: canReachLesson(k) ? null : 'true',
+          onclick: function () { if (canReachLesson(k)) visit(k); } }, [
+          h('span', { class: 'sc-intro-num', text: k < 9 ? '0' + (k + 1) : String(k + 1) }),
+          h('span', { class: 'sc-intro-ltitle', text: lesson.title || '' }),
+          h('span', { class: 'sc-intro-arrow', 'aria-hidden': 'true', text: done ? '✓' : '→' }),
+        ])));
+      });
+      outline = h('nav', { class: 'sc-intro-outline', 'aria-label': t('lessonsMenu') }, ol);
+    }
+    var body = h('main', { class: 'player-body', id: 'main-content' },
+      h('div', { class: 'lesson lesson-intro' + transitionClass(), lang: contentLang() }, [section, outline]));
+    app.appendChild(skipLink());
+    app.appendChild(header);
+    app.appendChild(body);
+    app.appendChild(renderLessonMenu());
+    state.navDirection = null;
+  }
+
+  // ── Block wrappers, entrance animations, lesson transitions ──────────────
+  var BACKGROUNDS = { muted: 1, soft: 1, accent: 1, gradient: 1, dark: 1 };
+  var DARK_BG = { accent: 1, gradient: 1, dark: 1 };
+  var PADDINGS = { compact: 1, normal: 1, spacious: 1 };
+
+  function blockAnimation() {
+    if (motionReduced() || typeof IntersectionObserver === 'undefined') return 'none';
+    return settings().blockAnimation;
+  }
+
+  function transitionClass() {
+    var tr = settings().lessonTransition;
+    if (!state.navDirection || tr === 'none' || motionReduced()) return '';
+    return tr === 'slide' ? ' lesson-enter-slide-' + state.navDirection : ' lesson-enter-fade';
+  }
+
+  // Panel styling (settings.background / spacing) + animation class. Blocks
+  // already revealed in this lesson (re-renders after a gate) don't animate again.
+  function wrapBlock(b, el, anim) {
+    var s = b.settings || {};
+    var bg = BACKGROUNDS[s.background] ? s.background : null;
+    var cls = 'blk blk-pad-' + (PADDINGS[s.spacing] ? s.spacing : 'normal');
+    if (s.width === 'full') cls += ' blk-full';
+    if (bg) cls += ' blk-has-bg' + (DARK_BG[bg] ? ' blk-on-dark' : '');
+    if (anim !== 'none' && !state.revealed[b.id]) cls += ' anim-' + anim;
+    var w = h('div', { class: cls, 'data-bg': bg, 'data-block': b.id }, el);
+    return w;
+  }
+
+  var revealObserver = null;
+  function observeReveals() {
+    if (revealObserver) { revealObserver.disconnect(); revealObserver = null; }
+    var els = document.querySelectorAll('.blk.anim-fade, .blk.anim-slide, .blk.anim-zoom');
+    if (!els.length || typeof IntersectionObserver === 'undefined') return;
+    var last = 0;
+    var step = 0;
+    revealObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var now = Date.now();
+        step = now - last < 120 ? step + 1 : 0;
+        last = now;
+        e.target.style.animationDelay = Math.min(step, 5) * 80 + 'ms';
+        e.target.classList.add('is-in');
+        state.revealed[e.target.getAttribute('data-block')] = true;
+        revealObserver.unobserve(e.target);
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    Array.prototype.forEach.call(els, function (el) { revealObserver.observe(el); });
   }
 
   // Completion screen shown after the learner clicks Finish.
@@ -848,27 +1117,40 @@
         el.style.textAlign = b.data.align || 'left';
         return el;
       }
-      case 'paragraph':
-        return h('div', { class: 'rich-text', html: b.data.html });
+      case 'paragraph': {
+        var pv = { lead: 1, dropcap: 1, columns: 1 }[b.data.variant] ? b.data.variant : 'normal';
+        return h('div', { class: 'rich-text sc-para-' + pv, html: b.data.html });
+      }
       case 'list': {
         var list = h(b.data.ordered ? 'ol' : 'ul', { class: 'list' });
         (b.data.items || []).forEach(function (it) { list.appendChild(h('li', { text: it })); });
         return list;
       }
-      case 'note':
-        return h('div', { class: 'note ' + (b.data.variant === 'warning' ? 'warning' : 'info') }, [
-          h('span', { text: b.data.variant === 'warning' ? '⚠' : 'ℹ' }),
-          h('p', { text: b.data.text, style: 'margin:0' }),
-        ]);
-      case 'image':
+      case 'note': {
+        var nv = NOTE_ICONS[b.data.variant] ? b.data.variant : 'note';
+        var icon = h('span', { class: 'sc-note-icon', 'aria-hidden': 'true' });
+        icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + NOTE_ICONS[nv] + '"/></svg>';
+        return h('div', { class: 'sc-note sc-note-' + nv }, [icon, h('p', { class: 'sc-note-text', text: b.data.text || '' })]);
+      }
+      case 'image': {
         if (!b.data.src) return null;
-        return h('figure', {}, [
+        var size = { small: 1, medium: 1, large: 1, full: 1 }[b.data.size] ? b.data.size : 'large';
+        var align = b.data.align === 'left' || b.data.align === 'right' ? b.data.align : 'center';
+        var figCls = 'sc-img sc-img-' + size + (size === 'small' || size === 'medium' ? ' sc-img-' + align : '');
+        return h('figure', { class: figCls }, [
           h('img', { src: b.data.src, alt: imgAlt(b.data) }),
           b.data.caption ? h('figcaption', { text: b.data.caption }) : null,
         ]);
+      }
       case 'gallery': {
-        var g = h('div', { class: 'gallery' });
-        (b.data.images || []).forEach(function (img) { g.appendChild(h('img', { src: img.src, alt: imgAlt(img) })); });
+        var imgs = (b.data.images || []).filter(function (img) { return img.src; });
+        if (b.data.layout === 'carousel') return renderCarousel(imgs);
+        var cols = b.data.columns === 2 || b.data.columns === 4 ? b.data.columns : 3;
+        var g = h('div', { class: 'sc-gallery sc-cols-' + cols });
+        imgs.forEach(function (img) {
+          g.appendChild(h('figure', {}, [h('img', { src: img.src, alt: imgAlt(img) }),
+            img.caption ? h('figcaption', { text: img.caption }) : null]));
+        });
         return g;
       }
       case 'video':
@@ -889,10 +1171,7 @@
       case 'table':
         return renderTable(b);
       case 'quote':
-        return h('blockquote', { class: 'quote' }, [
-          h('p', { text: b.data.text || '', style: 'margin:0' }),
-          b.data.author ? h('footer', { class: 'quote-author', text: '— ' + b.data.author }) : null,
-        ]);
+        return renderQuote(b);
       case 'continue': {
         var restricted = b.data.mode === 'restricted';
         // A passed gate disappears; the blocks it was hiding are now shown.
@@ -900,11 +1179,8 @@
         return h('div', { class: 'continue' }, h('button', { class: 'btn', text: b.data.label,
           onclick: function () { onContinue(b, restricted); } }));
       }
-      case 'divider': {
-        var hr = h('hr', { class: 'divider' });
-        hr.style.borderTopStyle = b.data.style || 'solid';
-        return hr;
-      }
+      case 'divider':
+        return renderDivider(b.data);
       case 'courseOutline':
         return renderOutline(b);
       case 'tabs': return renderTabs(b);
@@ -916,8 +1192,183 @@
       case 'timeline': return renderTimeline(b);
       case 'ordering': return renderOrdering(b);
       case 'fillBlanks': return renderFillBlanks(b);
+      case 'imageText': return renderImageText(b);
+      case 'attachment': return renderAttachment(b);
+      case 'columns': return renderColumns(b);
       default: return null;
     }
+  }
+
+  // Callout icons (24×24 stroked paths), same as the builder's NoteView.
+  var NOTE_ICONS = {
+    note: 'M12 8h.01M11 12h1v5h1M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
+    tip: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3Z',
+    success: 'm8 12.5 2.5 2.5L16 9.5M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
+    warning: 'M12 9v4m0 4h.01M10.3 3.9 2.4 17.6A2 2 0 0 0 4.1 20.6h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z',
+  };
+
+  // Lines, decorative separators, a labelled line, or empty space.
+  function renderDivider(d) {
+    switch (d.style) {
+      case 'spacer': return h('div', { class: 'sc-spacer', 'aria-hidden': 'true' });
+      case 'gradient': return h('hr', { class: 'sc-divider sc-divider-gradient' });
+      case 'dots': return h('div', { class: 'sc-divider sc-divider-dots', role: 'separator' }, [h('span'), h('span'), h('span')]);
+      case 'ornament': return h('div', { class: 'sc-divider sc-divider-ornament', role: 'separator' }, h('span', { 'aria-hidden': 'true', text: '\u2726' }));
+      case 'wave': return h('div', { class: 'sc-divider sc-divider-wave', role: 'separator' });
+      case 'label': return h('div', { class: 'sc-divider sc-divider-label', role: 'separator', 'aria-label': d.label || null }, h('span', { text: d.label || '' }));
+      default: {
+        var hr = h('hr', { class: 'sc-divider sc-divider-line' });
+        hr.style.borderTopStyle = d.style === 'dashed' || d.style === 'dotted' ? d.style : 'solid';
+        return hr;
+      }
+    }
+  }
+
+  // Quote in one of six styles; markup shared with the builder (sc-quote-*).
+  function renderQuote(b) {
+    var d = b.data;
+    var v = { statement: 1, card: 1, photo: 1, image: 1 }[d.variant] ? d.variant : 'classic';
+    var hasMedia = (v === 'photo' || v === 'image') && !!d.image;
+    var cite = d.author || d.role ? h('figcaption', { class: 'sc-quote-cite' }, [
+      v === 'card' && d.image ? h('img', { class: 'sc-quote-avatar', src: d.image, alt: '' }) : null,
+      h('span', { class: 'sc-quote-who' }, [
+        d.author ? h('span', { class: 'sc-quote-author', text: d.author }) : null,
+        d.role ? h('span', { class: 'sc-quote-role', text: d.role }) : null,
+      ]),
+    ]) : null;
+    var right = v === 'photo' && d.photoSide === 'right' ? ' photo-right' : '';
+    return h('figure', { class: 'sc-quote sc-quote-' + v + (hasMedia ? ' has-media' : '') + right }, [
+      v === 'photo' && d.image ? h('div', { class: 'sc-quote-media' }, h('img', { src: d.image, alt: '' })) : null,
+      v === 'image' && d.image ? h('img', { class: 'sc-quote-bg', src: d.image, alt: '' }) : null,
+      h('div', { class: 'sc-quote-body' }, [
+        v !== 'classic' ? h('span', { class: 'sc-quote-mark', 'aria-hidden': 'true', text: '\u201C' }) : null,
+        h('blockquote', { class: 'sc-quote-text', text: d.text || '' }),
+        cite,
+      ]),
+    ]);
+  }
+
+  function renderImageText(b) {
+    var d = b.data;
+    var layout = d.layout === 'right' || d.layout === 'overlay' ? d.layout : 'left';
+    return h('div', { class: 'sc-imgtext sc-imgtext-' + layout + (d.src ? '' : ' no-image') }, [
+      d.src ? h('div', { class: 'sc-imgtext-media' }, h('img', { src: d.src, alt: imgAlt(d) })) : null,
+      h('div', { class: 'sc-imgtext-body rich-text', html: d.html || '' }),
+    ]);
+  }
+
+  var GRIP_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>';
+
+  // 2–4 side-by-side text columns (stacked on phones).
+  function renderColumns(b) {
+    var cols = (b.data.columns || []).slice(0, 4);
+    if (!cols.length) return null;
+    var st = b.data.style === 'cards' || b.data.style === 'lines' ? b.data.style : 'plain';
+    return h('div', { class: 'sc-columns sc-columns-' + cols.length + ' sc-columns-' + st }, cols.map(function (c) {
+      return h('div', { class: 'sc-column' }, [
+        c.title ? h('h3', { class: 'sc-column-title', text: c.title }) : null,
+        h('div', { class: 'rich-text sc-column-text', html: c.html || '' }),
+      ]);
+    }));
+  }
+
+  function formatBytes(bytes) {
+    if (!bytes || bytes < 0) return '';
+    var units = ['B', 'KB', 'MB', 'GB'];
+    var n = bytes;
+    var i = 0;
+    while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+    return (n >= 10 || i === 0 ? Math.round(n) : n.toFixed(1)) + ' ' + units[i];
+  }
+
+  var DOWNLOAD_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>';
+  function renderAttachment(b) {
+    var files = (b.data.files || []).filter(function (f) { return f.src; });
+    if (!files.length) return null;
+    var list = h('ul', { class: 'sc-attach-list' });
+    files.forEach(function (f) {
+      var ext = /\.([A-Za-z0-9]{1,5})$/.exec(f.name || '');
+      var dl = h('a', { class: 'sc-attach-dl', href: f.src, download: f.name || '' });
+      dl.innerHTML = DOWNLOAD_ICON;
+      dl.appendChild(h('span', { text: t('download') }));
+      dl.appendChild(h('span', { class: 'sr-only', text: f.name || '' }));
+      list.appendChild(h('li', {}, h('div', { class: 'sc-attach-item' }, [
+        h('span', { class: 'sc-attach-badge', 'aria-hidden': 'true', text: ext ? ext[1].toUpperCase() : 'FILE' }),
+        h('span', { class: 'sc-attach-meta' }, [
+          h('span', { class: 'sc-attach-name', text: f.name || '' }),
+          f.size ? h('span', { class: 'sc-attach-size', text: formatBytes(f.size) }) : null,
+        ]),
+        dl,
+      ])));
+    });
+    return h('div', { class: 'sc-attach' }, [
+      b.data.title ? h('p', { class: 'sc-attach-title', text: b.data.title }) : null,
+      list,
+    ]);
+  }
+
+  var CHEVRON = { left: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>',
+    right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>' };
+  // Gallery 'carousel' layout: one image at a time, buttons, dots, arrows, swipe.
+  function renderCarousel(imgs) {
+    if (!imgs.length) return null;
+    var total = imgs.length;
+    var index = 0;
+    var track = h('div', { class: 'sc-carousel-track' });
+    var slides = imgs.map(function (img, n) {
+      var slide = h('div', { class: 'sc-carousel-slide', role: 'group', 'aria-roledescription': 'slide',
+        'aria-label': t('slideOf', { n: n + 1, total: total }) }, h('img', { src: img.src, alt: imgAlt(img), draggable: 'false' }));
+      track.appendChild(slide);
+      return slide;
+    });
+    var viewport = h('div', { class: 'sc-carousel-viewport' }, track);
+    var caption = h('p', { class: 'sc-carousel-caption', 'aria-live': 'polite' });
+    var dots = [];
+    function go(n) {
+      index = (n + total) % total;
+      track.style.transform = 'translateX(-' + index * 100 + '%)';
+      slides.forEach(function (s, k) {
+        if (k === index) s.removeAttribute('aria-hidden'); else s.setAttribute('aria-hidden', 'true');
+      });
+      dots.forEach(function (d, k) {
+        d.className = k === index ? 'is-active' : '';
+        if (k === index) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current');
+      });
+      caption.textContent = imgs[index].caption || '';
+    }
+    if (total > 1) {
+      var prev = h('button', { type: 'button', class: 'sc-carousel-btn sc-prev', 'aria-label': t('prevSlide'), onclick: function () { go(index - 1); } });
+      prev.innerHTML = CHEVRON.left;
+      var next = h('button', { type: 'button', class: 'sc-carousel-btn sc-next', 'aria-label': t('nextSlide'), onclick: function () { go(index + 1); } });
+      next.innerHTML = CHEVRON.right;
+      viewport.appendChild(prev);
+      viewport.appendChild(next);
+      var startX = null;
+      viewport.addEventListener('pointerdown', function (e) { startX = e.clientX; });
+      viewport.addEventListener('pointercancel', function () { startX = null; });
+      viewport.addEventListener('pointerup', function (e) {
+        if (startX == null) return;
+        var dx = e.clientX - startX;
+        startX = null;
+        if (Math.abs(dx) > 40) go(index + (dx < 0 ? 1 : -1));
+      });
+    }
+    var dotsEl = total > 1 ? h('div', { class: 'sc-carousel-dots' }, imgs.map(function (_, n) {
+      var d = h('button', { type: 'button', 'aria-label': t('goToSlide', { n: n + 1 }), onclick: function () { go(n); } });
+      dots.push(d);
+      return d;
+    })) : null;
+    var root = h('div', { class: 'sc-carousel', role: 'region', 'aria-roledescription': 'carousel', 'aria-label': t('carousel'), tabindex: '0' }, [
+      viewport,
+      h('div', { class: 'sc-carousel-foot' }, [caption, dotsEl]),
+    ]);
+    root.addEventListener('keydown', function (e) {
+      if (e.target !== root) return;
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(index - 1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); go(index + 1); }
+    });
+    go(0);
+    return root;
   }
 
   function toEmbedUrl(url) {
@@ -1693,7 +2144,7 @@
         var right = ids.indexOf(id);
         var li = h('li', { class: 'ord-item' + (reveal ? (right === i ? ' correct' : ' incorrect') : '') });
         if (!submitted) {
-          li.appendChild(h('span', { class: 'ord-handle', 'aria-hidden': 'true', title: t('dragItem'), text: '⠿' }));
+          li.appendChild(h('span', { class: 'ord-handle', 'aria-hidden': 'true', title: t('dragItem'), html: GRIP_ICON }));
           makeDraggable(li, id);
           makeDropTarget(li, function (dragged) { moveTo(dragged, order.indexOf(id)); build(); });
         }
@@ -1718,7 +2169,7 @@
       var ok = !!inCategory && it.categoryId === inCategory;
       var el = h('div', { class: 'ord-item' + (reveal ? (ok ? ' correct' : ' incorrect') : '') });
       if (!submitted) {
-        el.appendChild(h('span', { class: 'ord-handle', 'aria-hidden': 'true', title: t('dragItem'), text: '⠿' }));
+        el.appendChild(h('span', { class: 'ord-handle', 'aria-hidden': 'true', title: t('dragItem'), html: GRIP_ICON }));
         makeDraggable(el, id);
       }
       if (reveal) el.appendChild(resultMark(ok));

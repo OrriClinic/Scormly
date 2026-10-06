@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./styles/blocks.css";
 
 /* Default brand tokens (Rose theme). Overridden per-theme below.
  * Every theme keeps white text on --color-brand and --color-brand-dark text on
@@ -484,4 +485,57 @@ body {
   .a11y-root:not(.a11y-motion-ok) .animate-ping {
     display: none;
   }
+}
+
+/* ==========================================================================
+ * Block panels in the builder canvas and preview (React side).
+ * Light text on dark/saturated backgrounds: Tailwind's gray text utilities
+ * turn light inside .blk-on-dark, and revert (revert-layer = back to the
+ * utility's own value) inside light surfaces such as quiz cards or tab panels.
+ * ========================================================================== */
+.blk-on-dark :is(.text-gray-900, .text-gray-800, .text-gray-700) { color: #fff; }
+.blk-on-dark :is(.text-gray-600, .text-gray-500, .text-gray-400) { color: rgb(255 255 255 / 0.75); }
+.blk-on-dark .placeholder-gray-300::placeholder { color: rgb(255 255 255 / 0.5); }
+.blk-on-dark .rich-text a { color: #fff; }
+.blk-on-dark .border-brand { border-color: rgb(255 255 255 / 0.85); }
+.blk-on-dark :is(.bg-white, [class*="bg-white/"], [class*="bg-gray-"], [class*="bg-amber-"], [class*="bg-blue-"], .sc-quote-card, .sc-attach-item, .sc-columns-cards .sc-column)
+  :is(.text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500, .text-gray-400),
+.blk-on-dark :is(.bg-white, [class*="bg-white/"], [class*="bg-gray-"]):is(.text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500, .text-gray-400) {
+  color: revert-layer;
+}
+.blk-on-dark :is(.bg-white, [class*="bg-white/"], [class*="bg-gray-"]) .placeholder-gray-300::placeholder { color: revert-layer; }
+
+/* Background swatches in the block style popover. */
+.swatch[data-bg="none"] {
+  background-image: linear-gradient(to top right, transparent calc(50% - 1px), #f43f5e calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px));
+}
+
+/* Builder canvas: a soft studio backdrop behind the lesson column. */
+.canvas {
+  background-color: #f6f6f8;
+  background-image:
+    radial-gradient(60rem 30rem at 50% -10rem, color-mix(in srgb, var(--color-brand) 7%, transparent), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgb(15 23 42 / 0.045) 1px, transparent 0);
+  background-size: auto, 22px 22px;
+  background-attachment: local;
+}
+
+/* Menus and popovers. */
+@keyframes scormly-pop {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.pop-in { animation: scormly-pop 0.16s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .pop-in { animation: none; }
+}
+
+/* Preview lesson drawer. */
+@keyframes scormly-drawer-in {
+  from { transform: translateX(-100%); }
+  to { transform: none; }
+}
+.drawer-in { animation: scormly-drawer-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .drawer-in { animation: none; }
 }

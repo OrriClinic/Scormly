@@ -15,7 +15,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useCourseStore } from '../../store/courseStore'
+import { useCourseStore, INTRO_ID } from '../../store/courseStore'
 import { deleteLessonWithUndo } from '../../lib/deleteWithUndo'
 import type { Lesson } from '../../types/course'
 import { useT } from '../../i18n/I18nProvider'
@@ -65,7 +65,7 @@ export default function Sidebar() {
       )}
       <aside
         data-tour="lessons"
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-gray-200 bg-gray-50 transition-transform md:static md:z-auto md:w-64 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-gray-200/80 bg-[#fbfbfc] transition-transform md:static md:z-auto md:w-64 md:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -83,6 +83,10 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2">
+        <IntroRow />
+        <p className="px-2 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-400">
+          {t('lessons')}
+        </p>
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -204,10 +208,10 @@ function SortableLesson({
             requestAnimationFrame(() => row.focus())
           }
         }}
-        className={`flex w-full outline-none focus-visible:ring-2 focus-visible:ring-brand items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors ${
+        className={`flex w-full outline-none focus-visible:ring-2 focus-visible:ring-brand items-center gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors ${
           isActive
-            ? 'bg-brand/10 font-medium text-brand-dark'
-            : 'text-gray-700 hover:bg-gray-100'
+            ? 'bg-white font-medium text-brand-dark shadow-sm ring-1 ring-gray-200/80'
+            : 'text-gray-700 hover:bg-gray-100/80'
         }`}
       >
         <button
@@ -290,5 +294,47 @@ function SortableLesson({
         )}
       </div>
     </li>
+  )
+}
+
+// The course cover page: a separate item above the lessons (not a lesson,
+// not draggable, not counted in progress).
+function IntroRow() {
+  const active = useCourseStore((s) => s.activeLessonId === INTRO_ID)
+  const enabled = useCourseStore((s) => s.course.intro?.enabled ?? false)
+  const setActiveLesson = useCourseStore((s) => s.setActiveLesson)
+  const setSidebarOpen = useCourseStore((s) => s.setSidebarOpen)
+  const { t } = useT('design')
+  return (
+    <button
+      type="button"
+      aria-current={active ? 'page' : undefined}
+      onClick={() => {
+        setActiveLesson(INTRO_ID)
+        setSidebarOpen(false)
+      }}
+      className={`flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand ${
+        active ? 'bg-white font-medium text-brand-dark shadow-sm ring-1 ring-gray-200/80' : 'text-gray-700 hover:bg-gray-100/80'
+      }`}
+    >
+      <span
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded ${
+          active ? 'bg-brand text-white' : 'bg-gray-200 text-gray-500'
+        }`}
+        aria-hidden
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3">
+          <path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14l-8-4-8 4Z" strokeLinejoin="round" />
+        </svg>
+      </span>
+      <span className="min-w-0 flex-1 truncate">{t('introLabel')}</span>
+      <span
+        className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+          enabled ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-400'
+        }`}
+      >
+        {enabled ? t('on') : t('off')}
+      </span>
+    </button>
   )
 }

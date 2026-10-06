@@ -15,8 +15,12 @@ import { useAssetUrl } from '../../hooks/useAssetUrl'
 import {
   DEFAULT_COURSE_SETTINGS,
   isScoredBlock,
+  type BlockAnimation,
   type CompletionRule,
+  type ContentWidth,
+  type LessonTransition,
   type NavigationMode,
+  type Typography,
   type PlayerLanguage,
 } from '../../types/course'
 
@@ -312,7 +316,12 @@ function GeneralPanel() {
 function AppearancePanel() {
   const theme = useCourseStore((s) => s.course.theme)
   const setTheme = useCourseStore((s) => s.setTheme)
+  const stored = useCourseStore((s) => s.course.settings)
+  const updateSettings = useCourseStore((s) => s.updateSettings)
   const { t } = useT('settings')
+  const { t: td } = useT('design')
+  const contentWidth = stored?.contentWidth ?? 'normal'
+  const typography = stored?.typography ?? 'modern'
 
   return (
     <Panel intro={t('appearanceIntro')}>
@@ -357,6 +366,95 @@ function AppearancePanel() {
           })}
         </div>
       </Group>
+
+      <Group label={td('contentWidth')} help={td('contentWidthHelp')} radio>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {(['narrow', 'normal', 'wide', 'full'] as ContentWidth[]).map((w, i) => {
+            const checked = contentWidth === w
+            return (
+              <label
+                key={w}
+                className={`flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 px-3 py-4 transition focus-within:ring-2 focus-within:ring-brand/40 ${
+                  checked ? 'border-brand bg-brand/5' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="settings-content-width"
+                  checked={checked}
+                  onChange={() => updateSettings({ contentWidth: w })}
+                  className="sr-only"
+                />
+                {/* Mini page with a column of the chosen width. */}
+                <span aria-hidden className="flex h-12 w-20 justify-center rounded-md border border-gray-200 bg-white p-1.5">
+                  <span
+                    className={`flex flex-col gap-1 rounded-sm ${checked ? 'bg-brand/25' : 'bg-gray-200'}`}
+                    style={{ width: `${[38, 52, 72, 92][i]}%` }}
+                  />
+                </span>
+                <span className="text-sm font-medium text-gray-900">{td(`width_${w}`)}</span>
+              </label>
+            )
+          })}
+        </div>
+      </Group>
+
+      <Group label={td('typography')} help={td('typographyHelp')} radio>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {(['modern', 'editorial', 'rounded'] as Typography[]).map((ty) => {
+            const checked = typography === ty
+            return (
+              <label
+                key={ty}
+                className={`typo-${ty} flex cursor-pointer flex-col gap-1 rounded-xl border-2 px-4 py-3.5 transition focus-within:ring-2 focus-within:ring-brand/40 ${
+                  checked ? 'border-brand bg-brand/5' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="settings-typography"
+                  checked={checked}
+                  onChange={() => updateSettings({ typography: ty })}
+                  className="sr-only"
+                />
+                <h3 className="text-2xl font-bold text-gray-900">Aa</h3>
+                <span className="text-sm font-semibold text-gray-900">{td(`typo_${ty}`)}</span>
+                <span className="text-xs text-gray-500">{td(`typo_${ty}Help`)}</span>
+              </label>
+            )
+          })}
+        </div>
+      </Group>
+
+      <Field label={td('blockAnimation')} htmlFor="settings-block-animation" help={td('blockAnimationHelp')}>
+        <select
+          id="settings-block-animation"
+          value={stored?.blockAnimation ?? 'fade'}
+          onChange={(e) => updateSettings({ blockAnimation: e.target.value as BlockAnimation })}
+          className={`${inputClass} sm:w-auto sm:min-w-80`}
+        >
+          {(['none', 'fade', 'slide', 'zoom'] as BlockAnimation[]).map((a) => (
+            <option key={a} value={a}>
+              {td(`anim_${a}`)}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label={td('lessonTransition')} htmlFor="settings-lesson-transition" help={td('lessonTransitionHelp')}>
+        <select
+          id="settings-lesson-transition"
+          value={stored?.lessonTransition ?? 'fade'}
+          onChange={(e) => updateSettings({ lessonTransition: e.target.value as LessonTransition })}
+          className={`${inputClass} sm:w-auto sm:min-w-80`}
+        >
+          {(['none', 'fade', 'slide'] as LessonTransition[]).map((a) => (
+            <option key={a} value={a}>
+              {td(`trans_${a}`)}
+            </option>
+          ))}
+        </select>
+      </Field>
     </Panel>
   )
 }

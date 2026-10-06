@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { Children, useState, type ReactNode } from 'react'
 import {
   DndContext,
   KeyboardSensor,
@@ -85,7 +85,7 @@ export default function OrderingPreview({ block }: PreviewProps<'ordering'>) {
   }
 
   const rowTone = (ok: boolean) =>
-    reveal ? (ok ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50') : 'border-gray-200 bg-white'
+    reveal ? (ok ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50') : 'border-gray-200/90 bg-white'
 
   return (
     <div className="space-y-4">
@@ -163,7 +163,7 @@ export default function OrderingPreview({ block }: PreviewProps<'ordering'>) {
                   )
                 })}
             </Bin>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className={`grid gap-3 sm:grid-cols-2 ${categories.length > 2 ? 'lg:grid-cols-3' : ''}`}>
               {categories.map((cat) => (
                 <Bin key={cat.id} id={cat.id} title={cat.title} disabled={submitted}>
                   {learnerOrder
@@ -223,7 +223,9 @@ function SortableRow({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : undefined }}
-      className={`flex items-center gap-2 rounded-md border p-2 ${className}`}
+      className={`flex items-center gap-2.5 rounded-xl border px-2.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-shadow ${className} ${
+        isDragging ? 'z-10 shadow-xl ring-2 ring-brand/40' : 'hover:shadow-md'
+      }`}
     >
       {!disabled && (
         <button
@@ -231,9 +233,13 @@ function SortableRow({
           {...attributes}
           {...listeners}
           aria-label={t('dragItem')}
-          className="flex h-7 w-6 shrink-0 cursor-grab touch-none items-center justify-center text-gray-400"
+          className="flex h-8 w-7 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 active:cursor-grabbing"
         >
-          ⠿
+          <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden>
+            <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
+            <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
+          </svg>
         </button>
       )}
       {children}
@@ -258,11 +264,18 @@ function Bin({
       ref={setNodeRef}
       role="group"
       aria-label={title}
-      className={`min-h-16 rounded-lg border-2 border-dashed p-3 ${
-        isOver ? 'border-brand bg-brand/5' : 'border-gray-200'
+      className={`min-h-24 rounded-2xl border-2 p-3 transition-all duration-200 ${
+        isOver
+          ? 'scale-[1.01] border-brand bg-brand/5 shadow-lg shadow-brand/10'
+          : 'border-dashed border-gray-200 bg-gray-50/70'
       }`}
     >
-      <p className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">{title}</p>
+      <p className="mb-2.5 flex items-center justify-between gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <span>{title}</span>
+        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] tabular-nums text-gray-500 ring-1 ring-gray-200">
+          {Children.count(children)}
+        </span>
+      </p>
       <div className="flex flex-col gap-2">{children}</div>
     </div>
   )
@@ -298,11 +311,12 @@ function ItemChip({
       ref={setNodeRef}
       style={{
         transform: CSS.Translate.toString(transform),
-        opacity: isDragging ? 0.6 : undefined,
         zIndex: isDragging ? 10 : undefined,
         position: 'relative',
       }}
-      className={`flex flex-wrap items-center gap-2 rounded-md border p-2 ${tone}`}
+      className={`flex flex-wrap items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-shadow ${tone} ${
+        isDragging ? 'rotate-1 shadow-2xl ring-2 ring-brand/40' : 'shadow-[0_1px_2px_rgba(15,23,42,0.05)] hover:shadow-md'
+      }`}
     >
       {!disabled && (
         <button
@@ -310,9 +324,13 @@ function ItemChip({
           {...attributes}
           {...listeners}
           aria-label={t('dragItem')}
-          className="flex h-7 w-6 shrink-0 cursor-grab touch-none items-center justify-center text-gray-400"
+          className="flex h-8 w-7 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 active:cursor-grabbing"
         >
-          ⠿
+          <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden>
+            <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
+            <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
+          </svg>
         </button>
       )}
       {ok !== undefined && <ResultMark ok={ok} />}
@@ -323,7 +341,7 @@ function ItemChip({
         disabled={disabled}
         aria-label={`${t('chooseCategory')}: ${item.text}`}
         onChange={(e) => onChange(e.target.value || undefined)}
-        className="rounded-md border border-gray-300 px-2 py-1 text-sm"
+        className="sc-select max-w-full text-sm"
       >
         <option value="">—</option>
         {categories.map((c) => (

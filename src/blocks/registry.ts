@@ -348,6 +348,43 @@ export const BLOCK_REGISTRY: Record<BlockType, BlockMeta> = {
       },
     }),
   },
+  imageText: {
+    type: 'imageText',
+    category: 'media',
+    create: () => ({
+      id: uid('block'),
+      type: 'imageText',
+      settings: { ...baseSettings },
+      data: { src: '', alt: '', layout: 'left', html: `<p>${c('imageTextHtml')}</p>` },
+    }),
+  },
+  attachment: {
+    type: 'attachment',
+    category: 'media',
+    create: () => ({
+      id: uid('block'),
+      type: 'attachment',
+      settings: { ...baseSettings },
+      data: { title: c('attachmentTitle'), files: [] },
+    }),
+  },
+  columns: {
+    type: 'columns',
+    category: 'text',
+    create: () => ({
+      id: uid('block'),
+      type: 'columns',
+      settings: { ...baseSettings },
+      data: {
+        style: 'plain',
+        columns: [1, 2].map((n) => ({
+          id: uid('col'),
+          title: c('columnTitle', { n }),
+          html: `<p>${c('columnText')}</p>`,
+        })),
+      },
+    }),
+  },
 }
 
 /** Category order for the add menu (labels come from i18n `common`). */

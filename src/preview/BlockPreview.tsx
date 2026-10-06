@@ -18,6 +18,11 @@ import FillBlanksPreview from './components/FillBlanksPreview'
 import CourseOutlinePreview from './components/CourseOutlinePreview'
 import HotspotPreview from './components/HotspotPreview'
 import TimelinePreview from './components/TimelinePreview'
+import DividerView from './components/DividerView'
+import NoteView from './components/NoteView'
+import ImageTextPreview from './components/ImageTextPreview'
+import AttachmentPreview from './components/AttachmentPreview'
+import ColumnsPreview from './components/ColumnsPreview'
 
 // Read-only learner rendering of a single block (no editing affordances).
 export default function BlockPreview({
@@ -54,7 +59,7 @@ export default function BlockPreview({
       return (
         <RichHtml
           html={block.data.html}
-          className="rich-text leading-relaxed text-gray-800"
+          className={`rich-text leading-relaxed text-gray-800 sc-para-${block.data.variant ?? 'normal'}`}
         />
       )
     case 'list': {
@@ -70,21 +75,8 @@ export default function BlockPreview({
         </List>
       )
     }
-    case 'note': {
-      const isWarning = block.data.variant === 'warning'
-      return (
-        <div
-          className={`flex gap-3 rounded-lg border p-4 ${
-            isWarning
-              ? 'border-amber-200 bg-amber-50 text-amber-800'
-              : 'border-blue-200 bg-blue-50 text-blue-800'
-          }`}
-        >
-          <span aria-hidden>{isWarning ? '⚠' : 'ℹ'}</span>
-          <p className="leading-relaxed">{block.data.text}</p>
-        </div>
-      )
-    }
+    case 'note':
+      return <NoteView variant={block.data.variant} text={block.data.text} />
     case 'image':
       return <ImagePreview block={block} />
     case 'gallery':
@@ -114,12 +106,7 @@ export default function BlockPreview({
         </div>
       )
     case 'divider':
-      return (
-        <hr
-          className="my-2 border-0 border-t-2 border-gray-300"
-          style={{ borderTopStyle: block.data.style }}
-        />
-      )
+      return <DividerView {...block.data} />
     case 'courseOutline':
       return (
         <CourseOutlinePreview
@@ -146,5 +133,11 @@ export default function BlockPreview({
       return <OrderingPreview block={block} />
     case 'fillBlanks':
       return <FillBlanksPreview block={block} />
+    case 'imageText':
+      return <ImageTextPreview block={block} />
+    case 'attachment':
+      return <AttachmentPreview block={block} />
+    case 'columns':
+      return <ColumnsPreview block={block} />
   }
 }

@@ -1,29 +1,47 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useDialog } from '../../hooks/useDialog'
-import { useCourseStore } from '../../store/courseStore'
+import { useCourseStore, INTRO_ID } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import BlockPreview from '../../preview/BlockPreview'
+import IntroView from '../../preview/IntroView'
 import A11yMenu from '../../preview/A11yMenu'
 import { A11yContext, a11yClasses, useA11yPrefs } from '../../preview/a11y'
+import { blockWrapperProps } from '../../blocks/styleClasses'
+import { usePageWidthVar } from '../../hooks/usePageWidthVar'
+import { CONTENT_WIDTH_PX, type BlockAnimation, type Block } from '../../types/course'
 
 // Full-screen, learner-facing preview of the course with lesson navigation.
+// Mirrors the SCORM player: optional cover page, lesson menu with progress,
+// block entrance animations, lesson transitions and a "next lesson" card.
 export default function PreviewOverlay() {
   const course = useCourseStore((s) => s.course)
   const activeLessonId = useCourseStore((s) => s.activeLessonId)
   const setPreviewOpen = useCourseStore((s) => s.setPreviewOpen)
   const { t } = useT('preview')
+  const { t: td } = useT('design')
   const { t: ta } = useT('a11y')
   const { prefs, reduceMotion, update: updatePrefs } = useA11yPrefs()
-  const contentLanguage = course.settings?.contentLanguage?.trim() || undefined
-  const showProgress = course.settings?.showProgress !== false
-  const finishMessage = course.settings?.finishMessage?.trim() ?? ''
+  const settings = course.settings
+  const contentLanguage = settings?.contentLanguage?.trim() || undefined
+  const showProgress = settings?.showProgress !== false
+  const finishMessage = settings?.finishMessage?.trim() ?? ''
+  const contentWidth = CONTENT_WIDTH_PX[settings?.contentWidth ?? 'normal']
+  const blockAnimation: BlockAnimation = reduceMotion ? 'none' : settings?.blockAnimation ?? 'fade'
+  const transition = reduceMotion ? 'none' : settings?.lessonTransition ?? 'fade'
+  const typography = settings?.typography ?? 'modern'
+  const introEnabled = !!course.intro?.enabled
 
   const startIndex = Math.max(
     0,
     course.lessons.findIndex((l) => l.id === activeLessonId),
   )
   const [index, setIndex] = useState(startIndex)
+  const [onIntro, setOnIntro] = useState(introEnabled && activeLessonId === INTRO_ID)
   const [finished, setFinished] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [visited, setVisited] = useState<Record<number, boolean>>({})
+  // Direction of the last lesson change, for the slide transition.
+  const [direction, setDirection] = useState<'next' | 'prev'>('next')
   // Passed restricted `continue` gates: blockId → true (cleared on lesson change).
   const [continued, setContinued] = useState<Record<string, boolean>>({})
   const lesson = course.lessons[index]
@@ -33,6 +51,11 @@ export default function PreviewOverlay() {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const firstRender = useRef(true)
   const [announcement, setAnnouncement] = useState('')
+  usePageWidthVar(bodyRef)
+
+  useEffect(() => {
+    if (!onIntro && !finished) setVisited((v) => (v[index] ? v : { ...v, [index]: true }))
+  }, [index, onIntro, finished])
 
   // Start each lesson (and the completion screen) at the top, like the player.
   // Revealing blocks past a passed gate keeps the scroll position. After the
@@ -49,25 +72,30 @@ export default function PreviewOverlay() {
     setAnnouncement(
       finished
         ? t('courseComplete')
-        : current
-          ? ta('lessonAnnounce', { n: index + 1, total: course.lessons.length, title: current.title })
-          : '',
+        : onIntro
+          ? course.title
+          : current
+            ? ta('lessonAnnounce', { n: index + 1, total: course.lessons.length, title: current.title })
+            : '',
     )
     // Only lesson changes should move focus, not edits to the course.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, finished])
+  }, [index, finished, onIntro])
 
-  // Esc closes the preview; focus moves into it (so keys don't land in the
-  // editor field underneath) and stays trapped until it closes.
-  useDialog(rootRef, () => setPreviewOpen(false), { focusContainer: true })
+  // Esc closes the lesson menu first, then the preview; focus moves into it
+  // (so keys don't land in the editor field underneath) and stays trapped.
+  useDialog(rootRef, () => (menuOpen ? setMenuOpen(false) : setPreviewOpen(false)), {
+    focusContainer: true,
+  })
   const total = course.lessons.length
   const isLast = index >= total - 1
+  const progress = total ? Math.round((Object.keys(visited).length / total) * 100) : 0
 
   // Hide blocks after an unpassed restricted `continue` gate, and drop the
   // gate itself once passed — mirroring the SCORM player's gating behaviour.
   const visibleBlocks = (() => {
     if (!lesson) return []
-    const out: typeof lesson.blocks = []
+    const out: Block[] = []
     for (const b of lesson.blocks) {
       const isRestricted = b.type === 'continue' && b.data.mode === 'restricted'
       if (isRestricted && continued[b.id]) continue
@@ -76,13 +104,38 @@ export default function PreviewOverlay() {
     }
     return out
   })()
+  const gated = lesson ? visibleBlocks.length < lesson.blocks.filter((b) => !continued[b.id]).length : false
+
+  function goTo(i: number) {
+    setDirection(!onIntro && i < index ? 'prev' : 'next')
+    setOnIntro(false)
+    setFinished(false)
+    setMenuOpen(false)
+    setIndex(Math.min(total - 1, Math.max(0, i)))
+    setContinued({})
+  }
+
+  function goIntro() {
+    setDirection('prev')
+    setFinished(false)
+    setMenuOpen(false)
+    setOnIntro(true)
+  }
 
   function goNext() {
+    setDirection('next')
     if (isLast) setFinished(true)
-    else {
-      setIndex((i) => Math.min(total - 1, i + 1))
-      setContinued({})
+    else goTo(index + 1)
+  }
+
+  function goPrev() {
+    if (index === 0) {
+      if (introEnabled) goIntro()
+      return
     }
+    setDirection('prev')
+    setIndex((i) => Math.max(0, i - 1))
+    setContinued({})
   }
 
   function handleContinue(blockId: string, mode: 'restricted' | 'unrestricted') {
@@ -92,6 +145,14 @@ export default function PreviewOverlay() {
     if (mode === 'restricted') setContinued((c) => ({ ...c, [blockId]: true }))
     goNext()
   }
+
+  const transitionClass =
+    transition === 'none'
+      ? ''
+      : transition === 'slide'
+        ? `lesson-enter-slide-${direction}`
+        : 'lesson-enter-fade'
+  const screenKey = finished ? 'finished' : onIntro ? 'intro' : `lesson-${index}`
 
   return (
     <div
@@ -117,12 +178,22 @@ export default function PreviewOverlay() {
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {announcement}
       </div>
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 px-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="truncate font-semibold text-gray-900">
-            {course.title}
-          </span>
-          {showProgress && (
+      <header className="relative z-20 flex h-14 shrink-0 items-center justify-between gap-2 border-b border-gray-200/70 bg-white/85 px-3 backdrop-blur-md sm:px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-label={td('lessonsMenu')}
+            title={td('lessonsMenu')}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5" aria-hidden>
+              <path d="M4 7h16M4 12h16M4 17h10" strokeLinecap="round" />
+            </svg>
+          </button>
+          <span className="truncate font-semibold text-gray-900">{course.title}</span>
+          {showProgress && !onIntro && !finished && (
             <>
               <span className="hidden shrink-0 text-sm text-gray-400 sm:inline">
                 {t('progress', { n: index + 1, total })}
@@ -136,116 +207,301 @@ export default function PreviewOverlay() {
         <div className="flex items-center gap-2">
           <A11yMenu prefs={prefs} reduceMotion={reduceMotion} onChange={updatePrefs} />
           {finished ? (
-            <button
-              type="button"
-              onClick={() => setFinished(false)}
-              className="btn-secondary text-sm"
-            >
+            <button type="button" onClick={() => setFinished(false)} className="btn-secondary text-sm">
               {t('review')}
             </button>
-          ) : (
+          ) : onIntro ? null : (
             <>
               <button
                 type="button"
-                onClick={() => {
-                  setIndex((i) => Math.max(0, i - 1))
-                  setContinued({})
-                }}
-                disabled={index === 0}
+                onClick={goPrev}
+                disabled={index === 0 && !introEnabled}
                 className="btn-secondary text-sm disabled:opacity-30"
               >
                 {t('prev')}
               </button>
-              {isLast ? (
-                <button
-                  type="button"
-                  onClick={() => setFinished(true)}
-                  className="btn-primary text-sm"
-                >
-                  {t('finish')}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={goNext}
-                  className="btn-secondary text-sm"
-                >
-                  {t('next')}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={goNext}
+                className={`${isLast ? 'btn-primary' : 'btn-secondary'} text-sm`}
+              >
+                {isLast ? t('finish') : t('next')}
+              </button>
             </>
           )}
           <button
             type="button"
             onClick={() => setPreviewOpen(false)}
             aria-label={t('close')}
-            className="ml-2 flex h-9 w-9 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100"
+            className="ml-1 flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100"
           >
             <span aria-hidden>✕</span>
           </button>
         </div>
+        {showProgress && (
+          <div
+            className="absolute inset-x-0 bottom-0 h-0.5 bg-gray-100"
+            role="progressbar"
+            aria-label={td('progressPct', { n: progress })}
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div className="h-full bg-brand transition-[width] duration-500" style={{ width: `${progress}%` }} />
+          </div>
+        )}
       </header>
 
-      <div ref={bodyRef} className="flex-1 overflow-y-auto bg-gray-50">
-        <main
-          ref={mainRef}
-          id="scormly-preview-content"
-          tabIndex={-1}
-          lang={contentLanguage}
-          className="a11y-content mx-auto max-w-3xl px-4 py-6 outline-none sm:px-6 sm:py-10"
+      <div className="relative flex min-h-0 flex-1">
+        {menuOpen && (
+          <LessonMenu
+            course={course}
+            index={onIntro || finished ? -1 : index}
+            onIntro={onIntro}
+            visited={visited}
+            progress={progress}
+            onClose={() => setMenuOpen(false)}
+            onPick={goTo}
+            onPickIntro={introEnabled ? goIntro : undefined}
+          />
+        )}
+        <div
+          ref={bodyRef}
+          className="flex-1 overflow-y-auto overflow-x-hidden bg-[#fafafb]"
+          style={{ '--col-w': `${contentWidth}px` } as React.CSSProperties}
         >
-          <A11yContext.Provider value={{ captions: prefs.captions }}>
-            {finished ? (
-              <div className="py-8 text-center">
-                <div
-                  aria-hidden
-                  className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-brand/15 text-3xl text-brand-dark"
-                >
-                  ✓
-                </div>
-                <h1
-                  ref={headingRef}
-                  tabIndex={-1}
-                  className="text-2xl font-bold text-gray-900 outline-none"
-                >
-                  {t('courseComplete')}
-                </h1>
-                <p className="mt-3 whitespace-pre-line text-gray-500">
-                  {finishMessage || t('courseCompleteText')}
-                </p>
-              </div>
-            ) : lesson ? (
-              <>
-                <h1
-                  ref={headingRef}
-                  tabIndex={-1}
-                  className="mb-8 text-3xl font-bold text-gray-900 outline-none"
-                >
-                  {lesson.title}
-                </h1>
-                {lesson.blocks.length === 0 ? (
-                  <p className="text-gray-400">{t('empty')}</p>
-                ) : (
-                  <div className="space-y-6">
-                    {visibleBlocks.map((block) => (
-                      <BlockPreview
-                        key={block.id}
-                        block={block}
-                        currentLessonId={lesson.id}
-                        onNavigate={(i) => {
-                          setIndex(Math.min(total - 1, Math.max(0, i)))
-                          setContinued({})
-                        }}
-                        onContinue={handleContinue}
-                      />
-                    ))}
+          <main
+            ref={mainRef}
+            id="scormly-preview-content"
+            tabIndex={-1}
+            lang={contentLanguage}
+            className={`a11y-content typo-${typography} mx-auto px-4 py-8 outline-none sm:px-6 sm:py-14`}
+            style={{ maxWidth: (onIntro ? Math.max(contentWidth, CONTENT_WIDTH_PX.wide) : contentWidth) + 48 }}
+          >
+            <A11yContext.Provider value={{ captions: prefs.captions }}>
+              <div key={screenKey} className={transitionClass}>
+                {finished ? (
+                  <div className="py-10 text-center">
+                    <div
+                      aria-hidden
+                      className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-dark text-4xl text-white shadow-lg shadow-brand/30"
+                    >
+                      ✓
+                    </div>
+                    <h1
+                      ref={headingRef}
+                      tabIndex={-1}
+                      className="text-3xl font-bold tracking-tight text-gray-900 outline-none"
+                    >
+                      {t('courseComplete')}
+                    </h1>
+                    <p className="mx-auto mt-3 max-w-md whitespace-pre-line text-gray-500">
+                      {finishMessage || t('courseCompleteText')}
+                    </p>
                   </div>
-                )}
-              </>
-            ) : null}
-          </A11yContext.Provider>
-        </main>
+                ) : onIntro ? (
+                  <IntroView
+                    course={course}
+                    headingRef={headingRef}
+                    onStart={() => goTo(0)}
+                    onOpenLesson={goTo}
+                  />
+                ) : lesson ? (
+                  <>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand-dark">
+                      {t('progress', { n: index + 1, total })}
+                    </p>
+                    <h1
+                      ref={headingRef}
+                      tabIndex={-1}
+                      className="mb-10 text-4xl font-bold tracking-tight text-gray-900 outline-none"
+                    >
+                      {lesson.title}
+                    </h1>
+                    {lesson.blocks.length === 0 ? (
+                      <p className="text-gray-400">{t('empty')}</p>
+                    ) : (
+                      <div className="space-y-7">
+                        {visibleBlocks.map((block) => (
+                          <Reveal key={block.id} block={block} animation={blockAnimation}>
+                            <BlockPreview
+                              block={block}
+                              currentLessonId={lesson.id}
+                              onNavigate={goTo}
+                              onContinue={handleContinue}
+                            />
+                          </Reveal>
+                        ))}
+                      </div>
+                    )}
+                    {!gated && (
+                      <NextCard
+                        label={isLast ? t('finish') : td('nextLesson')}
+                        title={isLast ? '' : course.lessons[index + 1]?.title ?? ''}
+                        onClick={goNext}
+                      />
+                    )}
+                  </>
+                ) : null}
+              </div>
+            </A11yContext.Provider>
+          </main>
+        </div>
       </div>
     </div>
+  )
+}
+
+// Block wrapper: panel styling + entrance animation when scrolled into view.
+// Blocks entering together are staggered slightly.
+let lastReveal = 0
+let revealStep = 0
+function Reveal({ block, animation, children }: { block: Block; animation: BlockAnimation; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [shown, setShown] = useState(animation === 'none')
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || shown || typeof IntersectionObserver === 'undefined') {
+      setShown(true)
+      return
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return
+        const now = performance.now()
+        revealStep = now - lastReveal < 120 ? revealStep + 1 : 0
+        lastReveal = now
+        el.style.animationDelay = `${Math.min(revealStep, 5) * 80}ms`
+        setShown(true)
+        io.disconnect()
+      },
+      { rootMargin: '0px 0px -8% 0px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [shown])
+
+  const wrapper = blockWrapperProps(block.settings)
+  const anim = animation === 'none' ? '' : ` anim-${animation}${shown ? ' is-in' : ''}`
+  return (
+    <div ref={ref} {...wrapper} className={wrapper.className + anim}>
+      {children}
+    </div>
+  )
+}
+
+function NextCard({ label, title, onClick }: { label: string; title: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group mt-16 flex w-full items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-6 py-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md"
+    >
+      <span className="min-w-0">
+        <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-brand-dark">{label}</span>
+        {title && <span className="mt-1 block truncate text-lg font-semibold text-gray-900">{title}</span>}
+      </span>
+      <span
+        aria-hidden
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-white transition group-hover:translate-x-1"
+      >
+        →
+      </span>
+    </button>
+  )
+}
+
+function LessonMenu({
+  course,
+  index,
+  onIntro,
+  visited,
+  progress,
+  onClose,
+  onPick,
+  onPickIntro,
+}: {
+  course: ReturnType<typeof useCourseStore.getState>['course']
+  index: number
+  onIntro: boolean
+  visited: Record<number, boolean>
+  progress: number
+  onClose: () => void
+  onPick: (i: number) => void
+  onPickIntro?: () => void
+}) {
+  const { t } = useT('design')
+  return (
+    <>
+      <div className="absolute inset-0 z-10 bg-gray-900/20 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
+      <nav
+        aria-label={t('lessonsMenu')}
+        className="drawer-in absolute inset-y-0 left-0 z-10 flex w-80 max-w-[85vw] flex-col border-r border-gray-200 bg-white shadow-2xl"
+      >
+        <div className="border-b border-gray-100 px-5 py-4">
+          <p className="truncate font-semibold text-gray-900">{course.title}</p>
+          <div className="mt-3 flex items-center gap-3">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+              <div className="h-full rounded-full bg-brand transition-[width] duration-500" style={{ width: `${progress}%` }} />
+            </div>
+            <span className="text-xs font-medium tabular-nums text-gray-500">{t('progressPct', { n: progress })}</span>
+          </div>
+        </div>
+        <ol className="flex-1 overflow-y-auto p-2">
+          {onPickIntro && (
+            <li>
+              <MenuRow active={onIntro} done={false} num="•" title={t('courseHome')} onClick={onPickIntro} />
+            </li>
+          )}
+          {course.lessons.map((l, i) => (
+            <li key={l.id}>
+              <MenuRow
+                active={i === index}
+                done={!!visited[i] && i !== index}
+                num={String(i + 1)}
+                title={l.title}
+                onClick={() => onPick(i)}
+              />
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </>
+  )
+}
+
+function MenuRow({
+  active,
+  done,
+  num,
+  title,
+  onClick,
+}: {
+  active: boolean
+  done: boolean
+  num: string
+  title: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      aria-current={active ? 'page' : undefined}
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition ${
+        active ? 'bg-brand/10 font-semibold text-brand-dark' : 'text-gray-700 hover:bg-gray-50'
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+          done ? 'bg-emerald-500 text-white' : active ? 'bg-brand text-white' : 'bg-gray-100 text-gray-500'
+        }`}
+      >
+        {done ? '✓' : num}
+      </span>
+      <span className="min-w-0 flex-1 truncate">{title}</span>
+    </button>
   )
 }

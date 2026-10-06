@@ -418,3 +418,33 @@ captions and larger text, in the builder preview and in the exported player alik
   not implemented (401 / 2004 402) instead of 5 failing writes per scored block; learner names in
   "Last, First" form (TalentLMS sends `Dmytro,Dmytro`) display as "First Last"; lesson_status is
   read once at launch.
+- 2026-10-06 — **Design batch** (block types, styling, cover page, motion):
+  - Block format popover (palette button in the block toolbar): theme-derived
+    backgrounds (light gray, tint, accent, gradient, dark), padding, and width
+    (column / full-width band). Same-background neighbours join into one panel.
+  - Ready-made blocks in the Add menu, grouped Text / Quotes / Media / Structure:
+    heading & text, lead paragraph, drop cap, two columns, tip, key point,
+    highlight, key takeaways, statement, testimonial, quote with photo left /
+    right, quote on image, carousel, image & text, text on image, full-width
+    hero, wide carousel, full-width image, banner, full-width band, chapter
+    opener, ornament / wave dividers, downloads, knowledge check.
+  - New **Columns** block (2–4 text columns: plain / cards / lines). Hover
+    preview in the Add menu: after a short pause the real learner rendering of
+    the block or template appears beside the menu. Nicer selects in learner
+    content and a card/tray look for the sorting exercise (preview + player).
+  - Quote styles (classic, statement, card, photo with left/right side, on image);
+    paragraph styles (lead, drop cap, columns); callouts (note, tip, success,
+    warning); dividers (gradient, dots, ornament, wave, label, spacer).
+  - Image size (small / medium / column / full width) + alignment; gallery grid
+    columns or carousel; new blocks **Image & text** (left/right/overlay) and
+    **Attachment** (files in `assets/files/`, downloaded under the original name;
+    HTML/JS/SVG/XML blocked).
+  - Course cover page (`Course.intro`) as a separate sidebar item, not a lesson.
+  - Appearance settings: content width, typography (modern / editorial /
+    rounded, system fonts only), block entrance animation, lesson transition.
+  - Player + preview: cover page, lesson menu drawer with progress, header
+    progress bar, “Next lesson” card, premium restyle; shared block CSS
+    `src/styles/blocks.css` synced into `player.css`.
+  - Demo course and landing (new Design section, carousel/testimonial demos)
+    updated. Verified headlessly (Chromium) in editor, preview and player.
+

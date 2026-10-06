@@ -9,7 +9,7 @@ import { uid } from './id'
 import { toast } from '../store/toastStore'
 import { translate } from '../i18n/I18nProvider'
 
-export type AssetKind = 'image' | 'video' | 'audio' | 'captions'
+export type AssetKind = 'image' | 'video' | 'audio' | 'captions' | 'file'
 
 // SCORM-safe formats. These render as plain HTML in any LMS.
 const IMAGE_MIME: Record<string, string> = {
@@ -42,15 +42,26 @@ const MIME_BY_KIND: Record<AssetKind, Record<string, string>> = {
   video: VIDEO_MIME,
   audio: AUDIO_MIME,
   captions: CAPTIONS_MIME,
+  file: {},
 }
 const SUBDIR_BY_KIND: Record<AssetKind, string> = {
   image: 'images',
   video: 'videos',
   audio: 'audio',
   captions: 'captions',
+  file: 'files',
 }
 
+// Attachments (downloads) may be any document type, except files a browser
+// would run as a page or script if opened from the LMS's own origin.
+const BLOCKED_ATTACHMENT_EXT = new Set(['html', 'htm', 'xhtml', 'shtml', 'xht', 'js', 'mjs', 'svg', 'svgz', 'xml', 'php'])
+
 function fileExtension(file: File, kind: AssetKind): string | undefined {
+  if (kind === 'file') {
+    const ext = /\.([A-Za-z0-9]{1,10})$/.exec(file.name)?.[1]?.toLowerCase()
+    if (!ext) return 'bin'
+    return BLOCKED_ATTACHMENT_EXT.has(ext) ? undefined : ext
+  }
   const byMime = MIME_BY_KIND[kind][file.type]
   if (byMime) return byMime
   if (kind === 'captions' && /\.vtt$/i.test(file.name)) return 'vtt'

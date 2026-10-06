@@ -20,8 +20,16 @@ const text: LocaleTable = {
     addItem: 'Add item',
 
     // Note
+    noteKind: 'Type',
     note: 'Note',
+    tip: 'Tip',
+    success: 'Success',
     warning: 'Warning',
+    paragraphStyle: 'Style',
+    para_normal: 'Normal',
+    para_lead: 'Lead',
+    para_dropcap: 'Drop cap',
+    para_columns: 'Flowing columns',
     notePlaceholder: 'Note text',
     warningPlaceholder: 'Warning text',
   },
@@ -43,8 +51,16 @@ const text: LocaleTable = {
     addItem: 'Додати пункт',
 
     // Note
+    noteKind: 'Тип',
     note: 'Примітка',
+    tip: 'Порада',
+    success: 'Успіх',
     warning: 'Попередження',
+    paragraphStyle: 'Стиль',
+    para_normal: 'Звичайний',
+    para_lead: 'Лід',
+    para_dropcap: 'Буквиця',
+    para_columns: 'Текст у колонках',
     notePlaceholder: 'Текст примітки',
     warningPlaceholder: 'Текст попередження',
   },

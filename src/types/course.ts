@@ -29,11 +29,30 @@ export type BlockType =
   | 'timeline'
   | 'ordering'
   | 'fillBlanks'
+  | 'imageText'
+  | 'attachment'
+  | 'columns'
+
+/** Block background, drawn from the course theme (soft/accent/gradient follow
+ *  the theme accent), so recoloring the theme recolors every block. */
+export type BlockBackground =
+  | 'none'
+  | 'muted'
+  | 'soft'
+  | 'accent'
+  | 'gradient'
+  | 'dark'
 
 // Shared visual settings for a block (spacing, background, etc.).
 export interface BlockSettings {
-  /** Vertical spacing around the block. */
+  /** Inner padding of the block (most visible with a background). */
   spacing?: 'compact' | 'normal' | 'spacious'
+  /** Background color of the block; 'none' (default) = transparent. */
+  background?: BlockBackground
+  /** 'full' stretches the block edge to edge of the page: a full-width band
+   *  (with a background the content stays in the column; without one, media
+   *  such as text on image or a carousel spans the whole width). */
+  width?: 'normal' | 'full'
 }
 
 interface BaseBlock {
@@ -52,9 +71,15 @@ export interface HeadingData {
   align?: TextAlign
 }
 
+/** normal · lead (larger intro text) · dropcap (big first letter) ·
+ *  columns (two columns on wide screens). */
+export type ParagraphVariant = 'normal' | 'lead' | 'dropcap' | 'columns'
+
 export interface ParagraphData {
   /** Rich text as HTML (bold, italic, links). */
   html: string
+  /** Default 'normal'. */
+  variant?: ParagraphVariant
 }
 
 export interface ListData {
@@ -62,7 +87,7 @@ export interface ListData {
   items: string[]
 }
 
-export type NoteVariant = 'note' | 'warning'
+export type NoteVariant = 'note' | 'tip' | 'success' | 'warning'
 
 export interface NoteData {
   variant: NoteVariant
@@ -80,10 +105,25 @@ export interface ImageRef {
   decorative?: boolean
 }
 
-export interface ImageData extends ImageRef {}
+/** Image width: small/medium/large (= the content column) or full-bleed
+ *  (edge to edge of the page, wider than the content column). */
+export type ImageSize = 'small' | 'medium' | 'large' | 'full'
+
+export interface ImageData extends ImageRef {
+  /** Default 'large' (legacy images). */
+  size?: ImageSize
+  /** Horizontal placement of small/medium images (default 'center'). */
+  align?: TextAlign
+}
+
+export type GalleryLayout = 'grid' | 'carousel'
 
 export interface GalleryData {
   images: ImageRef[]
+  /** Default 'grid'. The carousel shows one image (with its caption) at a time. */
+  layout?: GalleryLayout
+  /** Grid columns on wide screens (default 3). */
+  columns?: 2 | 3 | 4
 }
 
 export interface VideoData {
@@ -123,9 +163,73 @@ export interface TableData {
   rows: string[][]
 }
 
+/** Quote presentation:
+ *  - classic: accent bar on the left
+ *  - statement: large centered text between accent rules
+ *  - card: testimonial card with a round author photo
+ *  - photo: large author photo beside the quote (left or right: photoSide)
+ *  - image: white text over a full background image */
+export type QuoteVariant = 'classic' | 'statement' | 'card' | 'photo' | 'image'
+
 export interface QuoteData {
   text: string
   author?: string
+  /** Default 'classic'. */
+  variant?: QuoteVariant
+  /** Author's role / company, shown under the name. */
+  role?: string
+  /** Author photo (card/photo) or background image (image variant). */
+  image?: string
+  /** 'photo' variant: which side the photo is on (default 'left'). */
+  photoSide?: 'left' | 'right'
+}
+
+// ── Image & text ────────────────────────────────────────────────────────────
+
+/** left/right: image beside the text; overlay: text on top of the image. */
+export type ImageTextLayout = 'left' | 'right' | 'overlay'
+
+export interface ImageTextData extends ImageRef {
+  layout: ImageTextLayout
+  /** Rich text shown next to (or over) the image. */
+  html: string
+}
+
+// ── Text columns ────────────────────────────────────────────────────────────
+
+export interface TextColumn {
+  id: string
+  /** Optional column heading. */
+  title: string
+  /** Rich text like a paragraph. */
+  html: string
+}
+
+/** plain: text side by side · cards: each column on a white card ·
+ *  lines: thin vertical rules between columns. */
+export type ColumnsStyle = 'plain' | 'cards' | 'lines'
+
+export interface ColumnsData {
+  /** 2–4 columns; they stack on phones. */
+  columns: TextColumn[]
+  style: ColumnsStyle
+}
+
+// ── Attachments ─────────────────────────────────────────────────────────────
+
+export interface AttachmentFile {
+  id: string
+  /** Relative path under assets/files/ (or a data URL in no-folder mode). */
+  src: string
+  /** Original file name, offered as the download name. */
+  name: string
+  /** Size in bytes (display only). */
+  size?: number
+}
+
+export interface AttachmentData {
+  title?: string
+  files: AttachmentFile[]
 }
 
 // ── Continue ─────────────────────────────────────────────────────────────────
@@ -139,10 +243,23 @@ export interface ContinueData {
 
 // ── Divider ──────────────────────────────────────────────────────────────────
 
-export type DividerStyle = 'solid' | 'dashed' | 'dotted'
+/** Lines (solid/dashed/dotted/gradient), decorative separators (dots,
+ *  ornament, wave), a line with a centered text label, or empty space. */
+export type DividerStyle =
+  | 'solid'
+  | 'dashed'
+  | 'dotted'
+  | 'gradient'
+  | 'dots'
+  | 'ornament'
+  | 'wave'
+  | 'label'
+  | 'spacer'
 
 export interface DividerData {
   style: DividerStyle
+  /** Text in the middle of a 'label' divider, e.g. "Part 2". */
+  label?: string
 }
 
 // ── Course outline ──────────────────────────────────────────────────────────
@@ -390,6 +507,9 @@ export type Block =
   | (BaseBlock & { type: 'timeline'; data: TimelineData })
   | (BaseBlock & { type: 'ordering'; data: OrderingData })
   | (BaseBlock & { type: 'fillBlanks'; data: FillBlanksData })
+  | (BaseBlock & { type: 'imageText'; data: ImageTextData })
+  | (BaseBlock & { type: 'attachment'; data: AttachmentData })
+  | (BaseBlock & { type: 'columns'; data: ColumnsData })
 
 /** Narrow Block to a specific type (for renderers/editors). */
 export type BlockOfType<T extends BlockType> = Extract<Block, { type: T }>
@@ -458,6 +578,50 @@ export interface CourseSettings {
   finishMessage?: string
   /** BCP 47 language of the course content (e.g. 'en', 'uk'); sets `lang`. */
   contentLanguage?: string
+  /** Width of the lesson content column (default 'normal'). */
+  contentWidth?: ContentWidth
+  /** How blocks appear as they scroll into view (default 'fade'). */
+  blockAnimation?: BlockAnimation
+  /** Transition between lessons (default 'fade'). */
+  lessonTransition?: LessonTransition
+  /** Font pairing for the learner-facing course (default 'modern'). */
+  typography?: Typography
+}
+
+export type ContentWidth = 'narrow' | 'normal' | 'wide' | 'full'
+export type BlockAnimation = 'none' | 'fade' | 'slide' | 'zoom'
+export type LessonTransition = 'none' | 'fade' | 'slide'
+/** modern: system sans · editorial: serif headings · rounded: rounded sans. */
+export type Typography = 'modern' | 'editorial' | 'rounded'
+
+/** Pixel widths of the content column (mirrored in the player's CSS). */
+export const CONTENT_WIDTH_PX: Record<ContentWidth, number> = {
+  narrow: 680,
+  normal: 768,
+  wide: 1024,
+  full: 1400,
+}
+
+/** Course cover page shown before the first lesson. The title, description
+ *  and cover image come from the course itself, so they stay in one place. */
+export interface CourseIntro {
+  enabled: boolean
+  /** cover: text over the full-bleed image · split: image beside the text ·
+   *  minimal: centered text, no image. */
+  layout: 'cover' | 'split' | 'minimal'
+  /** Small label above the title, e.g. "Onboarding · 15 min". */
+  eyebrow?: string
+  /** Start button label; empty = the player's built-in "Start course". */
+  buttonLabel?: string
+  /** List the lessons under the start button (default true). */
+  showOutline?: boolean
+}
+
+/** Cover page for new courses (legacy projects without `intro` have none). */
+export const DEFAULT_INTRO: CourseIntro = {
+  enabled: true,
+  layout: 'cover',
+  showOutline: true,
 }
 
 export type PlayerLanguage = 'auto' | 'en' | 'uk'
@@ -478,5 +642,7 @@ export interface Course {
   theme: ThemeId
   /** Completion/scoring settings. Optional in legacy projects (see migration). */
   settings?: CourseSettings
+  /** Optional cover page before the first lesson (not a lesson itself). */
+  intro?: CourseIntro
   lessons: Lesson[]
 }
