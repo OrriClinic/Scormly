@@ -20,6 +20,9 @@ function escapeXml(s: string): string {
 export function buildCmi5Manifest(course: Course): string {
   const title = escapeXml(course.title || 'Course')
   const description = escapeXml(course.description || course.title || 'Course')
+  // langstring lang: the course's content language (BCP 47), not a hardcoded
+  // en-US — LMS catalogs display the matching langstring to the learner.
+  const lang = escapeXml(course.settings?.contentLanguage?.trim() || 'en-US')
   const courseId = `https://scormly.app/course/${encodeURIComponent(course.id)}`
   const auId = `${courseId}/au`
 
@@ -39,12 +42,12 @@ export function buildCmi5Manifest(course: Course): string {
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd https://w3id.org/xapi/profiles/cmi5/v1/CourseStructure.xsd">
   <course id="${escapeXml(courseId)}">
-    <title><langstring lang="en-US">${title}</langstring></title>
-    <description><langstring lang="en-US">${description}</langstring></description>
+    <title><langstring lang="${lang}">${title}</langstring></title>
+    <description><langstring lang="${lang}">${description}</langstring></description>
   </course>
   <au id="${escapeXml(auId)}" moveOn="${moveOn}"${masteryAttr} launchMethod="AnyWindow">
-    <title><langstring lang="en-US">${title}</langstring></title>
-    <description><langstring lang="en-US">${description}</langstring></description>
+    <title><langstring lang="${lang}">${title}</langstring></title>
+    <description><langstring lang="${lang}">${description}</langstring></description>
     <url>index.html</url>
   </au>
 </courseStructure>

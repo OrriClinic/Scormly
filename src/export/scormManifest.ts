@@ -11,6 +11,14 @@ function escapeXml(s: string): string {
     .replace(/'/g, '&apos;')
 }
 
+// Manifest hrefs must be valid URIs: asset file names with spaces or non-ASCII
+// characters (common for Ukrainian authors) are %-encoded per path segment,
+// then XML-escaped. Strict LMS importers reject manifests with raw spaces or
+// Unicode in href attributes.
+function hrefXml(path: string): string {
+  return escapeXml(encodeURI(path))
+}
+
 // Collect scored block IDs (quiz, ordering, fill in the blanks) in order — used
 // to declare one non-primary objective per scored block in the SCORM 2004
 // manifest, so the LMS recognises the runtime `cmi.objectives.n.id =
@@ -25,6 +33,29 @@ function quizIds(course: Course): string[] {
   return ids
 }
 
+// LOM metadata (title / description / language) so the LMS catalog can show
+// the course description without the author re-typing it at import time.
+// 2004 uses the IEEE LOM binding; 1.2 uses the IMS MD 1.2 binding.
+function lomMetadata(course: Course, lang: string, v2004: boolean): string {
+  const title = escapeXml(course.title || 'Course')
+  const description = escapeXml(course.description || '')
+  const l = escapeXml(lang)
+  if (v2004) {
+    return `    <lom:lom>
+      <lom:general>
+        <lom:title><lom:string language="${l}">${title}</lom:string></lom:title>
+${description ? `        <lom:description><lom:string language="${l}">${description}</lom:string></lom:description>\n` : ''}        <lom:language>${l}</lom:language>
+      </lom:general>
+    </lom:lom>`
+  }
+  return `    <imsmd:lom>
+      <imsmd:general>
+        <imsmd:title><imsmd:langstring xml:lang="${l}">${title}</imsmd:langstring></imsmd:title>
+${description ? `        <imsmd:description><imsmd:langstring xml:lang="${l}">${description}</imsmd:langstring></imsmd:description>\n` : ''}        <imsmd:language>${l}</imsmd:language>
+      </imsmd:general>
+    </imsmd:lom>`
+}
+
 // Build an imsmanifest.xml for a single-SCO package launching index.html.
 // The same player auto-detects the SCORM API version at runtime; only the
 // manifest schema differs between 1.2 and 2004.
@@ -36,8 +67,9 @@ export function buildManifest(
 ): string {
   const title = escapeXml(course.title || 'Course')
   const id = `SCORMLY-${course.id}`
+  const lang = course.settings?.contentLanguage?.trim() || 'en'
   const fileEntries = files
-    .map((f) => `      <file href="${escapeXml(f)}" />`)
+    .map((f) => `      <file href="${hrefXml(f)}" />`)
     .join('\n')
   const hasMastery = masteryScore != null && masteryScore > 0
 
@@ -53,17 +85,23 @@ export function buildManifest(
           `            <imsss:objective objectiveID="${escapeXml('QUIZ_' + id)}" />`,
       )
       .join('\n')
-    const sequencing =
+    const objectives =
       hasMastery || quizObjs
         ? `
-        <imsss:sequencing>
           <imsss:objectives>
             <imsss:primaryObjective objectiveID="PRIMARYOBJ"${hasMastery ? ' satisfiedByMeasure="true"' : ''}>
 ${hasMastery ? `              <imsss:minNormalizedMeasure>${(masteryScore! / 100).toFixed(2)}</imsss:minNormalizedMeasure>\n` : ''}            </imsss:primaryObjective>
 ${quizObjs}
-          </imsss:objectives>
-        </imsss:sequencing>`
+          </imsss:objectives>`
         : ''
+    // deliveryControls: without completionSetByContent/objectiveSetByContent
+    // the LMS is allowed to infer "completed"/"satisfied" merely from the SCO
+    // being launched and exited, overriding the statuses the player reports.
+    // The player always sets both itself, so declare that explicitly.
+    const sequencing = `
+        <imsss:sequencing>${objectives}
+          <imsss:deliveryControls completionSetByContent="true" objectiveSetByContent="true" />
+        </imsss:sequencing>`
     return `<?xml version="1.0" encoding="UTF-8"?>
 <manifest identifier="${escapeXml(id)}" version="1"
   xmlns="http://www.imsglobal.org/xsd/imscp_v1p1"
@@ -71,11 +109,13 @@ ${quizObjs}
   xmlns:adlseq="http://www.adlnet.org/xsd/adlseq_v1p3"
   xmlns:adlnav="http://www.adlnet.org/xsd/adlnav_v1p3"
   xmlns:imsss="http://www.imsglobal.org/xsd/imsss"
+  xmlns:lom="http://ltsc.ieee.org/xsd/LOM"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd http://www.adlnet.org/xsd/adlcp_v1p3 adlcp_v1p3.xsd http://www.adlnet.org/xsd/adlseq_v1p3 adlseq_v1p3.xsd http://www.adlnet.org/xsd/adlnav_v1p3 adlnav_v1p3.xsd http://www.imsglobal.org/xsd/imsss imsss_v1p0.xsd">
+  xsi:schemaLocation="http://www.imsglobal.org/xsd/imscp_v1p1 imscp_v1p1.xsd http://www.adlnet.org/xsd/adlcp_v1p3 adlcp_v1p3.xsd http://www.adlnet.org/xsd/adlseq_v1p3 adlseq_v1p3.xsd http://www.adlnet.org/xsd/adlnav_v1p3 adlnav_v1p3.xsd http://www.imsglobal.org/xsd/imsss imsss_v1p0.xsd http://ltsc.ieee.org/xsd/LOM lom.xsd">
   <metadata>
     <schema>ADL SCORM</schema>
     <schemaversion>2004 4th Edition</schemaversion>
+${lomMetadata(course, lang, true)}
   </metadata>
   <organizations default="ORG-1">
     <organization identifier="ORG-1">
@@ -102,11 +142,13 @@ ${fileEntries}
 <manifest identifier="${escapeXml(id)}" version="1.2"
   xmlns="http://www.imsproject.org/xsd/imscp_rootv1p1p2"
   xmlns:adlcp="http://www.adlnet.org/xsd/adlcp_rootv1p2"
+  xmlns:imsmd="http://www.imsglobal.org/xsd/imsmd_rootv1p2p1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd">
+  xsi:schemaLocation="http://www.imsproject.org/xsd/imscp_rootv1p1p2 imscp_rootv1p1p2.xsd http://www.adlnet.org/xsd/adlcp_rootv1p2 adlcp_rootv1p2.xsd http://www.imsglobal.org/xsd/imsmd_rootv1p2p1 imsmd_rootv1p2p1.xsd">
   <metadata>
     <schema>ADL SCORM</schema>
     <schemaversion>1.2</schemaversion>
+${lomMetadata(course, lang, false)}
   </metadata>
   <organizations default="ORG-1">
     <organization identifier="ORG-1">
