@@ -227,7 +227,10 @@ Course
     layout: 'cover' | 'split' | 'minimal',  // cover = text over coverImage; split = image beside text; minimal = no image
     eyebrow?: string,              // small label above the title, e.g. "Onboarding · 15 min"
     buttonLabel?: string,          // start button text; empty = built-in "Start course"
-    showOutline?: boolean          // list the lessons under the button (default true)
+    showOutline?: boolean,         // list the lessons under the button (default true)
+    blocks?: Block[]               // extra content under the title: text and media blocks only
+                                   // (heading, paragraph, list, note, quote, columns, table, code, image,
+                                   // gallery, imageText, video, audio, embed, attachment, divider)
   },                               // the cover page shows the course title, description and coverImage
   lessons: Lesson[]
 }

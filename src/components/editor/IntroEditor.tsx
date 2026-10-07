@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { CourseIntro } from '../../types/course'
 import { DEFAULT_INTRO } from '../../types/course'
 import { useCourseStore } from '../../store/courseStore'
@@ -17,7 +18,8 @@ type Layout = CourseIntro['layout']
 // WYSIWYG editor for the course cover page. Title, description and image are
 // the course's own fields (shared with Project settings); the intro adds the
 // layout, a small label, the button text and the lesson list toggle.
-export default function IntroEditor() {
+// `children` is the editable block list shown under the title section.
+export default function IntroEditor({ children }: { children?: ReactNode }) {
   const course = useCourseStore((s) => s.course)
   const updateIntro = useCourseStore((s) => s.updateIntro)
   const updateCourseMeta = useCourseStore((s) => s.updateCourseMeta)
@@ -87,7 +89,8 @@ export default function IntroEditor() {
       )}
 
       <div className={`sc-intro-wrap transition-opacity ${intro.enabled ? '' : 'opacity-50'}`}>
-        <section className={`sc-intro sc-intro-${intro.layout}${image ? '' : ' no-image'}`}>
+        {/* mx-4 lines the cover up with block content (BlockShell's px-4 gutter). */}
+        <section className={`sc-intro sc-intro-${intro.layout}${image ? '' : ' no-image'} mx-4`}>
           {image && (
             <div className="sc-intro-media">
               <img src={url || undefined} alt="" />
@@ -136,8 +139,9 @@ export default function IntroEditor() {
             </div>
           </div>
         </section>
+        <div className="sc-intro-blocks">{children}</div>
         {intro.showOutline !== false && course.lessons.length > 0 && (
-          <nav className="sc-intro-outline" aria-label={t('lessons')}>
+          <nav className="sc-intro-outline mx-4" aria-label={t('lessons')}>
             <ol>
               {course.lessons.map((l, i) => (
                 <li key={l.id}>

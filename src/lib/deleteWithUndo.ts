@@ -1,4 +1,4 @@
-import { useCourseStore } from '../store/courseStore'
+import { useCourseStore, blocksOf } from '../store/courseStore'
 import { toast } from '../store/toastStore'
 import { translate } from '../i18n/I18nProvider'
 
@@ -23,7 +23,7 @@ function offerUndo(message: string) {
 
 export function deleteBlockWithUndo(lessonId: string, blockId: string): void {
   const s = useCourseStore.getState()
-  const blocks = s.course.lessons.find((l) => l.id === lessonId)?.blocks ?? []
+  const blocks = blocksOf(s.course, lessonId) ?? []
   const i = blocks.findIndex((b) => b.id === blockId)
   // Keep a selection on the next block (or the previous one at the end) so
   // the keyboard can carry on from where the deleted block was.

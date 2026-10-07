@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { Course } from '../types/course'
 import { DEFAULT_INTRO } from '../types/course'
 import { useAssetUrl } from '../hooks/useAssetUrl'
@@ -5,16 +6,19 @@ import { useT } from '../i18n/I18nProvider'
 
 // Learner-facing course cover page (Course.intro). Mirrors renderIntro() in the
 // SCORM player; the editor's IntroEditor uses the same sc-intro-* markup.
+// `children` renders the intro's blocks under the title section.
 export default function IntroView({
   course,
   onStart,
   onOpenLesson,
   headingRef,
+  children,
 }: {
   course: Course
   onStart: () => void
   onOpenLesson: (index: number) => void
   headingRef?: React.Ref<HTMLHeadingElement>
+  children?: ReactNode
 }) {
   const { t } = useT('design')
   const intro = { ...DEFAULT_INTRO, ...course.intro }
@@ -45,6 +49,7 @@ export default function IntroView({
           </div>
         </div>
       </section>
+      {children && <div className="sc-intro-blocks space-y-7">{children}</div>}
       {intro.showOutline !== false && lessons.length > 0 && (
         <nav className="sc-intro-outline" aria-label={t('lessons')}>
           <ol>

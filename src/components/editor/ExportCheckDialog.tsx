@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { useCourseStore } from '../../store/courseStore'
+import { useCourseStore, INTRO_ID } from '../../store/courseStore'
 import { runExport, useExportStore } from '../../export/runExport'
 import { useDialog } from '../../hooks/useDialog'
 import { useT } from '../../i18n/I18nProvider'
@@ -12,6 +12,7 @@ export default function ExportCheckDialog() {
   const setActiveLesson = useCourseStore((s) => s.setActiveLesson)
   const selectBlock = useCourseStore((s) => s.selectBlock)
   const { t } = useT('common')
+  const { t: td } = useT('design')
   const dialogRef = useRef<HTMLDivElement>(null)
   const close = () => useExportStore.setState({ pending: null })
   useDialog(dialogRef, close)
@@ -67,7 +68,9 @@ export default function ExportCheckDialog() {
                     {t(issue.key, issue.vars)}
                   </span>
                   {issue.lessonTitle !== undefined && (
-                    <span className="block truncate text-xs text-gray-400">{issue.lessonTitle}</span>
+                    <span className="block truncate text-xs text-gray-400">
+                      {issue.lessonId === INTRO_ID ? td('introLabel') : issue.lessonTitle}
+                    </span>
                   )}
                 </span>
                 {issue.lessonId && (

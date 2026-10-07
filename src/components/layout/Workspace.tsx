@@ -33,7 +33,7 @@ import { useT } from '../../i18n/I18nProvider'
 export default function Workspace() {
   const activeLesson = useCourseStore(selectActiveLesson)
   const selectBlock = useCourseStore((s) => s.selectBlock)
-  const moveBlock = useCourseStore((s) => s.moveBlock)
+  const introBlocks = useCourseStore((s) => s.course.intro?.blocks)
   const renameLesson = useCourseStore((s) => s.renameLesson)
   const addLesson = useCourseStore((s) => s.addLesson)
   const lessonCount = useCourseStore((s) => s.course.lessons.length)
@@ -42,21 +42,9 @@ export default function Workspace() {
   const contentWidth = useCourseStore((s) => s.course.settings?.contentWidth ?? 'normal')
   const typography = useCourseStore((s) => s.course.settings?.typography ?? 'modern')
   const { t } = useT('common')
+  const { t: td } = useT('design')
   const mainRef = useRef<HTMLElement>(null)
   usePageWidthVar(mainRef)
-  // Small distance so a click still selects/edits; drag starts only past 5px.
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    // Focus a drag handle, Space to pick up, arrows to move, Space to drop.
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-
-  function onDragEnd(e: DragEndEvent) {
-    if (!activeLesson || !e.over || e.active.id === e.over.id) return
-    const from = activeLesson.blocks.findIndex((b) => b.id === e.active.id)
-    const to = activeLesson.blocks.findIndex((b) => b.id === e.over!.id)
-    if (from !== -1 && to !== -1) moveBlock(activeLesson.id, from, to)
-  }
 
   return (
     <main
@@ -68,13 +56,13 @@ export default function Workspace() {
     >
       <div
         className="mx-auto px-4 py-6 sm:px-6 sm:py-12"
-        // Column width follows the course's content width (+ the padding).
-        style={{ maxWidth: (introActive ? CONTENT_WIDTH_PX.wide : CONTENT_WIDTH_PX[contentWidth]) + 48 }}
+        // Lessons and the cover page share the course's content width (+ padding).
+        style={{ maxWidth: CONTENT_WIDTH_PX[contentWidth] + 48 }}
       >
         {introActive ? (
-          <div onClick={(e) => e.stopPropagation()}>
-            <IntroEditor />
-          </div>
+          <IntroEditor>
+            <BlockList lessonId={INTRO_ID} blocks={introBlocks ?? []} emptyHint={td('introBlocksHint')} />
+          </IntroEditor>
         ) : activeLesson ? (
           <>
             <header className="canvas-lesson-head mb-10 px-4" onClick={(e) => e.stopPropagation()}>
@@ -90,61 +78,7 @@ export default function Workspace() {
               />
             </header>
 
-            {activeLesson.blocks.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white px-4 py-9 text-center">
-                <p className="mb-4 max-w-xs text-xs text-gray-500">
-                  {t('emptyHint')}
-                </p>
-                <div onClick={(e) => e.stopPropagation()}>
-                  <AddBlockMenu lessonId={activeLesson.id} />
-                </div>
-              </div>
-            ) : (
-              <div
-                className="space-y-3"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={onDragEnd}
-                >
-                  <SortableContext
-                    items={activeLesson.blocks.map((b) => b.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div>
-                      {activeLesson.blocks.map((block, index, blocks) => {
-                        const key = panelKey(block)
-                        const joinPrev = key !== null && key === panelKey(blocks[index - 1])
-                        const joinNext = key !== null && key === panelKey(blocks[index + 1])
-                        return (
-                          <Fragment key={block.id}>
-                            <AddBlockMenu
-                              variant="inline"
-                              tight={joinPrev}
-                              lessonId={activeLesson.id}
-                              atIndex={index}
-                            />
-                            <BlockShell
-                              block={block}
-                              lessonId={activeLesson.id}
-                              index={index}
-                              total={blocks.length}
-                              joinPrev={joinPrev}
-                              joinNext={joinNext}
-                            />
-                          </Fragment>
-                        )
-                      })}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-                <div className="pt-3">
-                  <AddBlockMenu lessonId={activeLesson.id} />
-                </div>
-              </div>
-            )}
+            <BlockList lessonId={activeLesson.id} blocks={activeLesson.blocks} emptyHint={t('emptyHint')} />
           </>
         ) : lessonCount === 0 ? (
           <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-gray-300 bg-white px-4 py-10 text-center">
@@ -165,5 +99,67 @@ export default function Workspace() {
         )}
       </div>
     </main>
+  )
+}
+
+// The editable block column of a lesson or the cover page: drag to reorder,
+// "+" between blocks, same-background blocks joined into one panel.
+function BlockList({ lessonId, blocks, emptyHint }: { lessonId: string; blocks: Block[]; emptyHint: string }) {
+  const moveBlock = useCourseStore((s) => s.moveBlock)
+  // Small distance so a click still selects/edits; drag starts only past 5px.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    // Focus a drag handle, Space to pick up, arrows to move, Space to drop.
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function onDragEnd(e: DragEndEvent) {
+    if (!e.over || e.active.id === e.over.id) return
+    const from = blocks.findIndex((b) => b.id === e.active.id)
+    const to = blocks.findIndex((b) => b.id === e.over!.id)
+    if (from !== -1 && to !== -1) moveBlock(lessonId, from, to)
+  }
+
+  if (blocks.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white px-4 py-9 text-center">
+        <p className="mb-4 max-w-xs text-xs text-gray-500">{emptyHint}</p>
+        <div onClick={(e) => e.stopPropagation()}>
+          <AddBlockMenu lessonId={lessonId} />
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+          <div>
+            {blocks.map((block, index) => {
+              const key = panelKey(block)
+              const joinPrev = key !== null && key === panelKey(blocks[index - 1])
+              const joinNext = key !== null && key === panelKey(blocks[index + 1])
+              return (
+                <Fragment key={block.id}>
+                  <AddBlockMenu variant="inline" tight={joinPrev} lessonId={lessonId} atIndex={index} />
+                  <BlockShell
+                    block={block}
+                    lessonId={lessonId}
+                    index={index}
+                    total={blocks.length}
+                    joinPrev={joinPrev}
+                    joinNext={joinNext}
+                  />
+                </Fragment>
+              )
+            })}
+          </div>
+        </SortableContext>
+      </DndContext>
+      <div className="pt-3">
+        <AddBlockMenu lessonId={lessonId} />
+      </div>
+    </div>
   )
 }

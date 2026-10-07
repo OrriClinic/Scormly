@@ -9,7 +9,7 @@ import type {
   LessonStatus,
   ThemeId,
 } from '../types/course'
-import { DEFAULT_COURSE_SETTINGS, DEFAULT_INTRO } from '../types/course'
+import { DEFAULT_COURSE_SETTINGS, DEFAULT_INTRO, INTRO_ID } from '../types/course'
 import { createBlock } from '../blocks/registry'
 import { DEFAULT_THEME, THEMES } from '../theme/themes'
 import { uid } from '../lib/id'
@@ -20,8 +20,8 @@ import { makeSampleCourse } from '../lib/sampleCourse'
 const HISTORY_LIMIT = 50
 
 /** `activeLessonId` value while the course cover page (intro) is being edited.
- *  It matches no lesson, so block actions are no-ops there. */
-export const INTRO_ID = '__intro__'
+ *  Block actions given this id act on the cover page's own blocks. */
+export { INTRO_ID }
 
 // Build the in-memory demo course used by the "try without saving" flow.
 // Localized to the current UI language at call time (not module load), so it
@@ -145,6 +145,21 @@ export interface CourseState {
 
 function findLesson(course: Course, lessonId: string): Lesson | undefined {
   return course.lessons.find((l) => l.id === lessonId)
+}
+
+/** The blocks behind a lesson id (the cover page's for INTRO_ID). */
+export function blocksOf(course: Course, lessonId: string | null): Block[] | undefined {
+  if (lessonId === INTRO_ID) return course.intro?.blocks ?? []
+  return course.lessons.find((l) => l.id === lessonId)?.blocks
+}
+
+// Draft-side counterpart of blocksOf for mutations: creates the cover page's
+// block list on first use (a legacy course gets a disabled intro).
+function findContainer(course: Course, lessonId: string): { blocks: Block[] } | undefined {
+  if (lessonId !== INTRO_ID) return findLesson(course, lessonId)
+  const intro = (course.intro ??= { ...DEFAULT_INTRO, enabled: false })
+  intro.blocks ??= []
+  return intro as { blocks: Block[] }
 }
 
 // Coerce a loaded course to current invariants: migrate a renamed/legacy theme
@@ -334,7 +349,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     addBlock: (lessonId, type, atIndex) => {
       const block = createBlock(type)
       mutate((c) => {
-        const lesson = findLesson(c, lessonId)
+        const lesson = findContainer(c, lessonId)
         if (!lesson) return
         if (atIndex == null || atIndex >= lesson.blocks.length) {
           lesson.blocks.push(block)
@@ -348,7 +363,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     insertBlocks: (lessonId, blocks, atIndex) => {
       if (blocks.length === 0) return
       mutate((c) => {
-        const lesson = findLesson(c, lessonId)
+        const lesson = findContainer(c, lessonId)
         if (!lesson) return
         const at = atIndex == null ? lesson.blocks.length : Math.max(0, Math.min(atIndex, lesson.blocks.length))
         lesson.blocks.splice(at, 0, ...blocks)
@@ -358,21 +373,21 @@ export const useCourseStore = create<CourseState>((set, get) => {
 
     updateBlockData: (lessonId, blockId, data, coalesceKey) =>
       mutate((c) => {
-        const lesson = findLesson(c, lessonId)
+        const lesson = findContainer(c, lessonId)
         const block = lesson?.blocks.find((b) => b.id === blockId)
         if (block) Object.assign(block.data, data)
       }, coalesceKey),
 
     updateBlockSettings: (lessonId, blockId, settings) =>
       mutate((c) => {
-        const lesson = findLesson(c, lessonId)
+        const lesson = findContainer(c, lessonId)
         const block = lesson?.blocks.find((b) => b.id === blockId)
         if (block) Object.assign(block.settings, settings)
       }),
 
     deleteBlock: (lessonId, blockId) => {
       mutate((c) => {
-        const lesson = findLesson(c, lessonId)
+        const lesson = findContainer(c, lessonId)
         if (lesson) lesson.blocks = lesson.blocks.filter((b) => b.id !== blockId)
       })
       if (get().selectedBlockId === blockId) set({ selectedBlockId: null })
@@ -381,7 +396,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
     duplicateBlock: (lessonId, blockId) => {
       const clonedId = uid('block')
       mutate((c) => {
-        const lesson = findLesson(c, lessonId)
+        const lesson = findContainer(c, lessonId)
         if (!lesson) return
         const index = lesson.blocks.findIndex((b) => b.id === blockId)
         if (index === -1) return
@@ -394,7 +409,7 @@ export const useCourseStore = create<CourseState>((set, get) => {
 
     moveBlock: (lessonId, fromIndex, toIndex) =>
       mutate((c) => {
-        const lesson = findLesson(c, lessonId)
+        const lesson = findContainer(c, lessonId)
         if (!lesson) return
         const [moved] = lesson.blocks.splice(fromIndex, 1)
         if (moved) lesson.blocks.splice(toIndex, 0, moved)

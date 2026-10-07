@@ -276,7 +276,7 @@ export default function PreviewOverlay() {
             tabIndex={-1}
             lang={contentLanguage}
             className={`a11y-content typo-${typography} mx-auto px-4 py-8 outline-none sm:px-6 sm:py-14`}
-            style={{ maxWidth: (onIntro ? Math.max(contentWidth, CONTENT_WIDTH_PX.wide) : contentWidth) + 48 }}
+            style={{ maxWidth: contentWidth + 48 }}
           >
             <A11yContext.Provider value={{ captions: prefs.captions }}>
               <div key={screenKey} className={transitionClass}>
@@ -305,7 +305,15 @@ export default function PreviewOverlay() {
                     headingRef={headingRef}
                     onStart={() => goTo(0)}
                     onOpenLesson={goTo}
-                  />
+                  >
+                    {course.intro?.blocks?.length
+                      ? course.intro.blocks.map((block) => (
+                          <Reveal key={block.id} block={block} animation={blockAnimation}>
+                            <BlockPreview block={block} currentLessonId={INTRO_ID} onNavigate={goTo} />
+                          </Reveal>
+                        ))
+                      : null}
+                  </IntroView>
                 ) : lesson ? (
                   <>
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-brand-dark">

@@ -1,6 +1,6 @@
 import type { BlockComponentProps } from '../types'
 import type { BlockOfType, GalleryLayout, ImageRef } from '../../types/course'
-import { useCourseStore } from '../../store/courseStore'
+import { useCourseStore, blocksOf } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import { useAssetUrl } from '../../hooks/useAssetUrl'
 import {
@@ -25,8 +25,7 @@ export default function GalleryBlock({
   // Uploads of a multi-file pick resolve one by one; read the latest images
   // from the store each time so earlier ones aren't overwritten.
   const upload = useAssetUpload('image', (src) => {
-    const lesson = useCourseStore.getState().course.lessons.find((l) => l.id === lessonId)
-    const current = lesson?.blocks.find((b) => b.id === block.id)
+    const current = blocksOf(useCourseStore.getState().course, lessonId)?.find((b) => b.id === block.id)
     const list = current?.type === 'gallery' ? current.data.images : images
     update(lessonId, block.id, { images: [...list, { src, alt: '' }] })
   })

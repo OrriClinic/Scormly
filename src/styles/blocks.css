@@ -525,10 +525,14 @@
 .sc-intro-minimal .sc-intro-text { margin-inline: auto; }
 .sc-intro-minimal .sc-intro-actions { justify-content: center; }
 
+/* Author blocks under the title section (the cover shares the lesson column). */
+.sc-intro-blocks { margin-top: 2.75rem; }
+
 .sc-intro-outline { margin-top: 2.75rem; }
 .sc-intro-outline ol { margin: 0; padding: 0; list-style: none; border-top: 1px solid #e5e7eb; }
 .sc-intro-outline button {
-  display: flex; align-items: center; gap: 1.25rem; width: 100%; padding: 1.1rem 0.25rem;
+  /* Room on the right for the arrow's hover nudge inside the highlight. */
+  display: flex; align-items: center; gap: 1.25rem; width: 100%; padding: 1.1rem 1rem 1.1rem 0.25rem;
   border: 0; border-bottom: 1px solid #e5e7eb; background: transparent; cursor: pointer;
   font: inherit; text-align: left; color: #111827;
   transition: padding 0.25s ease, background-color 0.25s ease;

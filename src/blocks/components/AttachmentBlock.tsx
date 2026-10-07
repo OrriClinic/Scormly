@@ -1,6 +1,6 @@
 import type { BlockComponentProps } from '../types'
 import type { AttachmentFile, BlockOfType } from '../../types/course'
-import { useCourseStore } from '../../store/courseStore'
+import { useCourseStore, blocksOf } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import { uid } from '../../lib/id'
 import { useAssetUpload } from '../../components/editor/controls'
@@ -19,8 +19,7 @@ export default function AttachmentBlock({
 
   // Read the latest list from the store: a multi-file pick saves one by one.
   const latestFiles = (): AttachmentFile[] => {
-    const lesson = useCourseStore.getState().course.lessons.find((l) => l.id === lessonId)
-    const b = lesson?.blocks.find((x) => x.id === block.id)
+    const b = blocksOf(useCourseStore.getState().course, lessonId)?.find((x) => x.id === block.id)
     return b?.type === 'attachment' ? b.data.files : files
   }
   const upload = useAssetUpload('file', (src, file) =>

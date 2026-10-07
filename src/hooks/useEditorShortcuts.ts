@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useCourseStore } from '../store/courseStore'
+import { useCourseStore, blocksOf } from '../store/courseStore'
 import { editorShortcutsBlocked, isEditableTarget } from '../lib/keyboard'
 import { deleteBlockWithUndo } from '../lib/deleteWithUndo'
 
@@ -23,9 +23,10 @@ export function useEditorShortcuts() {
       }
       const id = s.selectedBlockId
       if (!id) return
-      const lesson = s.course.lessons.find((l) => l.id === s.activeLessonId)
-      if (!lesson) return
-      const index = lesson.blocks.findIndex((b) => b.id === id)
+      const lessonId = s.activeLessonId
+      const blocks = blocksOf(s.course, lessonId)
+      if (!lessonId || !blocks) return
+      const index = blocks.findIndex((b) => b.id === id)
       if (index === -1) return
 
       if (e.key === 'Escape') {
@@ -36,20 +37,20 @@ export function useEditorShortcuts() {
       // Macs have no Delete key on laptops, so Backspace deletes too.
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault()
-        deleteBlockWithUndo(lesson.id, id)
+        deleteBlockWithUndo(lessonId, id)
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
         e.preventDefault()
-        s.duplicateBlock(lesson.id, id)
+        s.duplicateBlock(lessonId, id)
       } else if (e.altKey && e.key === 'ArrowUp' && index > 0) {
         e.preventDefault()
-        s.moveBlock(lesson.id, index, index - 1)
+        s.moveBlock(lessonId, index, index - 1)
       } else if (
         e.altKey &&
         e.key === 'ArrowDown' &&
-        index < lesson.blocks.length - 1
+        index < blocks.length - 1
       ) {
         e.preventDefault()
-        s.moveBlock(lesson.id, index, index + 1)
+        s.moveBlock(lessonId, index, index + 1)
       }
     }
     window.addEventListener('keydown', onKey)

@@ -79,7 +79,9 @@ declarative and JSON-serializable — it is the basis for `project.json` and exp
 
 `Course.theme` (a `ThemeId`) stores the global project theme. `Course.intro` is
 the optional cover page shown before the first lesson (it is not a lesson; the
-editor selects it with `activeLessonId === INTRO_ID`). `Block.settings` carries
+editor selects it with `activeLessonId === INTRO_ID`). Its `blocks` (content
+types only, `INTRO_BLOCK_TYPES`) render under the title; block actions reach
+them with `lessonId === INTRO_ID` (`blocksOf()` in the store). `Block.settings` carries
 the block format: `background` (theme-derived panel colors), `spacing` and
 `width` (`'full'` = edge-to-edge band).
 

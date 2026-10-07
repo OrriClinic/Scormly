@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent } from 'react'
 import type { BlockComponentProps } from '../types'
-import type { BlockOfType } from '../../types/course'
+import { INTRO_ID, type BlockOfType } from '../../types/course'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 import { saveAsset, UnsupportedFormatError, toastUploadError } from '../../lib/assets'
@@ -117,18 +117,21 @@ export default function VideoBlock({
               className="w-full resize-y rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand"
             />
           </label>
-          <label className="flex cursor-pointer items-start gap-2.5">
-            <input
-              type="checkbox"
-              checked={!!requireWatch}
-              onChange={(e) => update(lessonId, block.id, { requireWatch: e.target.checked })}
-              className="mt-0.5 h-4 w-4 accent-brand"
-            />
-            <span>
-              <span className="block text-sm font-medium text-gray-900">{t('requireWatch')}</span>
-              <span className="mt-0.5 block text-xs text-gray-500">{t('requireWatchHelp')}</span>
-            </span>
-          </label>
+          {/* The cover page has no Next button to hold back. */}
+          {lessonId !== INTRO_ID && (
+            <label className="flex cursor-pointer items-start gap-2.5">
+              <input
+                type="checkbox"
+                checked={!!requireWatch}
+                onChange={(e) => update(lessonId, block.id, { requireWatch: e.target.checked })}
+                className="mt-0.5 h-4 w-4 accent-brand"
+              />
+              <span>
+                <span className="block text-sm font-medium text-gray-900">{t('requireWatch')}</span>
+                <span className="mt-0.5 block text-xs text-gray-500">{t('requireWatchHelp')}</span>
+              </span>
+            </label>
+          )}
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
       )}

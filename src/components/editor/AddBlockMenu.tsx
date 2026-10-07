@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { BlockType } from '../../types/course'
+import { INTRO_BLOCK_TYPES, INTRO_ID, type BlockType } from '../../types/course'
 import {
   BLOCK_CATEGORIES,
   BLOCK_REGISTRY,
@@ -67,6 +67,17 @@ const CATEGORY_ICON: Record<BlockCategory, BlockType> = {
 // The last opened group, remembered while the app is open.
 let lastGroup = 'tpl:text'
 
+// Templates that only make cover-page-friendly blocks (computed once).
+let introTemplates: Set<string> | null = null
+function introTemplateIds(): Set<string> {
+  introTemplates ??= new Set(
+    BLOCK_TEMPLATES.filter((tpl) => tpl.create().every((b) => INTRO_BLOCK_TYPES.includes(b.type))).map(
+      (tpl) => tpl.id,
+    ),
+  )
+  return introTemplates
+}
+
 const CATEGORY_KEY: Record<BlockCategory, string> = {
   text: 'catText',
   media: 'catMedia',
@@ -107,9 +118,13 @@ export default function AddBlockMenu({
   const q = query.trim().toLowerCase()
   const hit = (title: string, description: string) =>
     !q || title.toLowerCase().includes(q) || description.toLowerCase().includes(q)
+  // The cover page takes content blocks only.
+  const forIntro = lessonId === INTRO_ID
   const groups: MenuGroup[] = [
     ...TEMPLATE_GROUPS.map((group) => {
-      const all = BLOCK_TEMPLATES.filter((tpl) => tpl.group === group)
+      const all = BLOCK_TEMPLATES.filter(
+        (tpl) => tpl.group === group && (!forIntro || introTemplateIds().has(tpl.id)),
+      )
       return {
         id: `tpl:${group}`,
         section: 'tpl' as const,
@@ -130,7 +145,9 @@ export default function AddBlockMenu({
       }
     }),
     ...BLOCK_CATEGORIES.map(({ category }) => {
-      const all = Object.values(BLOCK_REGISTRY).filter((m) => m.category === category)
+      const all = Object.values(BLOCK_REGISTRY).filter(
+        (m) => m.category === category && (!forIntro || INTRO_BLOCK_TYPES.includes(m.type)),
+      )
       return {
         id: `blk:${category}`,
         section: 'blk' as const,
@@ -150,8 +167,10 @@ export default function AddBlockMenu({
           .filter((it) => hit(it.title, it.description)),
       }
     }),
-  ]
-  const [activeGroup, setActiveGroup] = useState(lastGroup)
+  ].filter((g) => g.total > 0)
+  const [pickedGroup, setActiveGroup] = useState(lastGroup)
+  // The remembered group may not exist here (e.g. Interactive on the cover page).
+  const activeGroup = groups.some((g) => g.id === pickedGroup) ? pickedGroup : groups[0]?.id
   function selectGroup(id: string) {
     lastGroup = id
     setActiveGroup(id)

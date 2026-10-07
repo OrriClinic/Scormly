@@ -528,6 +528,17 @@ export function isScoredBlock(block: Block): boolean {
   return SCORED_BLOCK_TYPES.includes(block.type)
 }
 
+/** Block types allowed on the cover page: content only. Questions, gates and
+ *  lesson lists belong to lessons (scoring, progress, navigation). */
+export const INTRO_BLOCK_TYPES: readonly BlockType[] = [
+  'heading', 'paragraph', 'list', 'note', 'quote', 'columns', 'table', 'code',
+  'image', 'gallery', 'imageText', 'video', 'audio', 'embed', 'attachment', 'divider',
+]
+
+/** `activeLessonId` (and block actions' lesson id) that addresses the course
+ *  cover page rather than a lesson. */
+export const INTRO_ID = '__intro__'
+
 export type LessonStatus = 'draft' | 'published'
 
 export interface Lesson {
@@ -621,6 +632,8 @@ export interface CourseIntro {
   buttonLabel?: string
   /** List the lessons under the start button (default true). */
   showOutline?: boolean
+  /** Extra content under the title (INTRO_BLOCK_TYPES only). */
+  blocks?: Block[]
 }
 
 /** Cover page for new courses (legacy projects without `intro` have none). */

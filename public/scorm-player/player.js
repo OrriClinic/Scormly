@@ -968,13 +968,24 @@
       });
       outline = h('nav', { class: 'sc-intro-outline', 'aria-label': t('lessonsMenu') }, ol);
     }
+    // Author content under the title section (text, images, media).
+    var blocks = null;
+    if (intro.blocks && intro.blocks.length) {
+      var anim = blockAnimation();
+      blocks = h('div', { class: 'blocks sc-intro-blocks' });
+      intro.blocks.forEach(function (b) {
+        var el = renderBlock(b);
+        if (el) blocks.appendChild(wrapBlock(b, el, anim));
+      });
+    }
     var body = h('main', { class: 'player-body', id: 'main-content' },
-      h('div', { class: 'lesson lesson-intro' + transitionClass(), lang: contentLang() }, [section, outline]));
+      h('div', { class: 'lesson lesson-intro' + transitionClass(), lang: contentLang() }, [section, blocks, outline]));
     app.appendChild(skipLink());
     app.appendChild(header);
     app.appendChild(body);
     app.appendChild(renderLessonMenu());
     state.navDirection = null;
+    observeReveals();
   }
 
   // ── Block wrappers, entrance animations, lesson transitions ──────────────
@@ -1438,7 +1449,7 @@
       applyCaptions(video);
       video.addEventListener('loadedmetadata', function () { applyCaptions(video); });
     }
-    if (!b.data.requireWatch) return withTranscript(video, b.data.transcript);
+    if (!b.data.requireWatch || state.onIntro) return withTranscript(video, b.data.transcript);
 
     video.addEventListener('timeupdate', function () {
       if (video.duration && video.currentTime / video.duration >= 0.95) markWatched(b.id);

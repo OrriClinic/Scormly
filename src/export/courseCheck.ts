@@ -1,4 +1,4 @@
-import type { Block, Course } from '../types/course'
+import { INTRO_ID, type Block, type Course } from '../types/course'
 import { blankAnswers } from '../blocks/fillBlanks'
 
 /**
@@ -158,6 +158,15 @@ export function checkCourse(course: Course): CourseIssue[] {
   const issues: CourseIssue[] = []
   if (!course.settings?.contentLanguage?.trim()) {
     issues.push({ key: 'chkA11yContentLanguage', severity: 'info', a11y: true })
+  }
+  if (course.intro?.enabled) {
+    // The dialog names the cover page itself (lessonTitle stays empty).
+    const at = { lessonId: INTRO_ID, lessonTitle: '' }
+    for (const block of course.intro.blocks ?? []) {
+      for (const issue of [...checkBlock(block), ...checkBlockA11y(block)]) {
+        issues.push({ ...issue, ...at, blockId: block.id })
+      }
+    }
   }
   for (const lesson of course.lessons) {
     const at = { lessonId: lesson.id, lessonTitle: lesson.title }
