@@ -106,7 +106,7 @@ const BLOCK_DOCS: Record<BlockType, BlockDoc> = {
   }  // nextNodeId: null ends the scenario`,
   },
   quiz: {
-    summary: 'Graded questions (single / multiple choice, or matching).',
+    summary: 'Graded test: one Submit for all its questions (single / multiple choice, matching, put in order, fill in the blanks).',
     data: `{
     passingScore: number,  // 0–100
     showAnswers?: boolean,  // reveal correct answers after submitting (default true)
@@ -115,6 +115,10 @@ const BLOCK_DOCS: Record<BlockType, BlockDoc> = {
           options: { id: string, text: string, correct: boolean, feedback?: string }[] }
       | { id: string, type: 'matching', prompt: string, feedback?: string,
           pairs: { id: string, left: string, right: string }[] }
+      | { id: string, type: 'sequence', prompt: string, feedback?: string,
+          items: { id: string, text: string }[] }  // listed in the correct order; shown shuffled
+      | { id: string, type: 'fillBlanks', prompt: string, feedback?: string,
+          text: string, mode: 'type' | 'select', caseSensitive?: boolean }  // blanks as in the fillBlanks block
     )[]
   }`,
   },
@@ -282,9 +286,11 @@ ${blockReference()}
   \`settings.contentLanguage\` to the language the course is written in.
 - **Quizzes**: for \`single\`/\`multiple\`, mark correct options with
   \`correct: true\` (at least one; give at least 2 options). For \`matching\`,
-  the correct match for each pair is its own \`right\` value — keep every
-  \`right\` text unique within a question (learners pick answers by that text),
-  and give at least 2 pairs.
+  the correct match for each pair is its own \`right\` value and learners pick
+  answers by that text; pairs may share a \`right\` text to sort items into
+  categories. Give at least 2 pairs. A \`sequence\` needs at least 2 items
+  with text; a \`fillBlanks\` question at least one \`[blank]\`. Each question
+  is right or wrong as a whole; the quiz score is the share of right ones.
 - **Ordering**: give at least 2 items with non-empty text. In \`sequence\`
   mode list the items in the correct order. In \`categories\` mode give at
   least 2 categories and set every item's \`categoryId\` to one of them.
@@ -305,7 +311,7 @@ passes them is ready to export:
 - image / video / audio blocks have a \`src\`, galleries have at least one
   image, embeds have a \`url\`;
 - quizzes have questions; every question has text, enough options/pairs and a
-  correct answer, and matching answers are unique;
+  correct answer (sequence questions: 2+ items; fill-in questions: a blank);
 - ordering blocks have at least 2 items with text; in categories mode at least
   2 categories and every item assigned to one;
 - fill-in-the-blanks blocks contain at least one \`[blank]\`;

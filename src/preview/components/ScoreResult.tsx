@@ -9,12 +9,15 @@ export default function ScoreResult({
   submitted,
   score,
   passingScore,
+  submitLabel,
   onSubmit,
   onRetry,
 }: {
   submitted: boolean
   score: number
   passingScore: number
+  /** Defaults to "Submit answer". */
+  submitLabel?: string
   onSubmit: () => void
   onRetry: () => void
 }) {
@@ -42,7 +45,7 @@ export default function ScoreResult({
           }}
           className="btn-primary text-sm"
         >
-          {t('submit')}
+          {submitLabel ?? t('submit')}
         </button>
       )}
       <div role="status" aria-live="polite">

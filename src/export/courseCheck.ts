@@ -98,14 +98,15 @@ function checkBlock(block: Block): BlockIssue[] {
       qs.forEach((q, i) => {
         const n = i + 1
         if (!q.prompt.trim()) out.push({ key: 'chkQuestionNoPrompt', vars: { n } })
+        // Matching answers may repeat: items sharing a right-hand text sort
+        // into one category (the learner's list shows each text once).
         if (q.type === 'matching') {
           if (q.pairs.length < 2) out.push({ key: 'chkMatchingFewPairs', vars: { n } })
-          // The learner picks answers by their right-hand text, so repeated
-          // texts make the question impossible to score reliably.
-          const rights = q.pairs.map((p) => p.right.trim())
-          if (new Set(rights).size !== rights.length) {
-            out.push({ key: 'chkMatchingDuplicate', vars: { n } })
-          }
+        } else if (q.type === 'sequence') {
+          if (q.items.length < 2) out.push({ key: 'chkSequenceFewItems', vars: { n } })
+          if (q.items.some((it) => !it.text.trim())) out.push({ key: 'chkSequenceEmptyItem', vars: { n } })
+        } else if (q.type === 'fillBlanks') {
+          if (!blankAnswers(q.text).length) out.push({ key: 'chkQuestionNoBlanks', vars: { n } })
         } else {
           if (q.options.length < 2) out.push({ key: 'chkFewOptions', vars: { n } })
           if (!q.options.some((o) => o.correct)) out.push({ key: 'chkNoCorrect', vars: { n } })

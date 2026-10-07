@@ -2,7 +2,11 @@ import { useMemo, useState } from 'react'
 import type { PreviewProps } from '../types'
 import type { Question } from '../../types/course'
 import { useT } from '../../i18n/I18nProvider'
+import { blankAnswers, isBlankCorrect } from '../../blocks/fillBlanks'
+import { shuffledOrder } from '../../blocks/ordering'
 import ScoreResult from './ScoreResult'
+import SequenceList, { currentOrder } from './SequenceList'
+import BlanksText from './BlanksText'
 
 type Answer = string | string[] | Record<string, string>
 
@@ -18,31 +22,47 @@ function shuffle<T>(arr: T[]): T[] {
 
 export default function QuizPreview({ block }: PreviewProps<'quiz'>) {
   const { t } = useT('preview')
+  const { t: ta } = useT('assessment')
   const { questions, passingScore, showAnswers = true } = block.data
   const [answers, setAnswers] = useState<Record<string, Answer>>({})
   const [submitted, setSubmitted] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
-  // For every matching question, scramble the right-column choices once so the
-  // correct answer isn't always the first option. Stable across re-renders;
-  // re-rolled on retry (state reset → component remount of values isn't needed,
-  // but the memo dep on `submitted=false` keeps it stable per attempt).
-  const matchingChoices = useMemo(() => {
-    const map: Record<string, Array<{ id: string; right: string }>> = {}
+  // Per attempt: scramble each matching question's right-column choices (one
+  // per distinct answer, so several items can share a category) and each
+  // sequence question's starting order. Stable across re-renders.
+  const { matchingChoices, startOrders } = useMemo(() => {
+    const matchingChoices: Record<string, string[]> = {}
+    const startOrders: Record<string, string[]> = {}
     for (const q of questions) {
-      if (q.type === 'matching') {
-        map[q.id] = shuffle(q.pairs.map((p) => ({ id: p.id, right: p.right })))
-      }
+      if (q.type === 'matching') matchingChoices[q.id] = shuffle([...new Set(q.pairs.map((p) => p.right))])
+      if (q.type === 'sequence') startOrders[q.id] = shuffledOrder(q.items.map((it) => it.id))
     }
-    return map
+    return { matchingChoices, startOrders }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questions, submitted ? 0 : 1])
+  }, [questions, attempt])
 
   function setAnswer(qId: string, value: Answer) {
     setAnswers((prev) => ({ ...prev, [qId]: value }))
   }
 
+  function sequenceOrder(q: Extract<Question, { type: 'sequence' }>): string[] {
+    const ids = q.items.map((it) => it.id)
+    return currentOrder((answers[q.id] as string[] | undefined) ?? startOrders[q.id] ?? ids, ids)
+  }
+
   function isCorrect(q: Question): boolean {
     const a = answers[q.id]
+    if (q.type === 'sequence') {
+      const order = sequenceOrder(q)
+      return q.items.every((it, i) => order[i] === it.id)
+    }
+    if (q.type === 'fillBlanks') {
+      const responses = (a as string[] | undefined) ?? []
+      const strict = q.mode === 'type' && !!q.caseSensitive
+      const blanks = blankAnswers(q.text)
+      return blanks.length > 0 && blanks.every((ans, i) => isBlankCorrect(ans, responses[i], strict))
+    }
     if (q.type === 'single') {
       const opt = q.options.find((o) => o.id === a)
       return !!opt?.correct
@@ -66,6 +86,7 @@ export default function QuizPreview({ block }: PreviewProps<'quiz'>) {
   function reset() {
     setAnswers({})
     setSubmitted(false)
+    setAttempt((n) => n + 1)
   }
 
   // Reveal correctness only when the quiz is configured to show answers.
@@ -157,15 +178,45 @@ export default function QuizPreview({ block }: PreviewProps<'quiz'>) {
                       className="flex-1 rounded-md border border-gray-300 px-3 py-2"
                     >
                       <option value="">—</option>
-                      {(matchingChoices[q.id] ?? q.pairs).map((opt) => (
-                        <option key={opt.id} value={opt.right}>
-                          {opt.right}
+                      {(matchingChoices[q.id] ?? q.pairs.map((x) => x.right)).map((right) => (
+                        <option key={right} value={right}>
+                          {right}
                         </option>
                       ))}
                     </select>
                   </div>
                 ))}
               </div>
+            )}
+
+            {q.type === 'sequence' && !submitted && (
+              <p className="mb-2 text-sm text-gray-500">{ta('sequenceHint')}</p>
+            )}
+            {q.type === 'sequence' && (
+              <SequenceList
+                items={q.items}
+                order={sequenceOrder(q)}
+                onChange={(order) => setAnswer(q.id, order)}
+                submitted={submitted}
+                reveal={reveal}
+              />
+            )}
+
+            {q.type === 'fillBlanks' && (
+              <BlanksText
+                text={q.text}
+                mode={q.mode}
+                strict={q.mode === 'type' && !!q.caseSensitive}
+                responses={(answers[q.id] as string[] | undefined) ?? []}
+                onChange={(i, value) => {
+                  const next = ((answers[q.id] as string[] | undefined) ?? []).slice()
+                  next[i] = value
+                  setAnswer(q.id, next)
+                }}
+                submitted={submitted}
+                reveal={reveal}
+                attempt={attempt}
+              />
             )}
 
             {reveal && (
@@ -185,6 +236,7 @@ export default function QuizPreview({ block }: PreviewProps<'quiz'>) {
         submitted={submitted}
         score={score}
         passingScore={passingScore}
+        submitLabel={questions.length > 1 ? t('submitAll') : undefined}
         onSubmit={() => setSubmitted(true)}
         onRetry={reset}
       />

@@ -117,7 +117,6 @@ export function makeSampleCourse(lang: Language): Course {
         image: avatarArt(tr(L('ML', 'МЛ'))),
       }, 'muted'),
       block('courseOutline', { title: tr(L('Course outline', 'Зміст курсу')), numbered: true }),
-      block('continue', { mode: 'unrestricted', label: tr(L('Let’s start', 'Почнімо')) }),
     ],
   }
 
@@ -245,11 +244,12 @@ export function makeSampleCourse(lang: Language): Course {
           { id: id('card'), front: 'MFA', back: tr(L('Multi-factor authentication: a second proof of identity that stops most stolen-password attacks.', 'Багатофакторна автентифікація: другий доказ особи, що зупиняє більшість атак з украденим паролем.')) },
         ],
       }),
-      block('continue', { mode: 'unrestricted', label: tr(L('Continue', 'Далі')) }),
     ],
   }
 
   // ── Lesson 3: Practice ────────────────────────────────────────────────────
+  const catSafe = id('cat')
+  const catPhish = id('cat')
   const n = { start: id('node'), pwd: id('node'), verify: id('node'), good: id('node'), bad: id('node') }
   const practice: Lesson = {
     id: id('lesson'),
@@ -307,6 +307,35 @@ export function makeSampleCourse(lang: Language): Course {
           },
         ],
       }),
+      block('heading', { level: 2, text: tr(L('Warm-up before the test', 'Розминка перед тестом')) }),
+      block('ordering', {
+        mode: 'categories',
+        prompt: tr(L('Sort the messages: safe or phishing?', 'Розсортуйте повідомлення: безпечне чи фішинг?')),
+        categories: [
+          { id: catSafe, title: tr(L('Looks safe', 'Схоже на безпечне')) },
+          { id: catPhish, title: tr(L('Phishing', 'Фішинг')) },
+        ],
+        items: [
+          { id: id('item'), categoryId: catPhish, text: tr(L('“Your parcel is on hold — pay 1.99 via this link”', '«Посилку затримано — сплатіть 1,99 за посиланням»')) },
+          { id: id('item'), categoryId: catSafe, text: tr(L('A meeting invite from your manager for a meeting you discussed', 'Запрошення від керівника на зустріч, про яку ви домовлялися')) },
+          { id: id('item'), categoryId: catPhish, text: tr(L('“CEO” asks you to buy gift cards urgently and keep it secret', '«Директор» просить терміново купити подарункові картки й нікому не казати')) },
+          { id: id('item'), categoryId: catSafe, text: tr(L('A password-reset email right after you clicked “Forgot password”', 'Лист для скидання пароля одразу після того, як ви натиснули «Забули пароль»')) },
+          { id: id('item'), categoryId: catPhish, text: tr(L('“Unusual sign-in detected, confirm your password here”', '«Виявлено незвичний вхід, підтвердьте пароль тут»')) },
+        ],
+        passingScore: 80,
+        showAnswers: true,
+      }),
+      block('fillBlanks', {
+        mode: 'select',
+        text: tr(
+          L(
+            'Attackers create a sense of [urgency] so you act without thinking. Before clicking, [hover] over a link to see where it goes. Turning on [MFA] protects you even if your password is stolen.',
+            'Зловмисники створюють відчуття [терміновості], щоб ви діяли не думаючи. Перед кліком [наведіть курсор] на посилання, щоб побачити, куди воно веде. Увімкнена [MFA] захищає навіть тоді, коли пароль украли.',
+          ),
+        ),
+        passingScore: 80,
+        showAnswers: true,
+      }),
       block('heading', { level: 2, text: tr(L('Clicked a bad link? Act fast', 'Клікнули на підозріле посилання? Дійте швидко')) }),
       block('timeline', {
         layout: 'stepper',
@@ -349,13 +378,10 @@ export function makeSampleCourse(lang: Language): Course {
           },
         ],
       }, 'muted'),
-      block('continue', { mode: 'unrestricted', label: tr(L('To the final test', 'До фінального тесту')) }),
     ],
   }
 
   // ── Lesson 4: Final test ──────────────────────────────────────────────────
-  const catSafe = id('cat')
-  const catPhish = id('cat')
   const opt = (text: Text, correct: boolean, feedback?: Text) => ({
     id: id('opt'),
     text: tr(text),
@@ -371,34 +397,6 @@ export function makeSampleCourse(lang: Language): Course {
       block('heading', { level: 2, text: tr(L('Check yourself', 'Перевірте себе')), align: 'center' }),
       block('paragraph', {
         html: p(L('Pass with 80% or more to complete the course. Your score is reported to the LMS.', 'Наберіть 80% або більше, щоб завершити курс. Ваш результат передається в LMS.')),
-      }),
-      block('ordering', {
-        mode: 'categories',
-        prompt: tr(L('Sort the messages: safe or phishing?', 'Розсортуйте повідомлення: безпечне чи фішинг?')),
-        categories: [
-          { id: catSafe, title: tr(L('Looks safe', 'Схоже на безпечне')) },
-          { id: catPhish, title: tr(L('Phishing', 'Фішинг')) },
-        ],
-        items: [
-          { id: id('item'), categoryId: catPhish, text: tr(L('“Your parcel is on hold — pay 1.99 via this link”', '«Посилку затримано — сплатіть 1,99 за посиланням»')) },
-          { id: id('item'), categoryId: catSafe, text: tr(L('A meeting invite from your manager for a meeting you discussed', 'Запрошення від керівника на зустріч, про яку ви домовлялися')) },
-          { id: id('item'), categoryId: catPhish, text: tr(L('“CEO” asks you to buy gift cards urgently and keep it secret', '«Директор» просить терміново купити подарункові картки й нікому не казати')) },
-          { id: id('item'), categoryId: catSafe, text: tr(L('A password-reset email right after you clicked “Forgot password”', 'Лист для скидання пароля одразу після того, як ви натиснули «Забули пароль»')) },
-          { id: id('item'), categoryId: catPhish, text: tr(L('“Unusual sign-in detected, confirm your password here”', '«Виявлено незвичний вхід, підтвердьте пароль тут»')) },
-        ],
-        passingScore: 80,
-        showAnswers: true,
-      }),
-      block('fillBlanks', {
-        mode: 'select',
-        text: tr(
-          L(
-            'Attackers create a sense of [urgency] so you act without thinking. Before clicking, [hover] over a link to see where it goes. Turning on [MFA] protects you even if your password is stolen.',
-            'Зловмисники створюють відчуття [терміновості], щоб ви діяли не думаючи. Перед кліком [наведіть курсор] на посилання, щоб побачити, куди воно веде. Увімкнена [MFA] захищає навіть тоді, коли пароль украли.',
-          ),
-        ),
-        passingScore: 80,
-        showAnswers: true,
       }),
       block('quiz', {
         passingScore: 80,
@@ -433,6 +431,29 @@ export function makeSampleCourse(lang: Language): Course {
               { id: id('pair'), left: tr(L('Phishing', 'Фішинг')), right: tr(L('Email', 'Пошта')) },
               { id: id('pair'), left: tr(L('Smishing', 'Смішинг')), right: 'SMS' },
               { id: id('pair'), left: tr(L('Vishing', 'Вішинг')), right: tr(L('Phone call', 'Телефонний дзвінок')) },
+            ],
+          },
+          {
+            id: id('q'),
+            type: 'fillBlanks',
+            mode: 'select',
+            prompt: tr(L('Complete the rules.', 'Доповніть правила.')),
+            text: tr(
+              L(
+                'Your bank or IT will never ask for your [password] or a one-time [code]. If a message rushes you, [verify] it through a channel you trust.',
+                'Банк чи ІТ ніколи не попросять ваш [пароль] чи одноразовий [код]. Якщо лист вас квапить, [перевірте] його через канал, якому довіряєте.',
+              ),
+            ),
+          },
+          {
+            id: id('q'),
+            type: 'sequence',
+            prompt: tr(L('A suspicious email arrives. Put your steps in order.', 'Надійшов підозрілий лист. Розставте свої дії по порядку.')),
+            items: [
+              { id: id('item'), text: tr(L('Don’t click links or open attachments', 'Не клікайте посилання й не відкривайте вкладення')) },
+              { id: id('item'), text: tr(L('Check the sender’s address', 'Перевірте адресу відправника')) },
+              { id: id('item'), text: tr(L('Report it to your security team', 'Повідомте службу безпеки')) },
+              { id: id('item'), text: tr(L('Delete the email', 'Видаліть лист')) },
             ],
           },
         ],

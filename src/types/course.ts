@@ -353,7 +353,7 @@ export interface ScenarioData {
 
 // ── Quizzes (spec §5.1) ─────────────────────────────────────────────────────
 
-export type QuestionType = 'single' | 'multiple' | 'matching'
+export type QuestionType = 'single' | 'multiple' | 'matching' | 'sequence' | 'fillBlanks'
 
 export interface ChoiceOption {
   id: string
@@ -391,10 +391,32 @@ export interface MatchingQuestion extends BaseQuestion {
   pairs: MatchingPair[]
 }
 
+export interface SequenceItem {
+  id: string
+  text: string
+}
+
+/** Put the items in order; authored in the correct order, shown shuffled. */
+export interface SequenceQuestion extends BaseQuestion {
+  type: 'sequence'
+  items: SequenceItem[]
+}
+
+/** Same blank syntax and modes as the fill-in-the-blanks block. Correct only
+ *  when every blank is. */
+export interface FillBlanksQuestion extends BaseQuestion {
+  type: 'fillBlanks'
+  text: string
+  mode: 'type' | 'select'
+  caseSensitive?: boolean
+}
+
 export type Question =
   | SingleChoiceQuestion
   | MultipleChoiceQuestion
   | MatchingQuestion
+  | SequenceQuestion
+  | FillBlanksQuestion
 
 export interface QuizData {
   questions: Question[]

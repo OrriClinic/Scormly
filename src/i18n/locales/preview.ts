@@ -17,6 +17,7 @@ const preview: LocaleTable = {
 
     // Quiz
     submit: 'Submit answer',
+    submitAll: 'Submit answers',
     retry: 'Try again',
     correct: 'Correct',
     incorrect: 'Incorrect',
@@ -47,6 +48,7 @@ const preview: LocaleTable = {
 
     // Quiz
     submit: 'Відповісти',
+    submitAll: 'Надіслати відповіді',
     retry: 'Спробувати ще раз',
     correct: 'Правильно',
     incorrect: 'Неправильно',

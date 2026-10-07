@@ -22,7 +22,7 @@
 
   var T = {
     en: { prev: 'Previous', next: 'Next', progress: 'Lesson {n} of {total}',
-      empty: 'This lesson has no content yet.', submit: 'Submit answer', retry: 'Try again',
+      empty: 'This lesson has no content yet.', submit: 'Submit answer', submitAll: 'Submit answers', retry: 'Try again',
       correct: 'Correct', incorrect: 'Incorrect', yourScore: 'Your score: {s}%',
       passed: 'Passed', failed: 'Not passed', restart: 'Restart', end: 'The end',
       finish: 'Finish', exitCourse: 'Exit course', courseComplete: 'Course complete',
@@ -52,7 +52,7 @@
       progressPct: '{n}% complete', download: 'Download', carousel: 'Image carousel',
       slideOf: 'Image {n} of {total}', prevSlide: 'Previous image', nextSlide: 'Next image', goToSlide: 'Show image {n}' },
     uk: { prev: 'Назад', next: 'Далі', progress: 'Урок {n} з {total}',
-      empty: 'У цьому уроці ще немає контенту.', submit: 'Відповісти', retry: 'Спробувати ще раз',
+      empty: 'У цьому уроці ще немає контенту.', submit: 'Відповісти', submitAll: 'Надіслати відповіді', retry: 'Спробувати ще раз',
       correct: 'Правильно', incorrect: 'Неправильно', yourScore: 'Ваш результат: {s}%',
       passed: 'Складено', failed: 'Не складено', restart: 'Спочатку', end: 'Кінець',
       finish: 'Завершити', exitCourse: 'Вийти з курсу', courseComplete: 'Курс завершено',
@@ -1839,16 +1839,31 @@
       }
       return a;
     }
-    var matchChoices = {};
+    // Per attempt (call after clearing `answers`): matching choices, one per
+    // distinct answer so several items can share a category; sequence starting
+    // orders; fill-in dropdown lists.
+    var matchChoices = {}, blankSegs = {}, blankOpts = {};
     function rollChoices() {
       matchChoices = {};
       (data.questions || []).forEach(function (q) {
-        if (q.type === 'matching') matchChoices[q.id] = shuffleArray(q.pairs || []);
+        if (q.type === 'matching') {
+          var rights = [];
+          (q.pairs || []).forEach(function (p) { if (rights.indexOf(p.right) < 0) rights.push(p.right); });
+          matchChoices[q.id] = shuffleArray(rights);
+        } else if (q.type === 'sequence') {
+          answers[q.id] = shuffledOrder((q.items || []).map(function (it) { return it.id; }));
+        } else if (q.type === 'fillBlanks') {
+          blankSegs[q.id] = parseBlanks(q.text || '');
+          blankOpts[q.id] = blankOptions(blankSegs[q.id]);
+          answers[q.id] = [];
+        }
       });
     }
     rollChoices();
+    // Selected answers are canonical; only typed ones honour caseSensitive.
+    function strictOf(q) { return q.mode !== 'select' && !!q.caseSensitive; }
 
-    function build() {
+    function build(focusKey) {
       var reveal = submitted && showAnswers;
       wrap.innerHTML = '';
       (data.questions || []).forEach(function (q, qi) {
@@ -1874,13 +1889,19 @@
             card.appendChild(h('label', { class: 'quiz-opt' }, [input, h('span', { text: o.text }),
               reveal && o.feedback && input.checked ? h('span', { class: 'empty', text: '— ' + o.feedback }) : null]));
           });
+        } else if (q.type === 'sequence') {
+          if (!submitted) card.appendChild(h('p', { class: 'ord-hint', text: t('sequenceHint') }));
+          card.appendChild(sequenceList(q.items || [], answers[q.id], submitted, reveal, build));
+        } else if (q.type === 'fillBlanks') {
+          card.appendChild(blanksText(blankSegs[q.id], answers[q.id], blankOpts[q.id], q.mode === 'select',
+            strictOf(q), submitted, reveal));
         } else if (q.type === 'matching') {
-          var choices = matchChoices[q.id] || q.pairs || [];
+          var choices = matchChoices[q.id] || [];
           (q.pairs || []).forEach(function (p) {
             var sel = h('select', { 'aria-label': p.left });
             sel.disabled = submitted;
             sel.appendChild(h('option', { value: '', text: '—' }));
-            choices.forEach(function (opt) { sel.appendChild(h('option', { value: opt.right, text: opt.right })); });
+            choices.forEach(function (right) { sel.appendChild(h('option', { value: right, text: right })); });
             sel.value = (answers[q.id] || {})[p.id] || '';
             sel.addEventListener('change', function () {
               answers[q.id] = answers[q.id] || {};
@@ -1911,13 +1932,27 @@
         ]);
         wrap.appendChild(res);
       } else {
-        wrap.appendChild(h('button', { class: 'btn', text: t('submit'),
+        wrap.appendChild(h('button', { class: 'btn', text: (data.questions || []).length > 1 ? t('submitAll') : t('submit'),
           onclick: function () { submitted = true; build(); recordScore(); announceResult(wrap); } }));
+      }
+      // Rebuilding replaces the DOM; keep keyboard focus on a moved item's arrow.
+      if (focusKey) {
+        var f = wrap.querySelector('[data-focus="' + focusKey + '"]');
+        if (f && !f.disabled) f.focus();
       }
     }
 
     function isCorrect(q) {
       var a = answers[q.id];
+      if (q.type === 'sequence') {
+        return (q.items || []).every(function (it, i) { return (a || [])[i] === it.id; });
+      }
+      if (q.type === 'fillBlanks') {
+        var blanks = blankSegs[q.id].filter(function (seg) { return seg.kind === 'blank'; });
+        return blanks.length > 0 && blanks.every(function (seg) {
+          return isBlankCorrect(seg.answers, (a || [])[seg.index], strictOf(q));
+        });
+      }
       if (q.type === 'single') {
         var opt = (q.options || []).find(function (o) { return o.id === a; });
         return !!(opt && opt.correct);
@@ -1946,6 +1981,42 @@
       // Record each question as a SCORM interaction (LMS analytics).
       (data.questions || []).forEach(function (q) {
         var a = answers[q.id];
+        if (q.type === 'fillBlanks') {
+          // One fill-in interaction per blank, as in the fill-in-the-blanks block.
+          blankSegs[q.id].forEach(function (seg) {
+            if (seg.kind !== 'blank') return;
+            SCORM.recordInteraction(state.interactionIndex++, {
+              id: q.id + '_' + (seg.index + 1),
+              type: 'fill-in',
+              interactionType: 'fill-in',
+              response: String((a || [])[seg.index] || '').trim(),
+              correct: isBlankCorrect(seg.answers, (a || [])[seg.index], strictOf(q)),
+              weight: 1,
+              latencySec: latency,
+              description: q.prompt + ' — ' + t('blankN', { n: seg.index + 1 }),
+              correctResponses: seg.answers.slice(),
+              caseMatters: strictOf(q),
+              objectiveId: 'QUIZ_' + b.id,
+            });
+          });
+          return;
+        }
+        if (q.type === 'sequence') {
+          SCORM.recordInteraction(state.interactionIndex++, {
+            id: q.id,
+            type: 'sequencing',
+            interactionType: 'sequencing',
+            response: (a || []).slice(),
+            correct: isCorrect(q),
+            weight: 1,
+            latencySec: latency,
+            description: q.prompt,
+            correctResponses: [(q.items || []).map(function (it) { return it.id; })],
+            choices: (q.items || []).map(function (it) { return { id: it.id, text: it.text }; }),
+            objectiveId: 'QUIZ_' + b.id,
+          });
+          return;
+        }
         var pairs = q.pairs || [];
         // Matching targets are identified by pair id (the right-hand text is
         // free-form, not a valid identifier). Pairs sharing the same right-hand
@@ -2086,6 +2157,68 @@
     ]);
   }
 
+  // Native drag & drop for mouse; the arrow buttons / selects cover
+  // keyboard and touch (HTML5 DnD is unreliable on mobile).
+  var dragId = null;
+  function makeDraggable(el, id) {
+    el.setAttribute('draggable', 'true');
+    el.addEventListener('dragstart', function (e) {
+      dragId = id;
+      el.classList.add('dragging');
+      try { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; } catch (err) { /* old browsers */ }
+    });
+    el.addEventListener('dragend', function () { dragId = null; el.classList.remove('dragging'); });
+  }
+  function makeDropTarget(el, onDrop) {
+    el.addEventListener('dragover', function (e) { if (dragId) { e.preventDefault(); el.classList.add('drop-over'); } });
+    el.addEventListener('dragleave', function () { el.classList.remove('drop-over'); });
+    el.addEventListener('drop', function (e) {
+      e.preventDefault();
+      el.classList.remove('drop-over');
+      if (dragId) { var id = dragId; dragId = null; onDrop(id); }
+    });
+  }
+
+  // "Put in order" list shared by the ordering block and quiz sequence
+  // questions. `items` are in the correct order; `order` (the learner's item
+  // ids) is rearranged in place, then `rebuild(focusKey)` re-renders the owner
+  // and refocuses the control carrying that data-focus key.
+  function sequenceList(items, order, submitted, reveal, rebuild) {
+    var ids = items.map(function (it) { return it.id; });
+    var byId = {};
+    items.forEach(function (it) { byId[it.id] = it; });
+    function moveTo(id, to) {
+      var from = order.indexOf(id);
+      if (from < 0 || to < 0 || to >= order.length || from === to) return;
+      order.splice(from, 1);
+      order.splice(to, 0, id);
+    }
+    var list = h('ol', { class: 'ord-list' });
+    order.forEach(function (id, i) {
+      var it = byId[id];
+      var right = ids.indexOf(id);
+      var li = h('li', { class: 'ord-item' + (reveal ? (right === i ? ' correct' : ' incorrect') : '') });
+      if (!submitted) {
+        li.appendChild(h('span', { class: 'ord-handle', 'aria-hidden': 'true', title: t('dragItem'), html: GRIP_ICON }));
+        makeDraggable(li, id);
+        makeDropTarget(li, function (dragged) { moveTo(dragged, order.indexOf(id)); rebuild(); });
+      }
+      if (reveal) li.appendChild(resultMark(right === i));
+      li.appendChild(h('span', { class: 'ord-text', text: it.text }));
+      if (reveal && right !== i) li.appendChild(h('span', { class: 'ord-note', text: t('correctPosition', { n: right + 1 }) }));
+      if (!submitted) {
+        li.appendChild(h('button', { class: 'ord-arrow', type: 'button', text: '↑', 'data-focus': id + ':up',
+          'aria-label': t('moveUp') + ': ' + it.text, disabled: i === 0 ? 'true' : null,
+          onclick: function () { moveTo(id, i - 1); rebuild(id + ':up'); } }));
+        li.appendChild(h('button', { class: 'ord-arrow', type: 'button', text: '↓', 'data-focus': id + ':down',
+          'aria-label': t('moveDown') + ': ' + it.text, disabled: i === order.length - 1 ? 'true' : null,
+          onclick: function () { moveTo(id, i + 1); rebuild(id + ':down'); } }));
+      }
+      list.appendChild(li);
+    });
+    return list;
+  }
+
   function renderOrdering(b) {
     var data = b.data;
     var items = data.items || [];
@@ -2095,7 +2228,7 @@
     var ids = items.map(function (it) { return it.id; });
     var byId = {};
     items.forEach(function (it) { byId[it.id] = it; });
-    var order, assigned, submitted, openedAt, dragId = null;
+    var order, assigned, submitted, openedAt;
     var wrap = h('div', { class: 'ord' });
 
     function reset() { order = shuffledOrder(ids); assigned = {}; submitted = false; openedAt = Date.now(); }
@@ -2111,34 +2244,6 @@
     function categoryTitle(id) {
       var c = categories.find(function (x) { return x.id === id; });
       return c ? c.title : '';
-    }
-
-    function moveTo(id, to) {
-      var from = order.indexOf(id);
-      if (from < 0 || to < 0 || to >= order.length || from === to) return;
-      order.splice(from, 1);
-      order.splice(to, 0, id);
-    }
-
-    // Native drag & drop for mouse; the arrow buttons / selects cover
-    // keyboard and touch (HTML5 DnD is unreliable on mobile).
-    function makeDraggable(el, id) {
-      el.setAttribute('draggable', 'true');
-      el.addEventListener('dragstart', function (e) {
-        dragId = id;
-        el.classList.add('dragging');
-        try { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; } catch (err) { /* old browsers */ }
-      });
-      el.addEventListener('dragend', function () { dragId = null; el.classList.remove('dragging'); });
-    }
-    function makeDropTarget(el, onDrop) {
-      el.addEventListener('dragover', function (e) { if (dragId) { e.preventDefault(); el.classList.add('drop-over'); } });
-      el.addEventListener('dragleave', function () { el.classList.remove('drop-over'); });
-      el.addEventListener('drop', function (e) {
-        e.preventDefault();
-        el.classList.remove('drop-over');
-        if (dragId) { var id = dragId; dragId = null; onDrop(id); }
-      });
     }
 
     function build(focusKey) {
@@ -2158,30 +2263,7 @@
     }
 
     function buildSequence(reveal) {
-      var list = h('ol', { class: 'ord-list' });
-      order.forEach(function (id, i) {
-        var it = byId[id];
-        var right = ids.indexOf(id);
-        var li = h('li', { class: 'ord-item' + (reveal ? (right === i ? ' correct' : ' incorrect') : '') });
-        if (!submitted) {
-          li.appendChild(h('span', { class: 'ord-handle', 'aria-hidden': 'true', title: t('dragItem'), html: GRIP_ICON }));
-          makeDraggable(li, id);
-          makeDropTarget(li, function (dragged) { moveTo(dragged, order.indexOf(id)); build(); });
-        }
-        if (reveal) li.appendChild(resultMark(right === i));
-        li.appendChild(h('span', { class: 'ord-text', text: it.text }));
-        if (reveal && right !== i) li.appendChild(h('span', { class: 'ord-note', text: t('correctPosition', { n: right + 1 }) }));
-        if (!submitted) {
-          li.appendChild(h('button', { class: 'ord-arrow', type: 'button', text: '↑', 'data-focus': id + ':up',
-            'aria-label': t('moveUp') + ': ' + it.text, disabled: i === 0 ? 'true' : null,
-            onclick: function () { moveTo(id, i - 1); build(id + ':up'); } }));
-          li.appendChild(h('button', { class: 'ord-arrow', type: 'button', text: '↓', 'data-focus': id + ':down',
-            'aria-label': t('moveDown') + ': ' + it.text, disabled: i === order.length - 1 ? 'true' : null,
-            onclick: function () { moveTo(id, i + 1); build(id + ':down'); } }));
-        }
-        list.appendChild(li);
-      });
-      wrap.appendChild(list);
+      wrap.appendChild(sequenceList(items, order, submitted, reveal, build));
     }
 
     function chip(id, inCategory, reveal) {
@@ -2287,6 +2369,44 @@
     return answers.some(function (a) { return normalizeAnswer(a, caseSensitive) === r; });
   }
 
+  // Every blank's canonical answer once, shuffled: the 'select' mode list.
+  function blankOptions(segments) {
+    var seen = {}, canon = [];
+    segments.forEach(function (s) {
+      if (s.kind === 'blank' && !seen[s.answers[0]]) { seen[s.answers[0]] = true; canon.push(s.answers[0]); }
+    });
+    return shuffledOrder(canon);
+  }
+
+  // Text with inline blanks, shared by the fill-in-the-blanks block and quiz
+  // fill-in questions. `responses` (by blank index) is filled in place.
+  function blanksText(segments, responses, options, isSelect, strict, submitted, reveal) {
+    var p = h('p', { class: 'fib-text' });
+    segments.forEach(function (s) {
+      if (s.kind === 'text') { p.appendChild(document.createTextNode(s.text)); return; }
+      var ok = isBlankCorrect(s.answers, responses[s.index], strict);
+      var cls = 'fib-blank' + (reveal ? (ok ? ' correct' : ' incorrect') : '');
+      var field;
+      if (isSelect) {
+        field = h('select', { class: cls, 'aria-label': t('blankN', { n: s.index + 1 }) });
+        field.appendChild(h('option', { value: '', text: '—' }));
+        options.forEach(function (o) { field.appendChild(h('option', { value: o, text: o })); });
+        field.value = responses[s.index] || '';
+        field.addEventListener('change', function () { responses[s.index] = field.value; });
+      } else {
+        field = h('input', { class: cls, type: 'text', autocomplete: 'off', spellcheck: 'false',
+          size: String(Math.max(6, s.answers[0].length + 2)), 'aria-label': t('blankN', { n: s.index + 1 }) });
+        field.value = responses[s.index] || '';
+        field.addEventListener('input', function () { responses[s.index] = field.value; });
+      }
+      field.disabled = submitted;
+      p.appendChild(field);
+      if (reveal) p.appendChild(resultMark(ok));
+      if (reveal && !ok) p.appendChild(h('span', { class: 'fib-answer', text: t('correctAnswer', { a: s.answers[0] }) }));
+    });
+    return p;
+  }
+
   function renderFillBlanks(b) {
     var data = b.data;
     var isSelect = data.mode === 'select';
@@ -2300,9 +2420,7 @@
 
     function reset() {
       responses = []; submitted = false; openedAt = Date.now();
-      var seen = {}, canon = [];
-      blanks.forEach(function (s) { if (!seen[s.answers[0]]) { seen[s.answers[0]] = true; canon.push(s.answers[0]); } });
-      options = shuffledOrder(canon);
+      options = blankOptions(segments);
     }
 
     function computeScore() {
@@ -2314,30 +2432,7 @@
     function build() {
       var reveal = submitted && showAnswers;
       wrap.innerHTML = '';
-      var p = h('p', { class: 'fib-text' });
-      segments.forEach(function (s) {
-        if (s.kind === 'text') { p.appendChild(document.createTextNode(s.text)); return; }
-        var ok = isBlankCorrect(s.answers, responses[s.index], strict);
-        var cls = 'fib-blank' + (reveal ? (ok ? ' correct' : ' incorrect') : '');
-        var field;
-        if (isSelect) {
-          field = h('select', { class: cls, 'aria-label': t('blankN', { n: s.index + 1 }) });
-          field.appendChild(h('option', { value: '', text: '—' }));
-          options.forEach(function (o) { field.appendChild(h('option', { value: o, text: o })); });
-          field.value = responses[s.index] || '';
-          field.addEventListener('change', function () { responses[s.index] = field.value; });
-        } else {
-          field = h('input', { class: cls, type: 'text', autocomplete: 'off', spellcheck: 'false',
-            size: String(Math.max(6, s.answers[0].length + 2)), 'aria-label': t('blankN', { n: s.index + 1 }) });
-          field.value = responses[s.index] || '';
-          field.addEventListener('input', function () { responses[s.index] = field.value; });
-        }
-        field.disabled = submitted;
-        p.appendChild(field);
-        if (reveal) p.appendChild(resultMark(ok));
-        if (reveal && !ok) p.appendChild(h('span', { class: 'fib-answer', text: t('correctAnswer', { a: s.answers[0] }) }));
-      });
-      wrap.appendChild(p);
+      wrap.appendChild(blanksText(segments, responses, options, isSelect, strict, submitted, reveal));
       wrap.appendChild(exerciseFooter(submitted, computeScore(), data.passingScore,
         function () { submitted = true; build(); recordScore(); announceResult(wrap); },
         function () { reset(); build(); focusFirstControl(wrap); }));

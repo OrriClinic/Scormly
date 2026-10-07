@@ -3,6 +3,7 @@
 import { describe, test, expect } from 'vitest'
 import { checkCourse, hasBlockingIssues } from '../src/export/courseCheck'
 import type { Block, Course } from '../src/types/course'
+import { QUESTION_TYPES, newQuestion } from '../src/blocks/quizQuestions'
 
 function course(blocks: Block[][], settings: Record<string, unknown> = { contentLanguage: 'en' }): Course {
   return {
@@ -44,15 +45,26 @@ describe('checkCourse', () => {
       passingScore: 80,
       questions: [
         { id: 'q1', type: 'multiple', prompt: '', options: [{ id: 'a', text: 'A', correct: false }] },
-        { id: 'q2', type: 'matching', prompt: 'M', pairs: [{ id: 'p1', left: 'x', right: 'same' }, { id: 'p2', left: 'y', right: 'same ' }] },
+        // Shared answers are fine: both items sort into one category.
+        { id: 'q2', type: 'matching', prompt: 'M', pairs: [{ id: 'p1', left: 'x', right: 'same' }, { id: 'p2', left: 'y', right: 'same' }] },
+        { id: 'q3', type: 'sequence', prompt: 'S', items: [{ id: 'i1', text: ' ' }] },
+        { id: 'q4', type: 'fillBlanks', prompt: 'F', mode: 'type', text: 'No blanks here' },
       ],
     }, 'quiz1')
     const issues = checkCourse(course([[quiz]]))
     expect(issues.map((i) => [i.key, i.vars?.n])).toEqual([
-      ['chkQuestionNoPrompt', 1], ['chkFewOptions', 1], ['chkNoCorrect', 1], ['chkMatchingDuplicate', 2],
+      ['chkQuestionNoPrompt', 1], ['chkFewOptions', 1], ['chkNoCorrect', 1],
+      ['chkSequenceFewItems', 3], ['chkSequenceEmptyItem', 3], ['chkQuestionNoBlanks', 4],
     ])
     expect(issues[0].blockId).toBe('quiz1')
     expect(keys(course([[block('quiz', { passingScore: 80, questions: [] })]]))).toEqual(['chkQuizEmpty'])
+  })
+
+  test('a newly added question of every type is valid as is', () => {
+    for (const type of QUESTION_TYPES) {
+      const quiz = block('quiz', { passingScore: 80, questions: [newQuestion(type)] })
+      expect([type, keys(course([[quiz]]))]).toEqual([type, []])
+    }
   })
 
   test('ordering: too few items, empty items, categories problems', () => {

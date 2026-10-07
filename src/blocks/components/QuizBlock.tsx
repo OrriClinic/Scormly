@@ -2,64 +2,18 @@ import type { BlockComponentProps } from '../types'
 import type {
   BlockOfType,
   ChoiceOption,
+  FillBlanksQuestion,
   MatchingPair,
   Question,
-  QuestionType,
+  SequenceItem,
 } from '../../types/course'
 import { useCourseStore } from '../../store/courseStore'
-import { uid } from '../../lib/id'
-import { useT, translate } from '../../i18n/I18nProvider'
+import { useT } from '../../i18n/I18nProvider'
+import { blankAnswers } from '../fillBlanks'
+import { TYPE_LABEL_KEYS, newItem, newOption, newPair } from '../quizQuestions'
+import AddQuestionMenu from './AddQuestionMenu'
 
-const TYPE_LABEL_KEYS: Record<QuestionType, string> = {
-  single: 'typeSingle',
-  multiple: 'typeMultiple',
-  matching: 'typeMatching',
-}
-
-function newOption(correct = false): ChoiceOption {
-  return {
-    id: uid('opt'),
-    text: translate('content', correct ? 'quizCorrect' : 'quizWrong'),
-    correct,
-  }
-}
-
-function newPair(): MatchingPair {
-  return { id: uid('pair'), left: '', right: '' }
-}
-
-function newQuestion(): Question {
-  return {
-    id: uid('q'),
-    type: 'single',
-    prompt: translate('content', 'quizPrompt'),
-    options: [newOption(true), newOption()],
-  }
-}
-
-// Safely converts a question to another type, preserving id/prompt/feedback.
-function convertQuestion(q: Question, type: QuestionType): Question {
-  const base = { id: q.id, prompt: q.prompt, feedback: q.feedback }
-  if (type === 'matching') {
-    const pairs = q.type === 'matching' ? q.pairs : [newPair(), newPair()]
-    return { ...base, type, pairs }
-  }
-  const options =
-    q.type === 'matching' || q.options.length === 0
-      ? [newOption(), newOption()]
-      : q.options
-  // Single allows only one correct option.
-  const normalized =
-    type === 'single' ? ensureSingleCorrect(options) : options
-  return { ...base, type, options: normalized }
-}
-
-// Guarantees exactly one correct option for the single type.
-function ensureSingleCorrect(options: ChoiceOption[]): ChoiceOption[] {
-  const firstCorrect = options.findIndex((o) => o.correct)
-  const target = firstCorrect === -1 ? 0 : firstCorrect
-  return options.map((o, i) => ({ ...o, correct: i === target }))
-}
+const BLANK_MODES: FillBlanksQuestion['mode'][] = ['type', 'select']
 
 export default function QuizBlock({
   block,
@@ -68,6 +22,7 @@ export default function QuizBlock({
 }: BlockComponentProps<BlockOfType<'quiz'>>) {
   const update = useCourseStore((s) => s.updateBlockData)
   const { t } = useT('quiz')
+  const { t: ta } = useT('assessment')
   const { questions, passingScore, showAnswers = true } = block.data
 
   function setQuestions(next: Question[], coalesceKey?: string) {
@@ -90,14 +45,6 @@ export default function QuizBlock({
     replaceQuestion(q.id, { ...q, feedback }, `quiz-qfb-${q.id}`)
   }
 
-  function changeType(q: Question, type: QuestionType) {
-    if (q.type === type) return
-    replaceQuestion(q.id, convertQuestion(q, type))
-  }
-
-  function addQuestion() {
-    setQuestions([...questions, newQuestion()])
-  }
 
   function removeQuestion(qId: string) {
     setQuestions(questions.filter((q) => q.id !== qId))
@@ -184,6 +131,19 @@ export default function QuizBlock({
     )
   }
 
+  // ── Items (sequence), authored in the correct order ──
+  function setItems(q: SequenceQ, items: SequenceItem[], coalesceKey?: string) {
+    replaceQuestion(q.id, { ...q, items }, coalesceKey)
+  }
+
+  function moveItem(q: SequenceQ, from: number, to: number) {
+    if (to < 0 || to >= q.items.length) return
+    const items = q.items.slice()
+    const [moved] = items.splice(from, 1)
+    items.splice(to, 0, moved)
+    setItems(q, items)
+  }
+
   return (
     <div className="space-y-4">
       <label className="flex items-center gap-3 text-sm">
@@ -234,11 +194,15 @@ export default function QuizBlock({
         {questions.map((q, index) => (
           <div
             key={q.id}
-            className="space-y-4 rounded-lg border border-gray-200 p-5"
+            className="space-y-4 rounded-lg border border-gray-200 bg-white p-5"
           >
             <div className="flex items-center justify-between gap-2">
+              {/* The type is fixed once added: switching would discard the content. */}
               <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                 {t('questionN', { n: index + 1 })}
+                <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 normal-case tracking-normal text-gray-500">
+                  {t(TYPE_LABEL_KEYS[q.type])}
+                </span>
               </span>
               {selected && (
                 <button
@@ -251,25 +215,6 @@ export default function QuizBlock({
                 </button>
               )}
             </div>
-
-            {selected && (
-              <div className="flex flex-wrap gap-2">
-                {(Object.keys(TYPE_LABEL_KEYS) as QuestionType[]).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => changeType(q, type)}
-                    className={`rounded-md px-4 py-2 text-sm font-medium ${
-                      q.type === type
-                        ? 'bg-brand text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {t(TYPE_LABEL_KEYS[type])}
-                  </button>
-                ))}
-              </div>
-            )}
 
             <label className="block text-sm">
               <span className="mb-1 block text-xs font-medium text-gray-500">
@@ -287,7 +232,11 @@ export default function QuizBlock({
             <div className="space-y-2">
               {q.type === 'matching'
                 ? renderPairs(q)
-                : renderOptions(q)}
+                : q.type === 'sequence'
+                  ? renderItems(q)
+                  : q.type === 'fillBlanks'
+                    ? renderBlanks(q)
+                    : renderOptions(q)}
             </div>
 
             {selected && (
@@ -308,15 +257,7 @@ export default function QuizBlock({
         ))}
       </div>
 
-      {selected && (
-        <button
-          type="button"
-          onClick={addQuestion}
-          className="btn-secondary text-sm"
-        >
-          {t('addQuestion')}
-        </button>
-      )}
+      {selected && <AddQuestionMenu onAdd={(q) => setQuestions([...questions, q])} />}
     </div>
   )
 
@@ -426,7 +367,129 @@ export default function QuizBlock({
       </>
     )
   }
+
+  function renderItems(q: SequenceQ) {
+    const arrow =
+      'flex h-6 w-6 shrink-0 items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:hover:bg-transparent'
+    return (
+      <>
+        <p className="text-xs text-gray-500">{ta('itemsSequenceHelp')}</p>
+        {q.items.map((it, i) => (
+          <div key={it.id} className="flex items-center gap-2">
+            <span className="w-5 shrink-0 text-right text-xs font-semibold tabular-nums text-gray-400">
+              {i + 1}
+            </span>
+            <input
+              type="text"
+              value={it.text}
+              placeholder={ta('itemPlaceholder')}
+              onChange={(e) =>
+                setItems(
+                  q,
+                  q.items.map((x) => (x.id === it.id ? { ...x, text: e.target.value } : x)),
+                  `quiz-item-${it.id}`,
+                )
+              }
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-gray-800 outline-none placeholder-gray-300 focus:border-brand"
+            />
+            {selected && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => moveItem(q, i, i - 1)}
+                  disabled={i === 0}
+                  className={arrow}
+                  aria-label={`${ta('moveUp')}: ${it.text}`}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveItem(q, i, i + 1)}
+                  disabled={i === q.items.length - 1}
+                  className={arrow}
+                  aria-label={`${ta('moveDown')}: ${it.text}`}
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setItems(q, q.items.filter((x) => x.id !== it.id))}
+                  className={arrow}
+                  aria-label={ta('removeItem')}
+                >
+                  ✕
+                </button>
+              </>
+            )}
+          </div>
+        ))}
+        {selected && (
+          <button
+            type="button"
+            onClick={() => setItems(q, [...q.items, newItem(q.items.length + 1)])}
+            className="btn-secondary text-sm"
+          >
+            {ta('addItem')}
+          </button>
+        )}
+      </>
+    )
+  }
+
+  function renderBlanks(q: FillBlanksQuestion) {
+    const blankCount = blankAnswers(q.text).length
+    return (
+      <>
+        {selected && (
+          <div className="flex flex-wrap gap-2">
+            {BLANK_MODES.map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => m !== q.mode && replaceQuestion(q.id, { ...q, mode: m })}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                  q.mode === m ? 'bg-brand text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {ta(m === 'type' ? 'fbModeType' : 'fbModeSelect')}
+              </button>
+            ))}
+          </div>
+        )}
+        <label className="block text-sm">
+          <span className="mb-1 block text-xs font-medium text-gray-500">{ta('textLabel')}</span>
+          <textarea
+            value={q.text}
+            placeholder={ta('textPlaceholder')}
+            rows={3}
+            onChange={(e) => replaceQuestion(q.id, { ...q, text: e.target.value }, `quiz-blanks-${q.id}`)}
+            className="w-full resize-y rounded-md border border-gray-300 px-3 py-2 font-mono text-sm text-gray-800 outline-none placeholder-gray-300 focus:border-brand"
+          />
+          {selected && <span className="mt-1 block text-xs text-gray-500">{ta('textHelp')}</span>}
+        </label>
+        <p className={`text-xs ${blankCount ? 'text-gray-400' : 'text-amber-600'}`}>
+          {blankCount ? ta('blanksCount', { n: blankCount }) : ta('noBlanks')}
+        </p>
+        {selected && q.mode === 'type' && (
+          <label className="flex items-start gap-2.5 text-sm">
+            <input
+              type="checkbox"
+              checked={!!q.caseSensitive}
+              onChange={(e) => replaceQuestion(q.id, { ...q, caseSensitive: e.target.checked })}
+              className="mt-0.5 h-4 w-4 accent-brand"
+            />
+            <span>
+              <span className="block font-medium text-gray-700">{ta('caseSensitive')}</span>
+              <span className="mt-0.5 block text-xs text-gray-500">{ta('caseSensitiveHelp')}</span>
+            </span>
+          </label>
+        )}
+      </>
+    )
+  }
 }
 
 type SingleOrMultiple = Extract<Question, { type: 'single' | 'multiple' }>
 type MatchingQ = Extract<Question, { type: 'matching' }>
+type SequenceQ = Extract<Question, { type: 'sequence' }>

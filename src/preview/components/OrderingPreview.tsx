@@ -3,20 +3,13 @@ import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
-  closestCenter,
   useDraggable,
   useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { PreviewProps } from '../types'
 import type { OrderingItem } from '../../types/course'
@@ -24,12 +17,10 @@ import { useT } from '../../i18n/I18nProvider'
 import { scoreCategories, scoreSequence, shuffledOrder } from '../../blocks/ordering'
 import ScoreResult from './ScoreResult'
 import ResultMark from './ResultMark'
+import SequenceList, { currentOrder } from './SequenceList'
 
 // Droppable id of the "not sorted yet" pool in categories mode.
 const POOL = '__pool__'
-
-const arrowBtn =
-  'flex h-7 w-7 shrink-0 items-center justify-center rounded text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent'
 
 export default function OrderingPreview({ block }: PreviewProps<'ordering'>) {
   const { t } = useT('assessment')
@@ -45,11 +36,7 @@ export default function OrderingPreview({ block }: PreviewProps<'ordering'>) {
   )
 
   const byId = new Map(items.map((it) => [it.id, it]))
-  // Items added while the preview is open are appended; removed ones dropped.
-  const learnerOrder = [
-    ...order.filter((id) => byId.has(id)),
-    ...ids.filter((id) => !order.includes(id)),
-  ]
+  const learnerOrder = currentOrder(order, ids)
   const score =
     mode === 'sequence' ? scoreSequence(items, learnerOrder) : scoreCategories(items, assigned)
   const reveal = submitted && showAnswers
@@ -58,19 +45,6 @@ export default function OrderingPreview({ block }: PreviewProps<'ordering'>) {
     setOrder(shuffledOrder(ids))
     setAssigned({})
     setSubmitted(false)
-  }
-
-  function move(index: number, delta: number) {
-    const to = index + delta
-    if (to < 0 || to >= learnerOrder.length) return
-    setOrder(arrayMove(learnerOrder, index, to))
-  }
-
-  function onSortEnd(e: DragEndEvent) {
-    if (!e.over || e.active.id === e.over.id) return
-    const from = learnerOrder.indexOf(String(e.active.id))
-    const to = learnerOrder.indexOf(String(e.over.id))
-    if (from !== -1 && to !== -1) setOrder(arrayMove(learnerOrder, from, to))
   }
 
   function onCategoryDrop(e: DragEndEvent) {
@@ -97,49 +71,7 @@ export default function OrderingPreview({ block }: PreviewProps<'ordering'>) {
       )}
 
       {mode === 'sequence' ? (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onSortEnd}>
-          <SortableContext items={learnerOrder} strategy={verticalListSortingStrategy}>
-            <ol className="space-y-2">
-              {learnerOrder.map((id, i) => {
-                const it = byId.get(id)!
-                const correctIndex = ids.indexOf(id)
-                return (
-                  <SortableRow key={id} id={id} disabled={submitted} className={rowTone(correctIndex === i)}>
-                    {reveal && <ResultMark ok={correctIndex === i} />}
-                    <span className="flex-1 text-gray-800">{it.text}</span>
-                    {reveal && correctIndex !== i && (
-                      <span className="text-xs text-gray-500">
-                        {t('correctPosition', { n: correctIndex + 1 })}
-                      </span>
-                    )}
-                    {!submitted && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => move(i, -1)}
-                          disabled={i === 0}
-                          className={arrowBtn}
-                          aria-label={`${t('moveUp')}: ${it.text}`}
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => move(i, 1)}
-                          disabled={i === learnerOrder.length - 1}
-                          className={arrowBtn}
-                          aria-label={`${t('moveDown')}: ${it.text}`}
-                        >
-                          ↓
-                        </button>
-                      </>
-                    )}
-                  </SortableRow>
-                )
-              })}
-            </ol>
-          </SortableContext>
-        </DndContext>
+        <SequenceList items={items} order={learnerOrder} onChange={setOrder} submitted={submitted} reveal={reveal} />
       ) : (
         <DndContext sensors={sensors} onDragEnd={onCategoryDrop}>
           <div className="space-y-3">
@@ -200,50 +132,6 @@ export default function OrderingPreview({ block }: PreviewProps<'ordering'>) {
         onRetry={retry}
       />
     </div>
-  )
-}
-
-function SortableRow({
-  id,
-  disabled,
-  className,
-  children,
-}: {
-  id: string
-  disabled: boolean
-  className: string
-  children: ReactNode
-}) {
-  const { t } = useT('assessment')
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id,
-    disabled,
-  })
-  return (
-    <li
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : undefined }}
-      className={`flex items-center gap-2.5 rounded-xl border px-2.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-shadow ${className} ${
-        isDragging ? 'z-10 shadow-xl ring-2 ring-brand/40' : 'hover:shadow-md'
-      }`}
-    >
-      {!disabled && (
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          aria-label={t('dragItem')}
-          className="flex h-8 w-7 shrink-0 cursor-grab touch-none items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 active:cursor-grabbing"
-        >
-          <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4" aria-hidden>
-            <circle cx="9" cy="6" r="1.5" /><circle cx="15" cy="6" r="1.5" />
-            <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
-            <circle cx="9" cy="18" r="1.5" /><circle cx="15" cy="18" r="1.5" />
-          </svg>
-        </button>
-      )}
-      {children}
-    </li>
   )
 }
 
