@@ -67,7 +67,7 @@ const BLOCK_DOCS: Record<BlockType, BlockDoc> = {
   },
   continue: {
     summary: 'Continue button / page gate.',
-    data: `{ mode: 'unrestricted' | 'restricted', label: string }  // restricted hides later blocks until clicked`,
+    data: `{ mode: 'unrestricted' | 'restricted', label: string, nextCard?: boolean }  // restricted hides later blocks until clicked; as the lesson's last block it replaces the "Next lesson" card unless nextCard is true`,
   },
   divider: {
     summary: 'Horizontal separator.',

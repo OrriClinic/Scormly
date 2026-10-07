@@ -245,6 +245,9 @@ export type ContinueMode = 'unrestricted' | 'restricted'
 export interface ContinueData {
   mode: ContinueMode
   label: string
+  /** As the lesson's last block it replaces the "Next lesson" card, which
+   *  would do the same; true shows the card as well. */
+  nextCard?: boolean
 }
 
 // ── Divider ──────────────────────────────────────────────────────────────────

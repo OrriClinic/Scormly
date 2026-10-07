@@ -169,6 +169,11 @@ In the LMS, the player implements the SCORM API: for 1.2 — `LMSInitialize`,
   `IntroEditor` when `activeLessonId === INTRO_ID`; the preview uses `IntroView`;
   the player's `renderIntro()` opens it on a fresh attempt (resumed attempts go
   straight to the saved lesson). It is not a lesson: no progress, no tracking.
+  `intro.blocks` (content types only, `INTRO_BLOCK_TYPES`) sit under the title in
+  the lesson column; block actions address them with `lessonId === INTRO_ID`.
+- **Next lesson card** — shown at the end of each lesson unless the last visible
+  block is a Continue button (which already leads on); `ContinueData.nextCard`
+  keeps both.
 - **Ready-made blocks** — [`templates.ts`](../src/blocks/templates.ts): preconfigured
   block sets inserted as one undo step (`insertBlocks`).
 - **Motion** — `CourseSettings.blockAnimation` (entrance as blocks scroll into

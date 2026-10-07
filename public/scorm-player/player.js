@@ -800,11 +800,12 @@
     var anim = blockAnimation();
     var blocksEl = h('div', { class: 'blocks' });
     var gated = false;
+    var lastShown = null;
     if (lesson && lesson.blocks && lesson.blocks.length) {
       for (var bi = 0; bi < lesson.blocks.length; bi++) {
         var b = lesson.blocks[bi];
         var el = renderBlock(b);
-        if (el) blocksEl.appendChild(wrapBlock(b, el, anim));
+        if (el) { blocksEl.appendChild(wrapBlock(b, el, anim)); lastShown = b; }
         // Hide everything after an unpassed restricted gate.
         if (b.type === 'continue' && b.data.mode === 'restricted' && !state.continued[b.id]) {
           gated = bi < lesson.blocks.length - 1;
@@ -819,7 +820,9 @@
       settings().showProgress ? h('p', { class: 'lesson-kicker', text: t('progress', { n: i + 1, total: lessons.length }) }) : null,
       h('h1', { class: 'lesson-title', tabindex: '-1', text: lesson ? lesson.title : '' }),
       blocksEl,
-      gated ? null : nextCard(isLast, lessons[i + 1], canAdvance),
+      // A Continue button at the very end already leads on; the card would repeat it.
+      gated || (lastShown && lastShown.type === 'continue' && !lastShown.data.nextCard)
+        ? null : nextCard(isLast, lessons[i + 1], canAdvance),
     ]);
     var body = h('main', { class: 'player-body', id: 'main-content' }, lessonEl);
 

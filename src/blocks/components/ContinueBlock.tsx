@@ -1,6 +1,6 @@
 import type { BlockComponentProps } from '../types'
 import type { BlockOfType, ContinueMode } from '../../types/course'
-import { useCourseStore } from '../../store/courseStore'
+import { useCourseStore, blocksOf } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
 
 export default function ContinueBlock({
@@ -10,8 +10,13 @@ export default function ContinueBlock({
 }: BlockComponentProps<BlockOfType<'continue'>>) {
   const update = useCourseStore((s) => s.updateBlockData)
   const { t } = useT('scenario')
-  const { mode, label } = block.data
+  const { mode, label, nextCard } = block.data
   const restricted = mode === 'restricted'
+  // Only the lesson's last block stands in for the "Next lesson" card.
+  const isLast = useCourseStore((s) => {
+    const blocks = blocksOf(s.course, lessonId) ?? []
+    return blocks[blocks.length - 1]?.id === block.id
+  })
 
   function setLabel(value: string) {
     update(lessonId, block.id, { label: value }, `continue-label-${block.id}`)
@@ -82,6 +87,21 @@ export default function ContinueBlock({
 
           {restricted && (
             <p className="text-xs text-gray-500">{t('restrictedHelp')}</p>
+          )}
+
+          {isLast && (
+            <label className="flex cursor-pointer items-start gap-2.5">
+              <input
+                type="checkbox"
+                checked={!!nextCard}
+                onChange={(e) => update(lessonId, block.id, { nextCard: e.target.checked })}
+                className="mt-0.5 h-4 w-4 accent-brand"
+              />
+              <span>
+                <span className="block text-sm font-medium text-gray-900">{t('nextCard')}</span>
+                <span className="mt-0.5 block text-xs text-gray-500">{t('nextCardHelp')}</span>
+              </span>
+            </label>
           )}
         </div>
       )}

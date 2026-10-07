@@ -105,6 +105,9 @@ export default function PreviewOverlay() {
     return out
   })()
   const gated = lesson ? visibleBlocks.length < lesson.blocks.filter((b) => !continued[b.id]).length : false
+  // A Continue button at the very end already leads on; the card would repeat it.
+  const lastShown = visibleBlocks[visibleBlocks.length - 1]
+  const endsWithContinue = lastShown?.type === 'continue' && !lastShown.data.nextCard
 
   function goTo(i: number) {
     setDirection(!onIntro && i < index ? 'prev' : 'next')
@@ -342,7 +345,7 @@ export default function PreviewOverlay() {
                         ))}
                       </div>
                     )}
-                    {!gated && (
+                    {!gated && !endsWithContinue && (
                       <NextCard
                         label={isLast ? t('finish') : td('nextLesson')}
                         title={isLast ? '' : course.lessons[index + 1]?.title ?? ''}

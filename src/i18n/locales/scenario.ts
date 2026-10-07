@@ -12,6 +12,8 @@ const scenario: LocaleTable = {
     modeRestricted: 'Blocking',
     restrictedHelp:
       'The button is locked until the learner completes all interactive tasks above.',
+    nextCard: 'Also show the “Next lesson” card',
+    nextCardHelp: 'This button already takes the learner on, so the card under it is hidden.',
 
     // ── ScenarioBlock ──
     characterName: 'Character name',
@@ -53,6 +55,8 @@ const scenario: LocaleTable = {
     modeRestricted: 'Блокуючий',
     restrictedHelp:
       'Кнопка заблокована, доки студент не виконає всі інтерактивні завдання вище.',
+    nextCard: 'Також показувати картку «Наступний урок»',
+    nextCardHelp: 'Ця кнопка вже веде студента далі, тому картку під нею приховано.',
 
     // ── ScenarioBlock ──
     characterName: 'Імʼя персонажа',
