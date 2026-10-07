@@ -234,12 +234,15 @@
     return wrap;
   }
 
+  // New screens start at the top. The page itself scrolls (not .player-body),
+  // so full-width bands can span the viewport.
+  function scrollToTop() { window.scrollTo(0, 0); }
+
   // After a lesson change: focus the lesson heading and announce it.
   function focusLessonHeading(announceIt) {
     var h1 = document.querySelector('.lesson-title, .finish-title, .sc-intro-title');
     if (h1) { try { h1.focus({ preventScroll: true }); } catch (e) { h1.focus(); } }
-    var body = document.querySelector('.player-body');
-    if (body) body.scrollTop = 0;
+    scrollToTop();
     if (!announceIt) return;
     if (state.finished) { announce(t('courseComplete')); return; }
     if (state.onIntro) { announce(state.course.title || ''); return; }
@@ -391,7 +394,7 @@
     state.menuOpen = false;
     render();
     if (moveFocus) focusLessonHeading(true);
-    window.scrollTo(0, 0);
+    else scrollToTop();
   }
 
   // First lesson not yet complete (where "Start/Continue course" leads).
@@ -473,11 +476,9 @@
     }
     if (restricted) {
       // Re-render in place, keeping the scroll position.
-      var body = document.querySelector('.player-body');
-      var top = body ? body.scrollTop : 0;
+      var top = window.pageYOffset;
       render();
-      body = document.querySelector('.player-body');
-      if (body) body.scrollTop = top;
+      window.scrollTo(0, top);
     }
     refreshGating();
   }
@@ -572,7 +573,7 @@
     // The initial (resume) render keeps the natural focus order; later lesson
     // changes move focus to the heading and announce the lesson.
     if (lessonShown) focusLessonHeading(true);
-    else document.querySelector('.player-body').scrollTop = 0;
+    else scrollToTop();
     lessonShown = true;
   }
   var lessonShown = false;
