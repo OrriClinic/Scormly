@@ -1468,7 +1468,9 @@
 
   function renderTable(b) {
     var rows = b.data.rows || [];
-    var table = h('table', { class: 'data-table' });
+    var auto = b.data.width === 'auto';
+    var align = { center: 1, right: 1 }[b.data.align] ? b.data.align : 'left';
+    var table = h('table', { class: 'data-table ' + (auto ? 'sc-table sc-table-auto sc-table-' + align : 'sc-table') });
     rows.forEach(function (row, ri) {
       var tr = h('tr');
       row.forEach(function (cell) {

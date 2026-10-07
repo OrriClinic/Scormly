@@ -59,7 +59,7 @@ const BLOCK_DOCS: Record<BlockType, BlockDoc> = {
   },
   table: {
     summary: 'Simple table; every row has the same number of columns.',
-    data: `{ header: boolean, rows: string[][] }  // header=true → first row is <th>`,
+    data: `{ header: boolean, rows: string[][], width?: 'full' | 'auto', align?: 'left' | 'center' | 'right' }  // header=true → first row is <th>; width: full (default) or fit content; align places an 'auto' table`,
   },
   quote: {
     summary: 'Highlighted quotation in one of five styles.',

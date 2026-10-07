@@ -498,6 +498,26 @@ body {
 .blk-on-dark .placeholder-gray-300::placeholder { color: rgb(255 255 255 / 0.5); }
 .blk-on-dark .rich-text a { color: #fff; }
 .blk-on-dark .border-brand { border-color: rgb(255 255 255 / 0.85); }
+/* Accent-colored text (timeline step labels, blank chips) would vanish on the panel. */
+.blk-on-dark :is(.text-brand, .text-brand-dark) { color: rgb(255 255 255 / 0.9); }
+.blk-on-dark :is(.bg-white, .bg-gray-50) :is(.text-brand, .text-brand-dark),
+.blk-on-dark :is(.bg-white, .bg-gray-50):is(.text-brand, .text-brand-dark) { color: revert-layer; }
+/* Accent and gradient panels start at the brand color: brand surfaces
+ * (flashcard faces, primary buttons) on the panel itself turn white; inside
+ * light cards they stay. */
+.blk:is([data-bg="accent"], [data-bg="gradient"]) :is(.interactive-surface.bg-brand, .btn-primary):not(.blk :is(.bg-white, .bg-gray-50) *) {
+  background-color: #fff;
+  color: var(--color-brand-dark);
+}
+.blk:is([data-bg="accent"], [data-bg="gradient"]) .btn-primary:not(.blk :is(.bg-white, .bg-gray-50) *):hover:not(:disabled) {
+  background-color: rgb(255 255 255 / 0.85);
+}
+/* Light surfaces (editor cards, quiz cards) get dark text back, so fields and
+ * unstyled text inside them don't inherit the panel's white. Layered, so a
+ * text color utility on the same element still wins. */
+@layer components {
+  .blk-on-dark :is(.bg-white, .bg-gray-50) { color: #1f2937; }
+}
 .blk-on-dark :is(.bg-white, [class*="bg-white/"], [class*="bg-gray-"], [class*="bg-amber-"], [class*="bg-blue-"], .sc-quote-card, .sc-attach-item, .sc-columns-cards .sc-column)
   :is(.text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500, .text-gray-400),
 .blk-on-dark :is(.bg-white, [class*="bg-white/"], [class*="bg-gray-"]):is(.text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500, .text-gray-400) {

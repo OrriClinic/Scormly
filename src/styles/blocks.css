@@ -130,6 +130,12 @@
 .blk-has-bg.blk-join-bottom { border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; padding-bottom: 1rem; }
 
 /* ── Images ─────────────────────────────────────────────────────────────── */
+/* Table: the block's full width, or fitted to its content and placed. */
+.sc-table { width: 100%; border-collapse: collapse; }
+.sc-table-auto { width: auto; }
+.sc-table-center { margin-inline: auto; }
+.sc-table-right { margin-left: auto; }
+
 .sc-img { margin: 0; }
 .sc-img img {
   display: block; width: 100%; height: auto;
@@ -546,6 +552,12 @@
 
 /* ── Light text on dark/saturated block panels ──────────────────────────── */
 .blk-on-dark .sc-quote-classic { border-left-color: rgb(255 255 255 / 0.85); }
+/* Callouts stay light boxes with their own text color. */
+.blk-on-dark .sc-note .sc-note-text { color: inherit; }
+/* Tables turn light-on-dark: white text, see-through lines, tinted header. */
+.blk-on-dark .sc-table,
+.blk-on-dark .sc-table :is(th, td) { color: #fff; border-color: rgb(255 255 255 / 0.3); }
+.blk-on-dark .sc-table :is(th, .sc-table-head) { background: rgb(255 255 255 / 0.12); }
 .blk-on-dark .sc-quote-statement::before,
 .blk-on-dark .sc-quote-statement::after { background: rgb(255 255 255 / 0.9); }
 .blk-on-dark :is(.sc-quote-classic, .sc-quote-statement, .sc-quote-photo) :is(.sc-quote-text, .sc-quote-author, .sc-quote-mark) { color: #fff; }

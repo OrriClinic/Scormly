@@ -1,7 +1,9 @@
 import type { BlockComponentProps } from '../types'
-import type { BlockOfType } from '../../types/course'
+import type { BlockOfType, TableData, TextAlign } from '../../types/course'
 import { useCourseStore } from '../../store/courseStore'
 import { useT } from '../../i18n/I18nProvider'
+import { Segmented } from '../../components/editor/controls'
+import { tableClass } from '../styleClasses'
 
 export default function TableBlock({
   block,
@@ -10,7 +12,8 @@ export default function TableBlock({
 }: BlockComponentProps<BlockOfType<'table'>>) {
   const update = useCourseStore((s) => s.updateBlockData)
   const { t } = useT('newblocks')
-  const { header, rows } = block.data
+  const { t: td } = useT('design')
+  const { header, rows, width = 'full', align = 'left' } = block.data
   const columnCount = rows[0]?.length ?? 0
 
   function setCell(r: number, c: number, value: string) {
@@ -59,10 +62,27 @@ export default function TableBlock({
           <button type="button" onClick={addColumn} className="btn-secondary text-sm">
             + {t('addColumn')}
           </button>
+          <Segmented<NonNullable<TableData['width']>>
+            label={td('tableWidth')}
+            value={width}
+            onChange={(v) => update(lessonId, block.id, { width: v })}
+            options={[
+              ['full', td('tableWidth_full')],
+              ['auto', td('tableWidth_auto')],
+            ]}
+          />
+          {width === 'auto' && (
+            <Segmented<TextAlign>
+              label={td('imageAlign')}
+              value={align}
+              onChange={(v) => update(lessonId, block.id, { align: v })}
+              options={(['left', 'center', 'right'] as const).map((a) => [a, td(`align_${a}`)] as const)}
+            />
+          )}
         </div>
       )}
       <div className="overflow-x-auto">
-        <table className="border-collapse border border-gray-200">
+        <table className={`${tableClass(width, align)} border border-gray-200`}>
           <tbody>
             {selected && columnCount > 1 && (
               <tr>
@@ -84,14 +104,16 @@ export default function TableBlock({
             {rows.map((row, r) => {
               const isHeader = header && r === 0
               return (
-                <tr key={r} className={isHeader ? 'bg-gray-50 font-semibold' : ''}>
+                <tr key={r} className={isHeader ? 'sc-table-head bg-gray-50 font-semibold' : ''}>
                   {row.map((cell, c) => (
                     <td key={c} className="border border-gray-200 px-3 py-2">
                       <input
                         type="text"
                         value={cell}
                         onChange={(e) => setCell(r, c, e.target.value)}
-                        className="w-full bg-transparent outline-none"
+                        // A fitted table sizes its columns to the text, as learners see it.
+                        size={width === 'auto' ? Math.max(4, cell.length + 1) : undefined}
+                        className={`${width === 'auto' ? '' : 'w-full '}bg-transparent outline-none`}
                       />
                     </td>
                   ))}

@@ -49,6 +49,11 @@ export function blockWrapperProps(
   return { className, 'data-bg': bg }
 }
 
+/** Classes for a table: full width, or fitted to its content and placed. */
+export function tableClass(width: 'full' | 'auto' = 'full', align: TextAlign = 'left') {
+  return width === 'auto' ? `sc-table sc-table-auto sc-table-${align}` : 'sc-table'
+}
+
 /** Classes for a sized image figure. */
 export function imageFigureClass(size: ImageSize = 'large', align: TextAlign = 'center') {
   return `sc-img sc-img-${size}${size === 'small' || size === 'medium' ? ` sc-img-${align}` : ''}`

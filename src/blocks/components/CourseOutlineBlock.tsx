@@ -41,7 +41,7 @@ export default function CourseOutlineBlock({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-gray-200">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
         {title && (
           <p className="border-b border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold text-gray-700">
             {title}

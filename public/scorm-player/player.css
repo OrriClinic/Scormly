@@ -113,7 +113,7 @@ audio { width: 100%; }
 .embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 pre.code { overflow-x: auto; border-radius: 0.5rem; background: #111827; color: #f3f4f6; padding: 1rem; font-size: 0.875rem; }
 pre.code code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-table.data-table { border-collapse: collapse; width: 100%; }
+table.data-table { border-collapse: collapse; }
 table.data-table th, table.data-table td { border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; text-align: left; }
 table.data-table th { background: #f9fafb; font-weight: 600; }
 blockquote.quote { border-left: 4px solid var(--brand); padding-left: 1rem; margin: 0; font-style: italic; color: #374151; }
@@ -476,8 +476,17 @@ html[data-a11y-contrast][data-theme="terminal"] .btn:not(.btn-outline) { box-sha
 /* Text on dark block panels (the builder uses Tailwind overrides instead). */
 .blk-on-dark, .blk-on-dark :is(h1, h2, h3, p, li, .rich-text, .list) { color: #fff; }
 .blk-on-dark .rich-text a { color: #fff; }
-.blk-on-dark :is(.tabs, .accordion-item, .flashcard-back, .outline, .quiz-q, .quiz-opt, .quiz-result, .stepper, .scenario, .chat, .ord-item, .ord-bin, .hotspot-pop, table, .sc-quote-card, .sc-attach-item, .sc-columns-cards .sc-column) { color: #1f2937; }
-.blk-on-dark :is(.tabs, .accordion-item, .flashcard-back, .outline, .quiz-q, .quiz-opt, .quiz-result, .stepper, .scenario, .chat, .ord-item, .ord-bin, .hotspot-pop, table, .sc-quote-card, .note, .sc-columns-cards .sc-column) :is(h1, h2, h3, p, li, .rich-text) { color: inherit; }
+.blk-on-dark :is(.tabs, .accordion-item, .flashcard-back, .outline, .quiz-q, .quiz-opt, .quiz-result, .stepper, .scenario, .chat, .ord-item, .ord-bin, .hotspot-pop, .sc-quote-card, .sc-attach-item, .sc-columns-cards .sc-column) { color: #1f2937; }
+.blk-on-dark :is(.tabs, .accordion-item, .flashcard-back, .outline, .quiz-q, .quiz-opt, .quiz-result, .stepper, .scenario, .chat, .ord-item, .ord-bin, .hotspot-pop, .sc-quote-card, .note, .sc-columns-cards .sc-column) :is(h1, h2, h3, p, li, .rich-text) { color: inherit; }
+/* Accent and gradient panels start at the brand color, so brand buttons and
+ * card faces on the panel itself turn white (inside light cards they stay). */
+.blk:is([data-bg="accent"], [data-bg="gradient"]) .flashcard-front { background: #fff; color: var(--brand-dark); }
+.blk:is([data-bg="accent"], [data-bg="gradient"]) .btn:not(.btn-outline):not(:is(.stepper, .chat, .scenario, .tabs, .quiz-result, .sc-attach-item, .hotspot-pop) .btn) {
+  background: #fff; color: var(--brand-dark);
+}
+.blk:is([data-bg="accent"], [data-bg="gradient"]) .btn:not(.btn-outline):not(:is(.stepper, .chat, .scenario, .tabs, .quiz-result, .sc-attach-item, .hotspot-pop) .btn):hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.85);
+}
 
 /* Accessibility: the learner's reduced-motion choice never hides content,
  * and high contrast flattens block panels to black on white. */
@@ -620,6 +629,12 @@ html[data-a11y-contrast] .sc-intro-split .sc-intro-text, html[data-a11y-contrast
 .blk-has-bg.blk-join-bottom { border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; padding-bottom: 1rem; }
 
 /* ── Images ─────────────────────────────────────────────────────────────── */
+/* Table: the block's full width, or fitted to its content and placed. */
+.sc-table { width: 100%; border-collapse: collapse; }
+.sc-table-auto { width: auto; }
+.sc-table-center { margin-inline: auto; }
+.sc-table-right { margin-left: auto; }
+
 .sc-img { margin: 0; }
 .sc-img img {
   display: block; width: 100%; height: auto;
@@ -1036,6 +1051,12 @@ html[data-a11y-contrast] .sc-intro-split .sc-intro-text, html[data-a11y-contrast
 
 /* ── Light text on dark/saturated block panels ──────────────────────────── */
 .blk-on-dark .sc-quote-classic { border-left-color: rgb(255 255 255 / 0.85); }
+/* Callouts stay light boxes with their own text color. */
+.blk-on-dark .sc-note .sc-note-text { color: inherit; }
+/* Tables turn light-on-dark: white text, see-through lines, tinted header. */
+.blk-on-dark .sc-table,
+.blk-on-dark .sc-table :is(th, td) { color: #fff; border-color: rgb(255 255 255 / 0.3); }
+.blk-on-dark .sc-table :is(th, .sc-table-head) { background: rgb(255 255 255 / 0.12); }
 .blk-on-dark .sc-quote-statement::before,
 .blk-on-dark .sc-quote-statement::after { background: rgb(255 255 255 / 0.9); }
 .blk-on-dark :is(.sc-quote-classic, .sc-quote-statement, .sc-quote-photo) :is(.sc-quote-text, .sc-quote-author, .sc-quote-mark) { color: #fff; }

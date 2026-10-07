@@ -167,6 +167,10 @@ export interface TableData {
   header: boolean
   /** Rows of cell text; every row has the same number of columns. */
   rows: string[][]
+  /** 'full' (default) spans the block; 'auto' fits the content. */
+  width?: 'full' | 'auto'
+  /** Where an 'auto' table sits (default 'left'). */
+  align?: TextAlign
 }
 
 /** Quote presentation:
