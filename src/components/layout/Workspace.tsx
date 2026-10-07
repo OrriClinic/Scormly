@@ -14,7 +14,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useCourseStore, selectActiveLesson, INTRO_ID } from '../../store/courseStore'
-import { CONTENT_WIDTH_PX } from '../../types/course'
+import { CONTENT_WIDTH_PX, DEFAULT_CONTENT_WIDTH } from '../../types/course'
 import IntroEditor from '../editor/IntroEditor'
 import type { Block } from '../../types/course'
 
@@ -39,7 +39,7 @@ export default function Workspace() {
   const lessonCount = useCourseStore((s) => s.course.lessons.length)
   const lessonIndex = useCourseStore((s) => s.course.lessons.findIndex((l) => l.id === s.activeLessonId))
   const introActive = useCourseStore((s) => s.activeLessonId === INTRO_ID)
-  const contentWidth = useCourseStore((s) => s.course.settings?.contentWidth ?? 'normal')
+  const contentWidth = useCourseStore((s) => s.course.settings?.contentWidth ?? DEFAULT_CONTENT_WIDTH)
   const typography = useCourseStore((s) => s.course.settings?.typography ?? 'modern')
   const { t } = useT('common')
   const { t: td } = useT('design')

@@ -14,7 +14,8 @@ export default function WhatsNewDialog() {
         {RELEASES.map((release, i) => (
           <section key={release.id}>
             <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-              {new Date(release.date).toLocaleDateString(lang, { year: 'numeric', month: 'long', day: 'numeric' })}
+              {release.date &&
+                new Date(release.date).toLocaleDateString(lang, { year: 'numeric', month: 'long', day: 'numeric' })}
               {i === 0 && (
                 <span className="rounded-full bg-brand/10 px-2 py-0.5 normal-case tracking-normal text-brand">
                   {t('newBadge')}

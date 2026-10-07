@@ -8,7 +8,7 @@ import A11yMenu from '../../preview/A11yMenu'
 import { A11yContext, a11yClasses, useA11yPrefs } from '../../preview/a11y'
 import { useBlockWrapper } from '../../blocks/useBlockWrapper'
 import { usePageWidthVar } from '../../hooks/usePageWidthVar'
-import { CONTENT_WIDTH_PX, type BlockAnimation, type Block } from '../../types/course'
+import { CONTENT_WIDTH_PX, DEFAULT_CONTENT_WIDTH, type BlockAnimation, type Block } from '../../types/course'
 
 // Full-screen, learner-facing preview of the course with lesson navigation.
 // Mirrors the SCORM player: optional cover page, lesson menu with progress,
@@ -25,7 +25,7 @@ export default function PreviewOverlay() {
   const contentLanguage = settings?.contentLanguage?.trim() || undefined
   const showProgress = settings?.showProgress !== false
   const finishMessage = settings?.finishMessage?.trim() ?? ''
-  const contentWidth = CONTENT_WIDTH_PX[settings?.contentWidth ?? 'normal']
+  const contentWidth = CONTENT_WIDTH_PX[settings?.contentWidth ?? DEFAULT_CONTENT_WIDTH]
   const blockAnimation: BlockAnimation = reduceMotion ? 'none' : settings?.blockAnimation ?? 'fade'
   const transition = reduceMotion ? 'none' : settings?.lessonTransition ?? 'fade'
   const typography = settings?.typography ?? 'modern'

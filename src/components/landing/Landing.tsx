@@ -778,9 +778,11 @@ export default function Landing() {
                   <Reveal delay={i * 110}>
                     <div className="grid gap-3 md:grid-cols-[10rem_1fr] md:gap-10">
                       <div className="flex items-center gap-3 md:flex-col md:items-end md:pt-6 md:text-right">
-                        <time dateTime={r.date} className="font-semibold text-gray-900">
-                          {fmt.format(new Date(r.date))}
-                        </time>
+                        {r.date && (
+                          <time dateTime={r.date} className="font-semibold text-gray-900">
+                            {fmt.format(new Date(r.date))}
+                          </time>
+                        )}
                         {i === 0 && (
                           <span className="rounded-full bg-brand px-2.5 py-0.5 text-xs font-semibold text-white">
                             {t('newsLatest')}

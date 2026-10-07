@@ -221,7 +221,7 @@ Course
     showProgress?: boolean,        // show "Lesson n of N" in the player header (default true)
     finishMessage?: string,        // completion-screen text; empty/omitted = built-in message
     contentLanguage?: string,      // BCP 47 language of the course content (e.g. 'en', 'uk', 'pt-BR'); sets lang for screen readers
-    contentWidth?: 'narrow' | 'normal' | 'wide' | 'full',  // lesson column width (default 'normal')
+    contentWidth?: 'narrow' | 'normal' | 'wide' | 'full',  // lesson column width (default 'wide')
     typography?: 'modern' | 'editorial' | 'rounded',       // font style (default 'modern'; editorial = serif headings)
     blockAnimation?: 'none' | 'fade' | 'slide' | 'zoom',   // block entrance as the learner scrolls (default 'fade')
     lessonTransition?: 'none' | 'fade' | 'slide'           // animation between lessons (default 'fade')

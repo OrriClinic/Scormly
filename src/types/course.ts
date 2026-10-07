@@ -624,7 +624,7 @@ export interface CourseSettings {
   finishMessage?: string
   /** BCP 47 language of the course content (e.g. 'en', 'uk'); sets `lang`. */
   contentLanguage?: string
-  /** Width of the lesson content column (default 'normal'). */
+  /** Width of the lesson content column (default DEFAULT_CONTENT_WIDTH). */
   contentWidth?: ContentWidth
   /** How blocks appear as they scroll into view (default 'fade'). */
   blockAnimation?: BlockAnimation
@@ -674,11 +674,14 @@ export const DEFAULT_INTRO: CourseIntro = {
 
 export type PlayerLanguage = 'auto' | 'en' | 'uk'
 
+export const DEFAULT_CONTENT_WIDTH: ContentWidth = 'wide'
+
 export const DEFAULT_COURSE_SETTINGS: CourseSettings = {
   completion: 'quiz',
   scored: true,
   passingScore: 80,
   navigation: 'free',
+  contentWidth: DEFAULT_CONTENT_WIDTH,
 }
 
 export interface Course {

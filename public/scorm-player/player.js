@@ -594,7 +594,7 @@
       playerLanguage: s.playerLanguage === 'en' || s.playerLanguage === 'uk' ? s.playerLanguage : 'auto',
       showProgress: s.showProgress !== false,
       finishMessage: typeof s.finishMessage === 'string' ? s.finishMessage.trim() : '',
-      contentWidth: CONTENT_WIDTH[s.contentWidth] ? s.contentWidth : 'normal',
+      contentWidth: CONTENT_WIDTH[s.contentWidth] ? s.contentWidth : 'wide',
       typography: s.typography === 'editorial' || s.typography === 'rounded' ? s.typography : 'modern',
       blockAnimation: s.blockAnimation === 'none' || s.blockAnimation === 'slide' || s.blockAnimation === 'zoom' ? s.blockAnimation : 'fade',
       lessonTransition: s.lessonTransition === 'none' || s.lessonTransition === 'slide' ? s.lessonTransition : 'fade',

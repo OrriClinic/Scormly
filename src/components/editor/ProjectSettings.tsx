@@ -13,6 +13,7 @@ import { THEME_LIST } from '../../theme/themes'
 import { saveAsset, toastUploadError } from '../../lib/assets'
 import { useAssetUrl } from '../../hooks/useAssetUrl'
 import {
+  DEFAULT_CONTENT_WIDTH,
   DEFAULT_COURSE_SETTINGS,
   isScoredBlock,
   type BlockAnimation,
@@ -320,7 +321,7 @@ function AppearancePanel() {
   const updateSettings = useCourseStore((s) => s.updateSettings)
   const { t } = useT('settings')
   const { t: td } = useT('design')
-  const contentWidth = stored?.contentWidth ?? 'normal'
+  const contentWidth = stored?.contentWidth ?? DEFAULT_CONTENT_WIDTH
   const typography = stored?.typography ?? 'modern'
 
   return (
