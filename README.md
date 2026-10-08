@@ -1,3 +1,15 @@
+# Convert a video on Windows
+
+1. Download **Scormly-Windows.zip** from the [latest Orri release](https://github.com/OrriClinic/Scormly/releases/latest).
+2. Right-click the ZIP, choose **Extract All**, and open the extracted **Scormly-Windows** folder.
+3. Double-click **Convert video.cmd**, choose your `.webm` or `.mp4` video, then choose where to save the SCORM ZIP.
+
+No Node, npm, Git or administrator installation is needed. First use downloads a verified portable runtime; later conversions work offline. The original video is preserved. The result is a one-video SCORM 1.2 course with completion tracking; **My Learning Cloud import is not yet verified**. Videos must be at most 3 GiB and already use codecs supported by the learner's browser.
+
+See the [Windows converter guide](docs/windows-converter.md) for playback, completion and troubleshooting details. Developers build the release with `npm ci` and `npm run build:windows`. This Orri fork keeps the upstream Scormly builder below.
+
+---
+
 <div align="center">
 
 # Scormly
